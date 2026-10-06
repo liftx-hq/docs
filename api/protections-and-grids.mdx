@@ -80,7 +80,6 @@ This replaces the price-trigger SLx fragment in a compatible full request; it is
 {
   "slx_enabled":true,
   "slx_tp_trailing_enabled":false,
-  "slx_each_tp_trailing":false,
   "slx_sl_trigger_price_trailing_enabled":true,
   "slx_sl_trigger_price_trailing_pl_percent_activation":1000000,
   "slx_sl_trigger_price_trailing_indent_percent":500000,
@@ -90,6 +89,38 @@ This replaces the price-trigger SLx fragment in a compatible full request; it is
 ```
 
 This illustrates 1% activation, 0.5% indent and 0.25% step. It describes units, not recommended risk parameters. SLx trigger modes and optional initial prices must satisfy the selected configuration's validation.
+
+## Price-trigger breakeven alternative
+
+Replace the preceding SLx configuration with this fragment when selecting its breakeven alternative. The regular trailing indent and step fields no longer apply, so omit them.
+
+```json
+{
+  "slx_enabled": true,
+  "slx_tp_trailing_enabled": false,
+  "slx_sl_trigger_price_trailing_enabled": true,
+  "slx_sl_trigger_price_trailing_pl_percent_activation": 1000000,
+  "slx_sl_trailing_breakeven_enabled": true,
+  "slx_sl_trailing_breakeven_indent_percent": 100000
+}
+```
+
+This expresses 1% price activation and 0.1% breakeven indent, using the same percentage-point scaling. It belongs inside a complete compatible position request; it is not a standalone PATCH.
+
+## Optional initial SLx prices
+
+When the existing builder has computed a valid fee-aware reference, its exported request can also include these paired seed prices:
+
+```json
+{
+  "slx_activation_price_atomic": "70700",
+  "slx_activation_price_scale": 0,
+  "slx_price_atomic": "70350",
+  "slx_price_scale": 0
+}
+```
+
+These numbers are illustrative only. They would correspond to a 1% activation and 0.5% initial indent on a hypothetical long reference of 70,000 before catalog quantization. An order's limit price does not establish that reference. Copy the builder's actual result or omit these optional seeds; never invent them from an assumed fill. Subsequent fill-aware protection and trailing remain Liftx-owned. Each included atomic field needs its scale partner.
 
 ## Disable or change protection
 

@@ -5,6 +5,27 @@ description: "Compose supported operations without inventing atomicity, feedback
 
 A production controller maintains three distinct records: strategy intent, Liftx command receipt and observed position state. They advance at different times. Use persistent intent IDs and bounded execution queues rather than infer success from an HTTP response or a chart signal.
 
+## Commands and real-time state
+
+Submit commands through the durable HTTP API and consume the existing [WebSocket stream](/api/streams) for position, attached-order and balance changes. Subscribe before generating dependent trading work, obtain complete initial state, and apply revisions as updates arrive. Follow `has_more` for position pages and request totals only when needed. Reconcile a gap or uncertain result with the affected canonical read; avoid polling every position on every update.
+
+The `orders_index` channel tracks which instruments have open orders. It does not report every order amendment or fill. Use position publications for attached-order state and cumulative execution accounting. A command rejected before position creation may produce no position event, so retain and inspect its receipt separately. There is currently no receipt-change stream or durable execution-event replay feed.
+
+Choose credential scope deliberately: an instrument-restricted key can stream authorized tickers, but cannot stream positions, balances, indexes or position-history notices. A link-scoped read key without instrument restrictions can observe those private channels. Share its connection only among strategies authorized to observe that link. Current connection limits and the existing binary decoder are documented in the [stream protocol](/api/streams).
+
+## Transport and latency
+
+| Interface | Current role in Liftx | Engineering tradeoff |
+| --- | --- | --- |
+| Persistent HTTP commands | Supported command submission with durable receipts | Reuse a pooled client connection and bound concurrent requests. HTTP does not require a new TCP/TLS handshake for every command. |
+| WebSocket state | Supported push updates and snapshot recovery | Avoid repeated state polling; maintain one bounded consumer and reconcile after gaps. |
+| WebSocket command submission | Not implemented | Could reduce transport overhead, but would still need the same authorization, immutable identity, durable admission and trading owners. No Liftx latency improvement has been measured. |
+| Outgoing webhooks | Not implemented | Could serve server-side notifications. Delivery queues, recipient availability, acknowledgements and retries make this a separate delivery contract; they do not establish a faster feedback loop than an open stream. |
+
+[HTTP/1.1 supports persistent connections](https://www.rfc-editor.org/rfc/rfc9112.html#section-9.3). Exchange interfaces also vary: [OKX supports REST and WebSocket order entry](https://www.okx.com/en-sg/learn/complete-guide-to-okex-api-v5-upgrade), while the [Coinbase Advanced Trade overview pairs REST order management with WebSocket state updates](https://docs.cdp.coinbase.com/coinbase-app/advanced-trade-apis/overview). Neither pattern proves a latency result for Liftx.
+
+Before changing command transport, compare warm persistent connections under equal payloads, concurrency and network conditions. Measure command admission, durable receipt, owner handoff, venue acknowledgement and actual execution separately. A faster acknowledgement is not necessarily faster execution. Connection reuse and consuming the existing state stream are the starting point; transport changes must preserve the single command and lifecycle owners.
+
 ## One continuous strategy
 
 For each intended lifecycle:

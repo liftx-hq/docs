@@ -5,20 +5,26 @@ description: "Every OPEN, SL, SLx, TP, grid and modification field in the canoni
 
 API OPEN/MODIFY and advanced TradingView signals embed one canonical `PositionRequest`. Guided TradingView setup saves this same request during setup. There is no separate exchange-specific webhook order language.
 
-The safest starting point is a valid Liftx order draft and **Use current order setup** in integration settings. Export a request for the exact account and instrument. Adapter capabilities and current trading state still decide whether a well-formed request can execute.
+Start with a valid Liftx order draft, then use **Settings → Integrations → API → Copy current order JSON**. For TradingView, **Use current order setup** imports that draft into the setup and the generated alert supplies the applicable fields. Adapter capabilities and current trading state still decide whether a well-formed request can execute.
+
+## Required, conditional and optional
+
+**Required** means include the field on every OPEN/MODIFY request, even when its value is `false`. **Conditional** means include it for the indicated market, feature or modification; otherwise omit it. **Optional** means it is not needed to enable the selected behavior. Optional does not imply nullable: use only the nullability shown in OpenAPI. Fields marked as builder configuration can be optional at JSON decoding while still necessary to express the intended trading behavior.
+
+A request is the complete intended configuration, not a merge patch. Do not include inactive mode fields merely to make an example look exhaustive. Unknown keys are rejected. The tables below cover every `PositionRequest` key, including both members of each decimal pair. [Exact decimals and units](/api/precision-and-units) explains how to avoid hand-writing them.
 
 ## Market, direction and decimal units
 
-| Field | Contract |
-| --- | --- |
-| `action` | `1` for this open/edit request model; outer command action chooses OPEN or MODIFY |
-| `exchange_link_id` | Exact authorized account link; equal to the command envelope |
-| `instrument_id` | Exact catalog identifier; equal to the envelope; preserves case and bytes |
-| `quantity_asset` | Catalog base or quote asset in which input quantity rows are expressed |
-| `position_side` | `1` long or `2` short; immutable after creation |
-| `trading_currency` | Eligible spot settlement currency when applicable; preserve current value on modification |
-| `margin_mode` | Derivative creation: `1` cross or `2` isolated; immutable thereafter |
-| `leverage` | Positive derivative creation leverage, within the exact instrument/account limit; wire maximum 32,767. Omit unchanged leverage on modification. |
+| Field | Presence | Contract |
+| --- | --- | --- |
+| `action` | Required | `1` for this open/edit request model; outer command action chooses OPEN or MODIFY |
+| `exchange_link_id` | Required | Exact authorized account link; equal to the command envelope |
+| `instrument_id` | Required | Exact catalog identifier; equal to the envelope; preserves case and bytes |
+| `quantity_asset` | Required | Catalog base or quote asset in which input quantity rows are expressed |
+| `position_side` | Required | `1` long or `2` short; immutable after creation |
+| `trading_currency` | Conditional: eligible spot settlement | Eligible spot settlement currency when applicable; preserve current value on modification |
+| `margin_mode` | Conditional: derivative OPEN; immutable on MODIFY | Derivative creation: `1` cross or `2` isolated; immutable thereafter |
+| `leverage` | Conditional: derivative OPEN or intentional leverage change | Positive derivative creation leverage, within the exact instrument/account limit; wire maximum 32,767. Omit unchanged leverage on modification. |
 
 Spot versus derivative, dated versus perpetual, and linear versus inverse come from the chosen catalog instrument, not a `spot/futures` boolean or ticker suffix. Not every account supports every direction, margin mode or order role.
 
@@ -28,44 +34,44 @@ An input of `"525497"` at scale `1` with `quantity_asset:"USDT"` means **52,549.
 
 ## OPEN rows
 
-| Field | Contract |
-| --- | --- |
-| `open_order_type` | `1` limit, `2` market, `3` virtual limit, subject to supported order roles |
-| `open_prices_atomic`, `open_prices_scale` | Price rows in fixed-point form |
-| `open_quantities_atomic`, `open_quantities_scale` | Quantity rows in `quantity_asset` units |
-| `order_grid_enabled` | Enables the existing OPEN grid configuration |
-| `num_open_orders` | Number of OPEN rows for the enabled grid |
-| `open_slot_ids` | On modification, exact current stable OPEN slot identities aligned with the intended rows |
+| Field | Presence | Contract |
+| --- | --- | --- |
+| `open_order_type` | Required | `1` limit, `2` market, `3` virtual limit, subject to supported order roles |
+| `open_prices_atomic`, `open_prices_scale` | Required | Price rows in fixed-point form |
+| `open_quantities_atomic`, `open_quantities_scale` | Required | Quantity rows in `quantity_asset` units |
+| `order_grid_enabled` | Required | Enables the existing OPEN grid configuration |
+| `num_open_orders` | Conditional: enabled OPEN grid; builder count | Number of OPEN rows for the enabled grid |
+| `open_slot_ids` | Conditional: MODIFY retaining current slots | On modification, exact current stable OPEN slot identities aligned with the intended rows |
 
 All four OPEN arrays are required even for a market order. Preserve the exported builder convention for market price rows; a market order is not a guarantee of that indicated price. Do not infer adapter support from the numeric order-type enum alone.
 
 ## Stop loss
 
-| Field | Contract |
-| --- | --- |
-| `sl_enabled` | Required switch controlling ordinary SL |
-| `sl_price_rearrangement` | Required when SL is enabled; Liftx recalculates its price from the configured reference as exposure changes |
-| `sl_order_type` | Required when SL is enabled; supported role-specific order type |
-| `sl_type` | `1` distance from the first OPEN row price; `2` distance from the average entry reference |
-| `sl_step_percent` | Percentage points × 1,000,000; 2% is 2,000,000 |
-| `sl_price_atomic`, `sl_price_scale` | Exact initial/static SL price |
+| Field | Presence | Contract |
+| --- | --- | --- |
+| `sl_enabled` | Required | Required switch controlling ordinary SL |
+| `sl_price_rearrangement` | Conditional: SL enabled | Required when SL is enabled; Liftx recalculates its price from the configured reference as exposure changes |
+| `sl_order_type` | Conditional: SL enabled | Required when SL is enabled; supported role-specific order type |
+| `sl_type` | Conditional: relative SL reference; builder configuration | `1` distance from the first OPEN row price; `2` distance from the average entry reference |
+| `sl_step_percent` | Conditional: relative SL distance; builder configuration | Percentage points × 1,000,000; 2% is 2,000,000 |
+| `sl_price_atomic`, `sl_price_scale` | Conditional: SL initial/static price; paired | Exact initial/static SL price |
 
 A static SL price and a rearranged SL have different intent. Use the builder's appropriate fields instead of assuming that a price copied from a chart remains the effective fee/fill-aware stop forever.
 
 ## Take profit
 
-| Field | Contract |
-| --- | --- |
-| `tp_enabled` | Required switch controlling TP |
-| `tp_price_rearrangement` | Required when TP enabled; applies the configured fee-aware reference logic |
-| `tp_grid_enabled` | Required when TP enabled; enables multiple TP rows |
-| `num_tp_orders` | Count for an enabled TP grid |
-| `tp_order_type` | Required supported TP order type |
-| `tp_prices_atomic`, `tp_prices_scale` | Required price rows |
-| `tp_quantities_atomic`, `tp_quantities_scale` | Required quantity rows; builder may use zero placeholders because actual exposure drives protection sizing |
-| `tp_quantity_percents` | Required positive int32 weights; retain the builder's normalization convention |
-| `tp_pnls` | Required price-distance percentages; static unused entries may be zero |
-| `tp_slot_ids` | On modification, current stable TP slots aligned with intended rows |
+| Field | Presence | Contract |
+| --- | --- | --- |
+| `tp_enabled` | Required | Required switch controlling TP |
+| `tp_price_rearrangement` | Conditional: TP enabled | Required when TP enabled; applies the configured fee-aware reference logic |
+| `tp_grid_enabled` | Conditional: TP enabled | Required when TP enabled; enables multiple TP rows |
+| `num_tp_orders` | Conditional: TP grid enabled; builder count | Count for an enabled TP grid |
+| `tp_order_type` | Conditional: TP enabled | Required supported TP order type |
+| `tp_prices_atomic`, `tp_prices_scale` | Conditional: TP enabled | Required price rows |
+| `tp_quantities_atomic`, `tp_quantities_scale` | Conditional: TP enabled | Required quantity rows; builder may use zero placeholders because actual exposure drives protection sizing |
+| `tp_quantity_percents` | Conditional: TP enabled | Required positive int32 weights; retain the builder's normalization convention |
+| `tp_pnls` | Conditional: TP enabled | Required price-distance percentages; static unused entries may be zero |
+| `tp_slot_ids` | Conditional: MODIFY retaining TP slots | On modification, current stable TP slots aligned with intended rows |
 
 A single full TP uses weight `1000000`. Grid weights use percentage points × 1,000,000, so a 50/50 grid uses `[50000000,50000000]`. Existing protection normalization handles this distinction. Do not reinterpret a single full TP as a 1% close.
 
@@ -75,36 +81,45 @@ For rearranged TP, `tp_pnls` measures positive **price distance from fee-aware b
 
 `slx_enabled` is required. SLx is owned by Liftx once configured; the strategy does not need to send each trailing tick.
 
-| Mode or option | Fields | Meaning |
-| --- | --- | --- |
-| TP-trigger trailing | `slx_tp_trailing_enabled` | Requires TP. Mutually exclusive with price-trigger trailing. |
-| First TP trigger | `slx_tp_breakeven` | One-based TP trigger that first moves the stop to breakeven |
-| Continue after each TP | `slx_each_tp_trailing` | Subsequent configured triggers trail using the previous TP |
-| Price-trigger trailing | `slx_sl_trigger_price_trailing_enabled` | Uses price-distance activation rather than TP events |
-| Activation distance | `slx_sl_trigger_price_trailing_pl_percent_activation` | Percentage points × 1,000,000 |
-| Trailing indent | `slx_sl_trigger_price_trailing_indent_percent` | Percentage points × 1,000,000 |
-| Trailing step | `slx_sl_trigger_price_trailing_step` | Percentage points × 1,000,000 |
-| Breakeven alternative | `slx_sl_trailing_breakeven_enabled` | Price-trigger mode can use breakeven instead of ordinary indent/step |
-| Breakeven indent | `slx_sl_trailing_breakeven_indent_percent` | Percentage points × 1,000,000 |
-| Initial activation price | `slx_activation_price_atomic`, `slx_activation_price_scale` | Optional paired initial price |
-| Initial SLx price | `slx_price_atomic`, `slx_price_scale` | Optional paired initial stop price |
+| Mode or option | Fields | Presence | Meaning |
+| --- | --- | --- | --- |
+| TP-trigger trailing | `slx_tp_trailing_enabled` | Conditional: explicit choice when SLx enabled; absent defaults false | Requires TP. Mutually exclusive with price-trigger trailing. |
+| First TP trigger | `slx_tp_breakeven` | Conditional: TP-trigger mode | One-based TP trigger that first moves the stop to breakeven |
+| Continue after each TP | `slx_each_tp_trailing` | Optional: TP-trigger mode; absent defaults false | Subsequent configured triggers trail using the previous TP |
+| Price-trigger trailing | `slx_sl_trigger_price_trailing_enabled` | Conditional: explicit choice when SLx enabled; absent defaults false | Uses price-distance activation rather than TP events |
+| Activation distance | `slx_sl_trigger_price_trailing_pl_percent_activation` | Conditional: price-trigger mode | Percentage points × 1,000,000 |
+| Trailing indent | `slx_sl_trigger_price_trailing_indent_percent` | Conditional: price-trigger mode without breakeven alternative | Percentage points × 1,000,000 |
+| Trailing step | `slx_sl_trigger_price_trailing_step` | Conditional: price-trigger mode without breakeven alternative | Percentage points × 1,000,000 |
+| Breakeven alternative | `slx_sl_trailing_breakeven_enabled` | Optional: selects price-trigger breakeven alternative | Price-trigger mode can use breakeven instead of ordinary indent/step |
+| Breakeven indent | `slx_sl_trailing_breakeven_indent_percent` | Conditional: breakeven alternative enabled | Percentage points × 1,000,000 |
+| Initial activation price | `slx_activation_price_atomic`, `slx_activation_price_scale` | Optional: SLx enabled; both pair members together | Optional paired initial price |
+| Initial SLx price | `slx_price_atomic`, `slx_price_scale` | Optional: SLx enabled; both pair members together | Optional paired initial stop price |
 
 Do not enable both trigger families in one request. Feature applicability, positive distances and reference-price constraints are validated by the existing protection logic. Enabling every boolean is not a valid “maximum functionality” request.
 
 ## Exact order amendments
 
-`order_amendments` contains the current `slot_id`, exact physical Liftx `order_id` UUID, and paired `price_atomic`/`price_scale` and/or `quantity_atomic`/`quantity_scale`. A venue order ID is not interchangeable with the Liftx UUID. Slot identity alone cannot safely identify a replaced physical order generation.
+`order_amendments` is optional and applies only to exact order changes on MODIFY. Omit it on OPEN and when no physical order amendment is intended. Each entry contains the current `slot_id`, exact physical Liftx `order_id` UUID, and paired `price_atomic`/`price_scale` and/or `quantity_atomic`/`quantity_scale`. A venue order ID is not interchangeable with the Liftx UUID. Slot identity alone cannot safely identify a replaced physical order generation.
+
+| Amendment field | Presence | Meaning |
+| --- | --- | --- |
+| `slot_id` | Conditional: stable slot being amended | Copy the current slot from the modification publication |
+| `order_id` | Conditional: existing physical order being amended | Exact current Liftx order UUID, never a venue order ID |
+| `price_atomic`, `price_scale` | Optional paired change | Include both to change price |
+| `quantity_atomic`, `quantity_scale` | Optional paired change | Include both to change quantity |
+
+Include at least one intended price/quantity change; retain the current physical order identity when amending a placed order. The decoder accepting an optional identity is not permission to guess a generation.
 
 Use the current modification publication. Removing a row or slot from the complete intended configuration can request cancellation; preserving its exact identity expresses continuity. Read [modification](/api/modify-positions) before constructing a request.
 
 ## Complete illustrative derivative request
 
-This request uses a fictitious link and instrument and fixed synthetic quantities. It demonstrates the shape, not valid live venue configuration, position sizing advice or an immediately executable strategy.
+This request uses fictitious link `17`, illustrative exact catalog ID `BTC-USDT-SWAP` and synthetic values. Assume this selected linear catalog supports the pictured order roles, 2x cross margin and 0.001 BTC quantity; these are not current venue constraints. It demonstrates the shape, not valid live venue configuration, position sizing advice or an immediately executable strategy.
 ```json
 {
   "action": 1,
   "exchange_link_id": 17,
-  "instrument_id": "COPY_EXACT_CATALOG_ID",
+  "instrument_id": "BTC-USDT-SWAP",
   "quantity_asset": "BTC",
   "position_side": 1,
   "open_order_type": 1,
@@ -118,7 +133,7 @@ This request uses a fictitious link and instrument and fixed synthetic quantitie
     "1"
   ],
   "open_quantities_scale": [
-    4
+    3
   ],
   "order_grid_enabled": false,
   "margin_mode": 1,
@@ -128,20 +143,19 @@ This request uses a fictitious link and instrument and fixed synthetic quantitie
   "sl_step_percent": 2000000,
   "sl_price_atomic": "68600",
   "sl_price_scale": 0,
-  "sl_price_rearrangement": true,
+  "sl_price_rearrangement": false,
   "sl_order_type": 2,
   "slx_enabled": true,
   "slx_tp_trailing_enabled": false,
-  "slx_each_tp_trailing": false,
   "slx_sl_trigger_price_trailing_enabled": true,
   "slx_sl_trigger_price_trailing_pl_percent_activation": 1000000,
   "slx_sl_trigger_price_trailing_indent_percent": 500000,
   "slx_sl_trigger_price_trailing_step": 250000,
   "slx_sl_trailing_breakeven_enabled": false,
   "tp_enabled": true,
-  "tp_price_rearrangement": true,
+  "tp_price_rearrangement": false,
   "tp_grid_enabled": false,
-  "tp_order_type": 1,
+  "tp_order_type": 3,
   "tp_prices_atomic": [
     "72100"
   ],
@@ -158,7 +172,7 @@ This request uses a fictitious link and instrument and fixed synthetic quantitie
     1000000
   ],
   "tp_pnls": [
-    3000000
+    0
   ]
 }
 ```

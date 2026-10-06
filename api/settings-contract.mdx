@@ -49,11 +49,32 @@ This is a nonoperational shape example. A real expiry must be in the future and 
 
 The issuance response contains `credential` metadata and a one-time `secret` on new issuance. A committed duplicate cannot recover the secret. After a lost response, inspect metadata and revoke a key whose secret was not retained before explicitly creating another.
 
+| Credential field | Presence | Rule |
+| --- | --- | --- |
+| `name` | Required | Human-readable name |
+| `kind` | Required | `api` for ordinary API credentials; dedicated TradingView setup uses `tradingview` |
+| `scopes` | Required | Exact permissions; permissions are not implied by name or target mode |
+| `exchange_link_ids` | Required | Explicit linked accounts |
+| `instrument_ids` | Optional for API; required for TV binding | Empty API filter permits all instruments on the selected links; TV pins exactly one instrument |
+| `expires_at` | Required | Future UTC Unix seconds, no more than one year ahead |
+| `integration_id` | Optional on credential replacement | Existing exact namespace policy; not a permission expansion mechanism |
+
 ## TradingView binding policy
 
 In addition to restricted credential fields, a binding has `mode`, `position_mode`, `allow_market_terminate`, positive decimal-string `max_quantity`, fresh source UUID and guided `position_request` when applicable. One exact link and instrument are required. The returned immutable `revision` accompanies subsequent signals.
 
 `single`/`multiple` controls OPEN occupancy, while the signal's exact-position/strategy/market target controls what termination selects. The explicit market grant is additional authority, including manual and other strategies' positions in that exact market. It is not enabled by choosing multiple-position mode.
+
+| Additional binding field | Presence | Rule |
+| --- | --- | --- |
+| `mode` | Required | `guided` or `advanced` |
+| `position_request` | Conditional | Complete request in Guided mode; omit in Advanced mode |
+| `max_quantity` | Required | Positive decimal string in [normalized units](/api/precision-and-units), per position |
+| `source_instance_id` | Required | Fresh UUID for this ordered producer |
+| `position_mode` | Required | `single` or `multiple`; governs OPEN occupancy |
+| `allow_market_terminate` | Required | Explicit boolean granting or withholding market-wide termination |
+
+Both credential and binding issuance wrap the proposed `request` with the required `operation_id`. Fresh-auth start also requires `purpose`; verify requires `operation_id` and `proof`, referring to that existing challenge. Inside `proof`, exactly one offered `password` or `apple_token` is required, with `mfa_code` conditionally required by the challenge. Do not include both authentication methods. Revoke requests require the exact `id` (credential) or `integration_id` (binding) specified by their endpoint. See the endpoint schemas for wire bounds and request wrappers.
 
 ## Metadata, retention and revocation
 

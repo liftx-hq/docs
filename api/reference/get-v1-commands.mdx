@@ -1,31 +1,91 @@
 ---
 title: "List command receipts"
-description: "Returns at most 50 top-level receipts and nullable next_cursor."
+description: "Page through up to 50 top-level receipts in the authenticated integration namespace."
 openapi: "/api/openapi.json GET /v1/commands"
 playground: "simple"
 ---
 
-<Note>Preview contract. Production availability remains subject to activation and release qualification. Examples are synthetic; the documentation cannot submit requests.</Note>
+<Note>Preview contract. Production availability remains subject to activation and release qualification. Examples use illustrative identities and UTC times; the documentation cannot submit requests.</Note>
 
-## Authorization
+## Authorization and query fields
 
-Any valid API key for its own integration namespace.
+Any valid API key can read receipts in its **own integration namespace**, without an additional `read` scope. Current account, credential and Pro/trial entitlement checks still apply. This list is not account-wide Settings Activity and does not enumerate another namespace's TradingView commands.
 
-## Behavior
+| Query field | Requirement | Meaning |
+| --- | --- | --- |
+| `cursor` | Optional | Canonical lowercase receipt UUID returned as `next_cursor`; pass it unchanged to request older receipts. |
 
-Returns at most 50 top-level receipts and nullable next_cursor. Pass the returned cursor unchanged for older commands. Group children are represented by their parent summary; request detail for child outcomes. This is namespace history, not all account Activity.
+There is no client-controlled `limit`, status filter or position filter. Send each allowed query key at most once, with no request body. Unknown, duplicate or malformed query fields are rejected.
 
-## Request example
+## First page request
 
 ```http
-GET /v1/commands
+GET /v1/commands HTTP/1.1
+Host: api.liftx.io
 Authorization: Bearer YOUR_API_KEY_FROM_PRIVATE_STORAGE
 ```
 
-All IDs and dates are illustrative. URL-encode opaque query values and supply each allowed key once. Optional filters and their types appear in the generated schema below.
+### HTTP 200
 
-## Response and errors
+This illustrative short page contains a modification and its earlier OPEN:
 
-The generated response schema below is the wire contract. Preserve fixed-point strings, nullable fields and endpoint-specific envelopes. Inspect HTTP status and Content-Type before decoding failures; reused trading routes may return JSON or plain text. Authentication, entitlement and exact link/instrument restrictions apply in addition to endpoint validation. See [errors and recovery](/api/errors-and-limits).
+```json
+{
+  "commands": [
+    {
+      "id": "22222222-2222-4222-8222-222222222222",
+      "client_command_id": "btc-controller:cycle-001:modify-001",
+      "action": "modify",
+      "state": "execution_observed",
+      "position_id": "11111111-1111-4111-8111-111111111111",
+      "error_code": null,
+      "created_at": 1893456060,
+      "updated_at": 1893456061
+    },
+    {
+      "id": "11111111-1111-4111-8111-111111111111",
+      "client_command_id": "btc-controller:cycle-001:open",
+      "action": "open",
+      "state": "handed_off",
+      "position_id": "11111111-1111-4111-8111-111111111111",
+      "error_code": null,
+      "created_at": 1893456000,
+      "updated_at": 1893456001
+    }
+  ],
+  "next_cursor": null
+}
+```
+Rows are ordered newest first by creation time and receipt ID. Receipt update times may change as work progresses. The response contains at most 50 top-level receipts; `next_cursor:null` means this page has no older continuation. An empty page is `{"commands":[],"next_cursor":null}`.
 
-Read the [related guide](/api/commands-and-receipts) for lifecycle, units and recovery semantics.
+A TradingView group appears once as a parent summary. Its children are not repeated as top-level list rows; use [receipt detail](/api/reference/get-v1-commands-get) to inspect its frozen targets. Ordinary API namespace history normally contains the commands created in that API namespace.
+
+## Next page request
+
+When a full response returns a nonnull cursor, use exactly that value:
+
+```sh
+curl --fail-with-body --get \
+  -H "Authorization: Bearer ${LIFTX_API_KEY}" \
+  --data-urlencode "cursor=${NEXT_CURSOR_FROM_RESPONSE}" \
+  https://api.liftx.io/v1/commands
+```
+
+Do not manufacture a cursor from a position UUID or a different namespace. Pagination is not a point-in-time audit snapshot: receipt states can change, new commands can arrive, and old resolved receipts can leave retention. Refresh exact active receipt IDs separately and archive completed evidence if your audit needs exceed server retention.
+
+## Error example
+
+`GET /v1/commands?cursor=not-a-uuid` returns HTTP `400`:
+
+```json
+{
+  "success": false,
+  "error": {
+    "code": "INVALID_CURSOR",
+    "message": "Invalid receipt cursor"
+  }
+}
+```
+Authentication or entitlement failures can occur before query validation. See [errors and limits](/api/errors-and-limits) for those codes.
+
+The list reports command progress, not fills or flatness. Follow [receipt states](/api/commands-and-receipts) and reconcile actual [position state](/api/position-state) before dependent trades.

@@ -56,6 +56,7 @@
               "api/overview",
               "api/authentication",
               "api/accounts-and-instruments",
+              "api/precision-and-units",
               "api/position-state"
             ]
           },

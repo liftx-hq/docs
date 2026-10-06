@@ -3,7 +3,17 @@ title: "Accounts, instruments and balances"
 description: "Resolve an exact execution market and understand precision, units and snapshots."
 ---
 
-All examples use fictitious link `17` and `COPY_EXACT_CATALOG_ID`. Replace them only with authenticated catalog data from the intended account. These examples are not executable trading defaults.
+Examples use fictitious link `17`. `COPY_EXACT_CATALOG_ID` means the returned `instrument_id` of the exact row you selected; it is not a value to send literally. These examples are not executable trading defaults.
+
+## Find the instrument in Liftx
+
+1. Select the intended linked account and its environment in the terminal.
+2. Open the symbol picker and search by familiar pair text such as `BTCUSDT`. Select the spot or derivative market and inspect the exact instrument ID and topology shown for the row.
+3. Configure the order's quantity asset, OPEN rows and protections in the order builder.
+4. Open **Settings → Integrations → API → Copy current order JSON**. The copied request contains the exact `exchange_link_id`, `instrument_id`, quantity unit and decimal fields. It creates no key and sends no trade.
+5. For TradingView, use **Use current order setup** instead; generated messages already pin the instrument. No manual placeholder replacement is needed for generated messages.
+
+A bot can perform the same selection from the catalog below. Resolve it during setup and retain that exact ID. `BTCUSDT + futures` is not a unique execution key: multiple derivative products can share a base/quote pair. Do not select the first matching pair or reconstruct an ID from a ticker string. If multiple catalog rows match, require an explicit choice.
 
 ## Discover the contract
 
@@ -69,9 +79,13 @@ curl --fail-with-body --get \
 | `fee_schedule_id` | Match the appropriate fee schedule |
 | `state` | Instrument availability from its registered catalog |
 
+For spot, lot/min sizes use the catalog base unit. For derivatives, lot/min sizes are venue contract counts; multiplying by `contract_value` gives the corresponding normalized quantity. Input quantities in a different asset require the existing price-dependent sizing rules. Do not send native contract counts as `quantity_asset` quantities.
+
 Topology values are `1` spot, `2` linear derivative and `3` inverse derivative. Canonical quantities are base units for spot/linear instruments and quote-face units for inverse instruments. The exchange adapter owns venue contract conversion.
 
 ## Decimal interpretation
+
+See [prices, quantities and exact decimals](/api/precision-and-units) for copy/export steps, conversion code and unit comparisons.
 
 ```json
 {"price_atomic":"7012345","price_scale":2,"quantity_atomic":"25","quantity_scale":5}
@@ -123,4 +137,4 @@ Fee schedules are link-wide; this endpoint requires a key without an instrument 
 - `/positions/lookup?id=…` resolves an authorized position UUID without trusting caller-supplied venue inference.
 - `/positions/get-for-modification` reads the current active **Position publication**, including its revision and order identities. It is not a prebuilt `PositionRequest`.
 
-Respect `has_more` and any `incomplete`/error indication. A temporarily incomplete page is not evidence that a position disappeared. Use a new complete snapshot after reconnect or a state gap before making exposure-dependent decisions.
+Advance a position page offset by the number of returned `positions`, not by the requested `limit`: byte limits can shorten a page while `has_more` remains true. If no rows arrive with `has_more:true`, treat that as incomplete/no progress rather than spinning a paging loop. Respect `has_more` and any `incomplete`/error indication. A temporarily incomplete page is not evidence that a position disappeared. Use a new complete snapshot after reconnect or a state gap before making exposure-dependent decisions.

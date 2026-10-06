@@ -1,31 +1,163 @@
 ---
 title: "Get a command receipt"
-description: "Read an exact receipt UUID."
+description: "Read one command or a TradingView group with its exact child outcomes."
 openapi: "/api/openapi.json GET /v1/commands/get"
 playground: "simple"
 ---
 
-<Note>Preview contract. Production availability remains subject to activation and release qualification. Examples are synthetic; the documentation cannot submit requests.</Note>
+<Note>Preview contract. Production availability remains subject to activation and release qualification. Examples use illustrative identities and UTC times; the documentation cannot submit requests.</Note>
 
-## Authorization
+## Authorization and query
 
-Owning integration namespace; alternatively same-account `read` plus the exact authorized link/instrument.
+The owning integration namespace can read its receipt with any valid key. Alternatively, a key with `read` can inspect a **known receipt UUID from the same account** when its link/instrument policy permits that receipt. This enables an API controller to inspect a TradingView receipt without acquiring that TradingView namespace's mutation identity or list access.
 
-## Behavior
+| Query field | Requirement | Meaning |
+| --- | --- | --- |
+| `id` | Required | Canonical lowercase, nonzero receipt UUID. This is not `client_command_id` and is not an arbitrary position UUID. |
 
-Read an exact receipt UUID. Group detail includes up to 64 child targets; zero-target groups can omit targets. Other-namespace read permission does not grant mutation namespace authority. A receipt state never replaces actual position evidence.
+Send exactly one `id`, no other query keys and no request body.
 
-## Request example
-
-```http
-GET /v1/commands/get?id=11111111-1111-4111-8111-111111111111
-Authorization: Bearer YOUR_API_KEY_FROM_PRIVATE_STORAGE
+```sh
+curl --fail-with-body --get \
+  -H "Authorization: Bearer ${LIFTX_API_KEY}" \
+  --data-urlencode 'id=33333333-3333-4333-8333-333333333333' \
+  https://api.liftx.io/v1/commands/get
 ```
 
-All IDs and dates are illustrative. URL-encode opaque query values and supply each allowed key once. Optional filters and their types appear in the generated schema below.
+## Single-command response: HTTP 200
 
-## Response and errors
+```json
+{
+  "id": "33333333-3333-4333-8333-333333333333",
+  "client_command_id": "btc-controller:cycle-001:terminate",
+  "action": "terminate",
+  "state": "handed_off",
+  "position_id": "11111111-1111-4111-8111-111111111111",
+  "error_code": null,
+  "created_at": 1893456120,
+  "updated_at": 1893456121,
+  "terminal_request_kind": 1,
+  "terminal_request_seq": 2
+}
+```
+The synthetic example records a durably armed close (`terminal_request_kind:1`, positive sequence `2`). It does not certify completed closure. A canceled pending lifecycle can instead record kind `2`; a receipt without newly correlated terminal evidence omits those two optional fields.
 
-The generated response schema below is the wire contract. Preserve fixed-point strings, nullable fields and endpoint-specific envelopes. Inspect HTTP status and Content-Type before decoding failures; reused trading routes may return JSON or plain text. Authentication, entitlement and exact link/instrument restrictions apply in addition to endpoint validation. See [errors and recovery](/api/errors-and-limits).
+### Receipt fields
 
-Read the [related guide](/api/commands-and-receipts) for lifecycle, units and recovery semantics.
+| Field | Presence | Meaning |
+| --- | --- | --- |
+| `id` | Always | Server receipt UUID. |
+| `client_command_id` | Always | Original immutable client identity, or reserved server identity for a group child. |
+| `action`, `state` | Always | Command action and current receipt state. |
+| `position_id` | Always, nullable | Exact target for a single command/child; `null` for a group parent. |
+| `error_code` | Always, nullable | Machine-readable outcome code; inspect even when this GET returned HTTP `200`. |
+| `created_at`, `updated_at` | Always | UTC Unix seconds. These are command timestamps, not exchange fill timestamps. |
+| `terminal_request_kind`, `terminal_request_seq` | Only when correlated evidence exists | Durable terminal arm kind (`1` close, `2` cancel) and positive sequence. They may be visible during `dispatching`. |
+| `group_id` | Group children only | Parent receipt UUID. |
+| `group` | Group parents only | Frozen target selector/count and child state counts. |
+| `targets` | Nonempty group detail | Up to 64 exact child receipts. A zero-target group can omit this field. |
+
+See the [state table](/api/commands-and-receipts#receipt-states). Receipt GET success means the read succeeded; it does not turn `rejected`, `expired` or `operator_required` into a successful trade.
+
+## TradingView group response: HTTP 200
+
+The following is an alternative response when requesting the synthetic group UUID `77777777-7777-4777-8777-777777777777`. One target was handed off and one was rejected. All IDs and outcomes are illustrative.
+
+```json
+{
+  "id": "77777777-7777-4777-8777-777777777777",
+  "client_command_id": "pine-btc:cycle-001:exit-strategy",
+  "action": "terminate",
+  "state": "partial",
+  "position_id": null,
+  "error_code": null,
+  "created_at": 1893456180,
+  "updated_at": 1893456182,
+  "group": {
+    "target": "strategy",
+    "target_count": 2,
+    "counts": {
+      "accepted": 0,
+      "dispatching": 0,
+      "execution_observed": 0,
+      "handed_off": 1,
+      "rejected": 1,
+      "expired": 0,
+      "operator_required": 0
+    }
+  },
+  "targets": [
+    {
+      "id": "88888888-8888-4888-8888-888888888888",
+      "client_command_id": "liftx-group:77777777-7777-4777-8777-777777777777:11111111-1111-4111-8111-111111111111",
+      "action": "terminate",
+      "state": "handed_off",
+      "position_id": "11111111-1111-4111-8111-111111111111",
+      "error_code": null,
+      "created_at": 1893456180,
+      "updated_at": 1893456181,
+      "terminal_request_kind": 1,
+      "terminal_request_seq": 3,
+      "group_id": "77777777-7777-4777-8777-777777777777"
+    },
+    {
+      "id": "99999999-9999-4999-8999-999999999999",
+      "client_command_id": "liftx-group:77777777-7777-4777-8777-777777777777:aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+      "action": "terminate",
+      "state": "rejected",
+      "position_id": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+      "error_code": "POSITION_NOT_FOUND",
+      "created_at": 1893456180,
+      "updated_at": 1893456182,
+      "group_id": "77777777-7777-4777-8777-777777777777"
+    }
+  ]
+}
+```
+`partial` is a resolved group summary with mixed child outcomes. For a group with unresolved children, the summary instead reflects `operator_required`, then `dispatching`, then `accepted` in priority order. A zero-target group is `execution_observed` with `target_count:0`, all counts zero and no required `targets` array.
+
+The target set was frozen at admission. Retrying a group does not add later positions or execute finished children again. A successful child handoff still needs position-level completion checks. A null parent `error_code` does not conceal the rejected child's code; inspect every child.
+
+## Unresolved execution example
+
+A receipt read can return HTTP `200` with:
+
+```json
+{
+  "id": "22222222-2222-4222-8222-222222222222",
+  "client_command_id": "btc-controller:cycle-001:modify-001",
+  "action": "modify",
+  "state": "operator_required",
+  "position_id": "11111111-1111-4111-8111-111111111111",
+  "error_code": "EXECUTION_UNCERTAIN",
+  "created_at": 1893456060,
+  "updated_at": 1893456062
+}
+```
+Stop dependent mutations and reconcile the existing lifecycle. The available evidence does not justify a fresh command that repeats or compensates for the unresolved one.
+
+## Read errors
+
+Malformed or missing `id` produces HTTP `400`:
+
+```json
+{
+  "success": false,
+  "error": {
+    "code": "INVALID_ID",
+    "message": "Canonical receipt ID required"
+  }
+}
+```
+A receipt absent from the authorized result, including one no longer retained, returns HTTP `404`:
+
+```json
+{
+  "success": false,
+  "error": {
+    "code": "NOT_FOUND",
+    "message": "Receipt not found"
+  }
+}
+```
+Do not infer that a historical command never executed from a later `404`. Resolved receipt retention is finite; retain your own audit evidence. Use [namespace history](/api/reference/get-v1-commands) when recovering a lost response without a known receipt UUID, or retry the exact saved command while its receipt remains retained.

@@ -6,7 +6,7 @@ description: The canonical Pine envelope, event identity, complete position requ
 Advanced senders use the same durable command model as the API. The TradingView envelope adds its restricted `token` and setup-bound source information. Send exactly one `command` or `alert`; they are distinct authoring formats for the same trading owners.
 
 <Warning>
-Examples use synthetic identifiers, an invalid key and fixed illustrative timestamps. They describe shape and must not be replayed as current events. Generate live times and use the private values from Liftx. Execution remains gated by [availability](/availability).
+Examples use synthetic identifiers, an invalid key and fixed illustrative timestamps. They describe shape and must not be replayed as current events. `BTC-USDT-SWAP` is an illustrative exact linear catalog ID, not a universal symbol syntax; use the value generated for your selected account. Generate live times and use the private values from Liftx. Execution remains gated by [availability](/availability).
 </Warning>
 
 ## Guided OPEN
@@ -21,7 +21,7 @@ Examples use synthetic identifiers, an invalid key and fixed illustrative timest
     "action": "open",
     "target": "position",
     "exchange_link_id": 17,
-    "instrument_id": "COPY_EXACT_CATALOG_ID",
+    "instrument_id": "BTC-USDT-SWAP",
     "client_position_id": "example-strategy:cycle-47",
     "position_started_at": 1893456000,
     "source_instance_id": "11111111-1111-4111-8111-111111111111",
@@ -35,7 +35,7 @@ Guided OPEN omits `request` because Liftx saved it during setup. Advanced OPEN a
 
 ## Advanced OPEN with OPEN, SL, SLx and TP
 
-This illustrative derivative request uses base-asset quantity, one limit OPEN, a rearranged SL, price-trigger SLx and a rearranged TP. The complete payload is intentionally nonoperational. Export a valid draft for the selected account and catalog instrument instead of assuming the shown prices, limits or combination fit a venue.
+This illustrative derivative request uses base-asset quantity, one limit OPEN, a static SL, price-trigger SLx and a static virtual-limit TP. The complete payload is intentionally nonoperational. Export a valid draft for the selected account and catalog instrument instead of assuming the shown prices, limits or combination fit a venue.
 
 ```json
 {
@@ -47,7 +47,7 @@ This illustrative derivative request uses base-asset quantity, one limit OPEN, a
     "action": "open",
     "target": "position",
     "exchange_link_id": 17,
-    "instrument_id": "COPY_EXACT_CATALOG_ID",
+    "instrument_id": "BTC-USDT-SWAP",
     "client_position_id": "example-strategy:cycle-47",
     "position_started_at": 1893456000,
     "source_instance_id": "11111111-1111-4111-8111-111111111111",
@@ -56,14 +56,22 @@ This illustrative derivative request uses base-asset quantity, one limit OPEN, a
     "request": {
       "action": 1,
       "exchange_link_id": 17,
-      "instrument_id": "COPY_EXACT_CATALOG_ID",
+      "instrument_id": "BTC-USDT-SWAP",
       "quantity_asset": "BTC",
       "position_side": 1,
       "open_order_type": 1,
-      "open_prices_atomic": ["70000"],
-      "open_prices_scale": [0],
-      "open_quantities_atomic": ["1"],
-      "open_quantities_scale": [4],
+      "open_prices_atomic": [
+        "70000"
+      ],
+      "open_prices_scale": [
+        0
+      ],
+      "open_quantities_atomic": [
+        "1"
+      ],
+      "open_quantities_scale": [
+        3
+      ],
       "order_grid_enabled": false,
       "margin_mode": 1,
       "leverage": 2,
@@ -72,26 +80,37 @@ This illustrative derivative request uses base-asset quantity, one limit OPEN, a
       "sl_step_percent": 2000000,
       "sl_price_atomic": "68600",
       "sl_price_scale": 0,
-      "sl_price_rearrangement": true,
+      "sl_price_rearrangement": false,
       "sl_order_type": 2,
       "slx_enabled": true,
       "slx_tp_trailing_enabled": false,
-      "slx_each_tp_trailing": false,
       "slx_sl_trigger_price_trailing_enabled": true,
       "slx_sl_trigger_price_trailing_pl_percent_activation": 1000000,
       "slx_sl_trigger_price_trailing_indent_percent": 500000,
       "slx_sl_trigger_price_trailing_step": 250000,
       "slx_sl_trailing_breakeven_enabled": false,
       "tp_enabled": true,
-      "tp_price_rearrangement": true,
+      "tp_price_rearrangement": false,
       "tp_grid_enabled": false,
-      "tp_order_type": 1,
-      "tp_prices_atomic": ["72100"],
-      "tp_prices_scale": [0],
-      "tp_quantities_atomic": ["0"],
-      "tp_quantities_scale": [0],
-      "tp_quantity_percents": [1000000],
-      "tp_pnls": [3000000]
+      "tp_order_type": 3,
+      "tp_prices_atomic": [
+        "72100"
+      ],
+      "tp_prices_scale": [
+        0
+      ],
+      "tp_quantities_atomic": [
+        "0"
+      ],
+      "tp_quantities_scale": [
+        0
+      ],
+      "tp_quantity_percents": [
+        1000000
+      ],
+      "tp_pnls": [
+        0
+      ]
     }
   }
 }
@@ -115,7 +134,7 @@ Reuse the lifecycle reference and immutable start, increment the sequence, alloc
     "action": "terminate",
     "target": "position",
     "exchange_link_id": 17,
-    "instrument_id": "COPY_EXACT_CATALOG_ID",
+    "instrument_id": "BTC-USDT-SWAP",
     "client_position_id": "example-strategy:cycle-47",
     "position_started_at": 1893456000,
     "source_instance_id": "11111111-1111-4111-8111-111111111111",
@@ -141,21 +160,108 @@ The safe preparation sequence is:
 
 Pine cannot perform step 1 or consume execution results. Therefore the supplied examples do not schedule automatic modify calls. A historical OPEN JSON is unsafe after fills, manual edits or slot-generation changes. Use the direct API for OPEN-order changes. Never broadcast one full modification request to a heterogeneous group of positions.
 
+### Illustrated protection modification
+
+The following belongs to the same synthetic lifecycle above **only if** a fresh API read confirms revision `7`, exactly these OPEN/TP rows and slot identities, and eligibility for the illustrated stop change. It changes the SL to `69,300`, disables SLx and preserves OPEN/TP identity; it does not amend OPEN orders. An API controller must construct it from current state. Pine cannot fetch the prerequisite snapshot, so this is a wire example rather than an autonomous Pine modification recipe.
+
+```json
+{
+  "token": "REPLACE_WITH_RESTRICTED_TRADINGVIEW_KEY",
+  "command": {
+    "client_command_id": "example-strategy:cycle-47:modify",
+    "issued_at": 1893456060,
+    "expires_at": 1893456120,
+    "action": "modify",
+    "target": "position",
+    "exchange_link_id": 17,
+    "instrument_id": "BTC-USDT-SWAP",
+    "client_position_id": "example-strategy:cycle-47",
+    "position_started_at": 1893456000,
+    "source_instance_id": "11111111-1111-4111-8111-111111111111",
+    "sequence": 102,
+    "binding_revision": 1,
+    "expected_revision": 7,
+    "request": {
+      "action": 1,
+      "exchange_link_id": 17,
+      "instrument_id": "BTC-USDT-SWAP",
+      "quantity_asset": "BTC",
+      "position_side": 1,
+      "open_order_type": 1,
+      "open_prices_atomic": [
+        "70000"
+      ],
+      "open_prices_scale": [
+        0
+      ],
+      "open_quantities_atomic": [
+        "1"
+      ],
+      "open_quantities_scale": [
+        3
+      ],
+      "order_grid_enabled": false,
+      "margin_mode": 1,
+      "sl_enabled": true,
+      "sl_type": 1,
+      "sl_step_percent": 1000000,
+      "sl_price_atomic": "69300",
+      "sl_price_scale": 0,
+      "sl_price_rearrangement": false,
+      "sl_order_type": 2,
+      "tp_enabled": true,
+      "tp_price_rearrangement": false,
+      "tp_grid_enabled": false,
+      "tp_order_type": 3,
+      "tp_prices_atomic": [
+        "72100"
+      ],
+      "tp_prices_scale": [
+        0
+      ],
+      "tp_quantities_atomic": [
+        "0"
+      ],
+      "tp_quantities_scale": [
+        0
+      ],
+      "tp_quantity_percents": [
+        1000000
+      ],
+      "tp_pnls": [
+        0
+      ],
+      "slx_enabled": false,
+      "open_slot_ids": [
+        "44444444-4444-4444-8444-444444444444"
+      ],
+      "tp_slot_ids": [
+        "55555555-5555-4555-8555-555555555555"
+      ]
+    }
+  }
+}
+```
+
+An accepted modification returns a new receipt, not confirmation that cancellation/replacement completed. Follow its durable outcome and current position state. [API modification responses](/api/modify-positions) describe rejected and unresolved outcomes.
+
 ## Envelope rules
 
-| Field | Contract |
-| --- | --- |
-| `client_command_id` | Nonempty, at most 128 UTF-8 bytes; unique intent within integration namespace; preserve exactly on retry; reserved `liftx-group:` prefix is unavailable |
-| `issued_at` | Positive integer Unix seconds; unseen identities must be within five minutes of issuance, with at most 30 seconds of future clock allowance, and still before their own deadline |
-| `expires_at` | Integer Unix seconds, after issuance and no more than 300 seconds later; generated helpers use 60 seconds |
-| `action` | `open`, `modify`, `terminate`; canonical TV aliases `cancel` and `close` normalize to termination |
-| `target` | Omitted/`position` for exact commands; explicit `strategy`/`market` only for termination |
-| `exchange_link_id`, `instrument_id` | Must match the authenticated immutable setup and nested request when present |
-| `source_instance_id`, `binding_revision` | Exact configured values, not user-selected per event |
-| `sequence` | Positive integer source ordering, assigned once per intent |
-| `client_position_id`, `position_started_at` | Exact lifecycle reference for position targeting; reference length 1–128 UTF-8 bytes; immutable positive start no later than issuance; absent for groups |
-| `expected_revision` | Optional TV modify fence; when present must match current state |
-| `request` | Complete canonical position request where required; absent for termination |
+The outer `token` is required. Exactly one of `command` or the [ordinary `alert` format](/integrations/tradingview/ordinary-alerts) is required. The table below applies inside `command`. Conditional fields must match both the action and target; optional fields are omitted when inapplicable.
+
+| Field | Presence | Contract |
+| --- | --- | --- |
+| `client_command_id` | Required | Nonempty, at most 128 UTF-8 bytes; unique intent within integration namespace; preserve exactly on retry; reserved `liftx-group:` prefix is unavailable |
+| `issued_at` | Required | Positive integer Unix seconds; unseen identities must be within five minutes of issuance, with at most 30 seconds of future clock allowance, and still before their own deadline |
+| `expires_at` | Required | Integer Unix seconds, after issuance and no more than 300 seconds later; generated helpers use 60 seconds |
+| `action` | Required | `open`, `modify`, `terminate`; canonical TV aliases `cancel` and `close` normalize to termination |
+| `target` | Optional; defaults to `position` | Omitted/`position` for exact commands; explicit `strategy`/`market` only for termination |
+| `exchange_link_id`, `instrument_id` | Required | Must match the authenticated immutable setup and nested request when present |
+| `source_instance_id`, `binding_revision` | Required | Exact configured values, not user-selected per event |
+| `sequence` | Required | Positive integer source ordering, assigned once per intent |
+| `client_position_id`, `position_started_at` | Conditional: exact target only; forbidden for groups | Exact lifecycle reference for position targeting; reference length 1–128 UTF-8 bytes; immutable positive start no later than issuance; absent for groups |
+| `expected_revision` | Optional: exact MODIFY; forbidden for groups | Optional TV modify fence; when present must match current state |
+| `request` | Conditional: Advanced OPEN / MODIFY; omit for Guided OPEN and all termination | Complete canonical position request where required; absent for termination |
 
 Use integer Unix seconds for times and decimal coefficient strings for money. Strict decoding rejects unknown keys, duplicate keys, incorrect casing, trailing JSON, oversized bodies and invalid unions. One body is limited to 256 KiB.
 

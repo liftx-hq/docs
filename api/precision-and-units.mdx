@@ -1,0 +1,77 @@
+---
+title: "Prices, quantities and exact decimals"
+description: "Copy a valid order request or encode decimal strings without floating-point rounding."
+---
+
+Most users can avoid writing `_atomic` and `_scale` fields. Prepare an order in Liftx, then open **Settings → Integrations → API → Copy current order JSON**. This uses the same validated order builder as the terminal. It copies a `PositionRequest`, including the selected account, exact catalog instrument, quantity unit and applicable protection settings; it does not submit an order or create a key. Wrap it in an [OPEN command](/api/open-positions) with fresh command identity and timestamps.
+
+For TradingView, **Use current order setup** imports the draft into a setup. Guided mode saves that request in Liftx and generates an alert without a nested `request`. Advanced mode includes the complete request in generated JSON/Pine. See [TradingView setup](/integrations/tradingview/setup). Existing positions require a [fresh modification workflow](/api/modify-positions), not a reused creation draft.
+
+## Read the numbers
+
+The exact value is `atomic × 10^(-scale)`. The coefficient is a JSON **string**; scale is a JSON **integer**.
+
+| Entered value | Atomic | Scale | Meaning |
+| --- | --- | --- | --- |
+| `70000` | `"70000"` | `0` | Price of 70,000 in the instrument's price unit |
+| `70123.45` | `"7012345"` | `2` | Price with two decimal places |
+| `0.001` | `"1"` | `3` | Quantity of 0.001 in `quantity_asset` |
+| `100.50` | `"10050"` | `2` | Quantity of 100.50 in `quantity_asset` |
+
+`{"quantity_atomic":"1","quantity_scale":3}` does not identify BTC, USDT or contracts by itself. Units come from that field's contract. Scale is decimal placement; it does **not** mean exchange tick size, lot size or the smallest tradable quantity.
+
+Coefficient strings allow up to 128 digits, and scale is 0–30. Related arrays must align by row: `open_prices_atomic[i]` uses `open_prices_scale[i]`, and the quantity at index `i` belongs to that same OPEN row. Keep all rows and exact current slot IDs when modifying.
+
+## Construct exact values in a bot
+
+Start from decimal strings, never a binary floating-point calculation such as `int(float(price) * 100)`. This illustrative Python helper performs string conversion only. It rejects scientific notation and does not round, quantize, check account eligibility or validate venue limits.
+
+```python
+import re
+
+def decimal_parts(value: str) -> tuple[str, int]:
+    if not isinstance(value, str) or len(value) > 160:
+        raise ValueError("Use a bounded fixed-decimal string")
+    if re.fullmatch(r"-?[0-9]+(?:\.[0-9]+)?", value) is None:
+        raise ValueError("Use digits with an optional decimal point")
+    negative = value.startswith("-")
+    whole, _, fraction = value.lstrip("-").partition(".")
+    scale = len(fraction)
+    coefficient = (whole + fraction).lstrip("0") or "0"
+    if scale > 30 or len(coefficient) > 128:
+        raise ValueError("Value exceeds the wire precision bounds")
+    if negative and coefficient != "0":
+        coefficient = "-" + coefficient
+    return coefficient, scale
+
+price_atomic, price_scale = decimal_parts("70123.45")
+quantity_atomic, quantity_scale = decimal_parts("0.001")
+request_rows = {
+    "open_prices_atomic": [price_atomic],
+    "open_prices_scale": [price_scale],
+    "open_quantities_atomic": [quantity_atomic],
+    "open_quantities_scale": [quantity_scale],
+}
+```
+
+Perform exact decimal arithmetic and tick/lot validation in the client before submission. The server still validates authoritative account and instrument constraints. The terminal's exporter already applies its existing precision and sizing logic.
+
+## Quantity is not margin or contract count
+
+| Value | Unit and rule |
+| --- | --- |
+| OPEN quantity rows | The request's selected `quantity_asset`, which must be the catalog base or quote asset |
+| Price rows | The selected instrument's price convention; obtain it from the exact catalog market |
+| Normalized spot/linear quantity | Base asset units |
+| Normalized inverse quantity | Quote-face units |
+| TradingView `max_quantity` | Normalized quantity above, per position; not a total strategy budget |
+| Derivative catalog `lot_size` / `min_size` | Venue contract counts; use the catalog's positive `contract_value` for normalized units |
+| Leverage | Margin configuration; multiplying leverage does not change the meaning of input quantity |
+
+For a linear BTC/USDT instrument, `quantity_asset:"USDT"` and quantity `100` expresses 100 USDT of input sizing, not 100 USDT of margin. A base-unit cap of `0.01` expresses 0.01 BTC. These cannot be compared as if they used the same unit. Price changes, fees and fills mean a normalized cap is not a guaranteed quote-spending limit.
+
+Percentage configuration uses percentage points × 1,000,000: 2% is `2000000`. TP allocation has an existing special convention: one full TP uses `1000000`, while a 50/50 grid uses `[50000000,50000000]`. Preserve the builder's values. [PositionRequest](/api/position-request) documents every conditional field.
+
+## Why keep the current wire format?
+
+Exact decimal strings are also a valid public API design; for example, [Coinbase's order API](https://docs.cdp.coinbase.com/api-reference/advanced-trade-api/rest-api/orders/create-order) uses string size and price fields. There is no universal rule that coefficient/scale is faster than decimal text. Liftx currently shares one strict coefficient/scale decoder with its terminal and trading owners. Changing the external representation would require a measured codec and contract change. The exporter improves authoring without adding conversion, catalog lookup or another execution path to command admission.

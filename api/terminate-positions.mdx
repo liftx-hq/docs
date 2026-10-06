@@ -1,52 +1,128 @@
 ---
 title: "Cancel or close a position"
-description: "Use the existing terminal lifecycle to cancel pending work and close remaining exposure."
+description: "Terminate an exact lifecycle, then verify cancellation, exposure and completion independently."
 ---
 
-Use `positions:terminate` with command action `terminate`. The lifecycle owner selects the appropriate cancellation or closure behavior from current state.
+Use `positions:terminate` and command action `terminate`. The existing owner chooses cancellation or closure from current lifecycle evidence. A pending order can fill while cancellation is in progress; termination handles remaining exposure instead of promising to leave any new fill open.
 
-A pending position can fill while cancellation is being dispatched. Termination handles the resulting remaining exposure; it is not a promise to cancel only if nothing filled. API clients should not select a separate engine based on a stale pending/open label.
+## Complete request
 
-## Full command
+The link, position UUID and times below are illustrative. Use the exact position ID from an OPEN receipt or an authorized position read, with the same link/catalog instrument. `1893456120` is `2030-01-01T00:02:00Z`; it must be replaced for a deliberately new intent, never refreshed on a transport retry.
+
 ```json
 {
-  "client_command_id": "demo-controller:cycle-001:terminate",
+  "client_command_id": "btc-controller:cycle-001:terminate",
   "issued_at": 1893456120,
   "expires_at": 1893456180,
   "action": "terminate",
   "exchange_link_id": 17,
-  "instrument_id": "COPY_EXACT_CATALOG_ID",
+  "instrument_id": "BTC-USDT-SWAP",
   "position_id": "11111111-1111-4111-8111-111111111111"
 }
 ```
+| Field | Requirement |
+| --- | --- |
+| `client_command_id`, `issued_at`, `expires_at` | Required immutable command identity and UTC deadline, at most 300 seconds after issuance. |
+| `action` | Required literal `terminate`. Ordinary API commands do not accept `close` or `cancel` aliases. |
+| `exchange_link_id`, `instrument_id`, `position_id` | Required exact authorized position scope. |
+| `target` | Optional literal `position`; normally omitted. |
+| `request` | Must be omitted, including `request:null`. No client-selected close quantity or replacement order request is accepted here. |
+| `expected_revision` | Not required; termination acts on the current lifecycle instead of selecting a cancel/close engine from a cached label. |
 
-The dates, IDs and instrument are synthetic. Download [terminate-command.json](/examples/api/terminate-command.json). The exact position UUID can come from the OPEN receipt or an authorized read. Omit `request` entirely; `request:null` is not the termination shape.
+## Acceptance and durable ownership
 
-## What to observe
+A new POST returns HTTP `202`:
 
-1. Keep the returned receipt UUID.
-2. Inspect `state`, any `error_code`, and recorded terminal request kind/sequence.
-3. Read the actual position and its attached orders. Check exposure and unresolved order work.
-4. Continue monitoring until the canonical lifecycle establishes the relevant completion; a command handoff alone does not establish flatness.
+```json
+{
+  "id": "33333333-3333-4333-8333-333333333333",
+  "client_command_id": "btc-controller:cycle-001:terminate",
+  "action": "terminate",
+  "state": "accepted",
+  "position_id": "11111111-1111-4111-8111-111111111111",
+  "error_code": null,
+  "created_at": 1893456120,
+  "updated_at": 1893456120
+}
+```
+A later `GET /v1/commands/get?id=33333333-3333-4333-8333-333333333333` can return HTTP `200` with a durably armed close:
 
-`handed_off` means durable terminal ownership exists. Mailbox acceptance is not proof that exchange execution has begun. A later fill, delayed exchange evidence or reconciliation can still affect the position.
+```json
+{
+  "id": "33333333-3333-4333-8333-333333333333",
+  "client_command_id": "btc-controller:cycle-001:terminate",
+  "action": "terminate",
+  "state": "handed_off",
+  "position_id": "11111111-1111-4111-8111-111111111111",
+  "error_code": null,
+  "created_at": 1893456120,
+  "updated_at": 1893456121,
+  "terminal_request_kind": 1,
+  "terminal_request_seq": 2
+}
+```
+For a pending lifecycle with no filled exposure at the arm, the alternative durable cancel evidence can be:
 
-## Idempotent transport retry
+```json
+{
+  "id": "33333333-3333-4333-8333-333333333333",
+  "client_command_id": "btc-controller:cycle-001:terminate",
+  "action": "terminate",
+  "state": "handed_off",
+  "position_id": "11111111-1111-4111-8111-111111111111",
+  "error_code": null,
+  "created_at": 1893456120,
+  "updated_at": 1893456121,
+  "terminal_request_kind": 2,
+  "terminal_request_seq": 1
+}
+```
+`terminal_request_kind` is `1` close or `2` cancel; the positive sequence identifies the durably armed request. These are two alternative examples. Do not choose the kind or sequence in the client. The evidence can appear while the receipt is still `dispatching`, before the synchronous owner call returns. Already-owned or moot termination can return `execution_observed` without a newly correlated arm.
 
-Resubmit the exact original command if its HTTP outcome is unknown. Do not issue repeated new terminate identities to accelerate processing. The owner already orders terminal work and protects against unsafe overlapping execution.
+Neither the recorded kind nor `handed_off` proves completed exchange cancellation or zero exposure. Later fills and delayed evidence still belong to the lifecycle owner.
 
-If access is revoked or entitlement expires after the owner has taken responsibility, owned terminal work can continue. Revocation itself is not termination.
+## Verify the trading outcome
 
-## Many positions
+1. Track the accepted receipt UUID and any `error_code`.
+2. Read the exact position with [GET /v1/positions/get](/api/reference/get-v1-positions-get), or consume a current complete authorized publication.
+3. Examine canonical allocation exposure, the current order lineages and terminal/completion projections. Zero exposure alone does not resolve a still-working physical order.
+4. Wait for the actual lifecycle's completion before dependent operations such as a close-and-reverse strategy. A command receipt is not that completion event.
 
-The ordinary API command targets one position. A controller can deliberately enumerate a complete authorized snapshot, freeze its own reviewed list and submit bounded per-position commands with independent identities. This is not an atomic account-wide close, and positions opened later are outside that list.
+Use [position state](/api/position-state) and the [stream protocol](/api/streams) for interpretation. An incomplete or temporarily empty list is not proof of flatness.
 
-TradingView provides explicit strategy/market group termination through its restricted setup policy. Those groups freeze at most 64 targets and can have partial outcomes. They do not create a permanent market pause or close arbitrary exchange positions outside Liftx management. See [TradingView](/integrations/tradingview/overview).
+## Error examples and retry
 
-## Unsupported shortcuts
+Sending a nested request to TERMINATE fails admission with HTTP `400`:
 
-- `DELETE /orders/...` and arbitrary venue order cancellation are not API endpoints.
-- `cancel` and `close` are not ordinary API action values; use `terminate`. Canonical TradingView commands can normalize those aliases to the same owner.
-- There is no cancel-only alias that promises to leave existing exposure untouched.
-- A receipt, a zero-target group or a temporarily empty/incomplete list does not prove market flatness.
-- An atomic close-and-reverse instruction is not implemented. Use current position evidence before a dependent opposite OPEN.
+```json
+{
+  "success": false,
+  "error": {
+    "code": "INVALID_REQUEST",
+    "message": "Termination does not accept a position request"
+  }
+}
+```
+If effects cannot be resolved safely, receipt detail can instead return HTTP `200`:
+
+```json
+{
+  "id": "33333333-3333-4333-8333-333333333333",
+  "client_command_id": "btc-controller:cycle-001:terminate",
+  "action": "terminate",
+  "state": "operator_required",
+  "position_id": "11111111-1111-4111-8111-111111111111",
+  "error_code": "EXECUTION_UNCERTAIN",
+  "created_at": 1893456120,
+  "updated_at": 1893456122
+}
+```
+Inspect the receipt and current trading evidence; do not issue new terminate IDs repeatedly to accelerate processing. A transport retry retransmits the exact original command and returns its original receipt identity. Already-owned termination/protection/recovery may continue after key revocation or entitlement expiry. Revocation itself is not a close operation.
+
+## Multiple positions and TradingView
+
+The ordinary API command targets one position. A controller may freeze a reviewed list from complete authorized state and submit bounded per-position commands, each with its own identity. That is not an atomic account-wide close and does not include later positions.
+
+TradingView's explicitly authorized `strategy` or `market` termination freezes at most 64 targets. Parent and child receipts expose partial outcomes through the same [receipt detail endpoint](/api/reference/get-v1-commands-get). The group does not create a permanent market pause or manage arbitrary exchange positions outside Liftx. See [TradingView](/integrations/tradingview/overview).
+
+There is no arbitrary `DELETE /orders/...`, guaranteed cancel-only instruction or atomic close-and-reverse action. Use the canonical owners and current evidence for each intended lifecycle step.

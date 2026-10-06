@@ -85,18 +85,18 @@ Ordinary EXIT does not know the reference of one earlier OPEN. It cannot selecti
 
 ## Field-by-field contract
 
-| Field | Requirement |
-| --- | --- |
-| `token` | Dedicated restricted TradingView key; never an ordinary API key |
-| `alert.fired_at` | Keep `{{timenow}}` exactly. TradingView supplies UTC trigger time, to the nearest second. |
-| `alert.max_lag_seconds` | Integer 1–300; generated messages use 60. An unseen signal past this deadline cannot start execution. |
-| `alert.action` | Exactly `open` or `terminate` in ordinary messages |
-| `alert.target` | `position` for OPEN; `strategy` or authorized `market` for EXIT |
-| `alert.exchange_link_id` | Exact positive numeric link ID from the generated setup |
-| `alert.instrument_id` | Exact opaque catalog ID from the generated setup |
-| `alert.source_instance_id` | Generated UUID identifying this one ordered producer |
-| `alert.binding_revision` | Exact revision from the setup |
-| `alert.request` | Complete canonical request for Advanced OPEN; omitted for Guided OPEN and all EXIT messages |
+| Field | Presence | Contract |
+| --- | --- | --- |
+| `token` | Required | Dedicated restricted TradingView key; never an ordinary API key |
+| `alert.fired_at` | Required | Keep `{{timenow}}` exactly. TradingView supplies UTC trigger time, to the nearest second. |
+| `alert.max_lag_seconds` | Required | Integer 1–300; generated messages use 60. An unseen signal past this deadline cannot start execution. |
+| `alert.action` | Required | Exactly `open` or `terminate` in ordinary messages |
+| `alert.target` | Required | `position` for OPEN; `strategy` or authorized `market` for EXIT |
+| `alert.exchange_link_id` | Required | Exact positive numeric link ID from the generated setup |
+| `alert.instrument_id` | Required | Exact opaque catalog ID from the generated setup |
+| `alert.source_instance_id` | Required | Generated UUID identifying this one ordered producer |
+| `alert.binding_revision` | Required | Exact revision from the setup |
+| `alert.request` | Conditional: Advanced OPEN only | Complete canonical request for Advanced OPEN; omitted for Guided OPEN and all EXIT messages |
 
 Unknown, duplicate, incorrectly cased or extra fields are rejected. Do not add `command`, `sequence`, `client_command_id`, `position_id` or position references to the `alert` object. The ordinary adapter derives those identities itself.
 

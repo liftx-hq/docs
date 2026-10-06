@@ -245,11 +245,11 @@
                 },
                 "examples": {
                   "open": {
-                    "summary": "Synthetic OPEN receipt; new acceptance",
-                    "description": "Synthetic documentation data, not an account snapshot, executable market configuration or production-availability assertion. IDs, quantities, prices, times and values are illustrative.",
+                    "summary": "Open accepted receipt",
+                    "description": "Synthetic example corresponding to the named command request. Acceptance is not execution, exchange acknowledgement, fill or flatness.",
                     "value": {
-                      "id": "22222222-2222-4222-8222-222222222222",
-                      "client_command_id": "demo-controller:cycle-001:open",
+                      "id": "11111111-1111-4111-8111-111111111111",
+                      "client_command_id": "btc-controller:cycle-001:open",
                       "action": "open",
                       "state": "accepted",
                       "position_id": "11111111-1111-4111-8111-111111111111",
@@ -259,31 +259,31 @@
                     }
                   },
                   "modify": {
-                    "summary": "Synthetic MODIFY receipt; not execution completion",
-                    "description": "Synthetic documentation data, not an account snapshot, executable market configuration or production-availability assertion. IDs, quantities, prices, times and values are illustrative.",
+                    "summary": "Modify accepted receipt",
+                    "description": "Synthetic example corresponding to the named command request. Acceptance is not execution, exchange acknowledgement, fill or flatness.",
                     "value": {
-                      "id": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
-                      "client_command_id": "demo-controller:cycle-001:modify",
+                      "id": "22222222-2222-4222-8222-222222222222",
+                      "client_command_id": "btc-controller:cycle-001:modify-001",
                       "action": "modify",
                       "state": "accepted",
                       "position_id": "11111111-1111-4111-8111-111111111111",
                       "error_code": null,
-                      "created_at": 1893456000,
-                      "updated_at": 1893456000
+                      "created_at": 1893456060,
+                      "updated_at": 1893456060
                     }
                   },
                   "terminate": {
-                    "summary": "Synthetic TERMINATE receipt; not flatness confirmation",
-                    "description": "Synthetic documentation data, not an account snapshot, executable market configuration or production-availability assertion. IDs, quantities, prices, times and values are illustrative.",
+                    "summary": "Terminate accepted receipt",
+                    "description": "Synthetic example corresponding to the named command request. Acceptance is not execution, exchange acknowledgement, fill or flatness.",
                     "value": {
-                      "id": "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
-                      "client_command_id": "demo-controller:cycle-001:terminate",
+                      "id": "33333333-3333-4333-8333-333333333333",
+                      "client_command_id": "btc-controller:cycle-001:terminate",
                       "action": "terminate",
                       "state": "accepted",
                       "position_id": "11111111-1111-4111-8111-111111111111",
                       "error_code": null,
-                      "created_at": 1893456000,
-                      "updated_at": 1893456000
+                      "created_at": 1893456120,
+                      "updated_at": 1893456120
                     }
                   }
                 }
@@ -314,11 +314,11 @@
                 },
                 "examples": {
                   "open": {
-                    "summary": "Synthetic OPEN receipt; identical retry",
-                    "description": "Synthetic documentation data, not an account snapshot, executable market configuration or production-availability assertion. IDs, quantities, prices, times and values are illustrative.",
+                    "summary": "Open accepted receipt; duplicate immutable intent",
+                    "description": "Synthetic example corresponding to the named command request. Acceptance is not execution, exchange acknowledgement, fill or flatness.",
                     "value": {
-                      "id": "22222222-2222-4222-8222-222222222222",
-                      "client_command_id": "demo-controller:cycle-001:open",
+                      "id": "11111111-1111-4111-8111-111111111111",
+                      "client_command_id": "btc-controller:cycle-001:open",
                       "action": "open",
                       "state": "accepted",
                       "position_id": "11111111-1111-4111-8111-111111111111",
@@ -328,31 +328,31 @@
                     }
                   },
                   "modify": {
-                    "summary": "Synthetic MODIFY receipt; not execution completion",
-                    "description": "Synthetic documentation data, not an account snapshot, executable market configuration or production-availability assertion. IDs, quantities, prices, times and values are illustrative.",
+                    "summary": "Modify accepted receipt; duplicate immutable intent",
+                    "description": "Synthetic example corresponding to the named command request. Acceptance is not execution, exchange acknowledgement, fill or flatness.",
                     "value": {
-                      "id": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
-                      "client_command_id": "demo-controller:cycle-001:modify",
+                      "id": "22222222-2222-4222-8222-222222222222",
+                      "client_command_id": "btc-controller:cycle-001:modify-001",
                       "action": "modify",
                       "state": "accepted",
                       "position_id": "11111111-1111-4111-8111-111111111111",
                       "error_code": null,
-                      "created_at": 1893456000,
-                      "updated_at": 1893456000
+                      "created_at": 1893456060,
+                      "updated_at": 1893456060
                     }
                   },
                   "terminate": {
-                    "summary": "Synthetic TERMINATE receipt; not flatness confirmation",
-                    "description": "Synthetic documentation data, not an account snapshot, executable market configuration or production-availability assertion. IDs, quantities, prices, times and values are illustrative.",
+                    "summary": "Terminate accepted receipt; duplicate immutable intent",
+                    "description": "Synthetic example corresponding to the named command request. Acceptance is not execution, exchange acknowledgement, fill or flatness.",
                     "value": {
-                      "id": "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
-                      "client_command_id": "demo-controller:cycle-001:terminate",
+                      "id": "33333333-3333-4333-8333-333333333333",
+                      "client_command_id": "btc-controller:cycle-001:terminate",
                       "action": "terminate",
                       "state": "accepted",
                       "position_id": "11111111-1111-4111-8111-111111111111",
                       "error_code": null,
-                      "created_at": 1893456000,
-                      "updated_at": 1893456000
+                      "created_at": 1893456120,
+                      "updated_at": 1893456120
                     }
                   }
                 }
@@ -367,6 +367,164 @@
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/Command"
+              },
+              "examples": {
+                "open": {
+                  "summary": "Limit OPEN with SL, price-trigger SLx and TP",
+                  "description": "Synthetic link, catalog, timestamps and UUIDs. Resolve your actual catalog and current state; never replay these timestamps or modification slots. Examples represent separate lifecycle intents, not an executable trading script.",
+                  "value": {
+                    "client_command_id": "btc-controller:cycle-001:open",
+                    "issued_at": 1893456000,
+                    "expires_at": 1893456060,
+                    "action": "open",
+                    "exchange_link_id": 17,
+                    "instrument_id": "BTC-USDT-SWAP",
+                    "request": {
+                      "action": 1,
+                      "exchange_link_id": 17,
+                      "instrument_id": "BTC-USDT-SWAP",
+                      "quantity_asset": "BTC",
+                      "position_side": 1,
+                      "open_order_type": 1,
+                      "open_prices_atomic": [
+                        "70000"
+                      ],
+                      "open_prices_scale": [
+                        0
+                      ],
+                      "open_quantities_atomic": [
+                        "1"
+                      ],
+                      "open_quantities_scale": [
+                        3
+                      ],
+                      "order_grid_enabled": false,
+                      "margin_mode": 1,
+                      "leverage": 2,
+                      "sl_enabled": true,
+                      "sl_type": 1,
+                      "sl_step_percent": 2000000,
+                      "sl_price_atomic": "68600",
+                      "sl_price_scale": 0,
+                      "sl_price_rearrangement": false,
+                      "sl_order_type": 2,
+                      "slx_enabled": true,
+                      "slx_tp_trailing_enabled": false,
+                      "slx_sl_trigger_price_trailing_enabled": true,
+                      "slx_sl_trigger_price_trailing_pl_percent_activation": 1000000,
+                      "slx_sl_trigger_price_trailing_indent_percent": 500000,
+                      "slx_sl_trigger_price_trailing_step": 250000,
+                      "slx_sl_trailing_breakeven_enabled": false,
+                      "tp_enabled": true,
+                      "tp_price_rearrangement": false,
+                      "tp_grid_enabled": false,
+                      "tp_order_type": 3,
+                      "tp_prices_atomic": [
+                        "72100"
+                      ],
+                      "tp_prices_scale": [
+                        0
+                      ],
+                      "tp_quantities_atomic": [
+                        "0"
+                      ],
+                      "tp_quantities_scale": [
+                        0
+                      ],
+                      "tp_quantity_percents": [
+                        1000000
+                      ],
+                      "tp_pnls": [
+                        0
+                      ]
+                    }
+                  }
+                },
+                "modify": {
+                  "summary": "Fresh revision MODIFY preserving exact current rows",
+                  "description": "Synthetic link, catalog, timestamps and UUIDs. Resolve your actual catalog and current state; never replay these timestamps or modification slots. Examples represent separate lifecycle intents, not an executable trading script.",
+                  "value": {
+                    "client_command_id": "btc-controller:cycle-001:modify-001",
+                    "issued_at": 1893456060,
+                    "expires_at": 1893456120,
+                    "action": "modify",
+                    "exchange_link_id": 17,
+                    "instrument_id": "BTC-USDT-SWAP",
+                    "position_id": "11111111-1111-4111-8111-111111111111",
+                    "expected_revision": 7,
+                    "request": {
+                      "action": 1,
+                      "exchange_link_id": 17,
+                      "instrument_id": "BTC-USDT-SWAP",
+                      "quantity_asset": "BTC",
+                      "position_side": 1,
+                      "open_order_type": 1,
+                      "open_prices_atomic": [
+                        "70000"
+                      ],
+                      "open_prices_scale": [
+                        0
+                      ],
+                      "open_quantities_atomic": [
+                        "1"
+                      ],
+                      "open_quantities_scale": [
+                        3
+                      ],
+                      "order_grid_enabled": false,
+                      "margin_mode": 1,
+                      "sl_enabled": true,
+                      "sl_type": 1,
+                      "sl_step_percent": 1000000,
+                      "sl_price_atomic": "69300",
+                      "sl_price_scale": 0,
+                      "sl_price_rearrangement": false,
+                      "sl_order_type": 2,
+                      "tp_enabled": true,
+                      "tp_price_rearrangement": false,
+                      "tp_grid_enabled": false,
+                      "tp_order_type": 3,
+                      "tp_prices_atomic": [
+                        "72100"
+                      ],
+                      "tp_prices_scale": [
+                        0
+                      ],
+                      "tp_quantities_atomic": [
+                        "0"
+                      ],
+                      "tp_quantities_scale": [
+                        0
+                      ],
+                      "tp_quantity_percents": [
+                        1000000
+                      ],
+                      "tp_pnls": [
+                        0
+                      ],
+                      "slx_enabled": false,
+                      "open_slot_ids": [
+                        "44444444-4444-4444-8444-444444444444"
+                      ],
+                      "tp_slot_ids": [
+                        "55555555-5555-4555-8555-555555555555"
+                      ]
+                    }
+                  }
+                },
+                "terminate": {
+                  "summary": "Terminate one exact position",
+                  "description": "Synthetic link, catalog, timestamps and UUIDs. Resolve your actual catalog and current state; never replay these timestamps or modification slots. Examples represent separate lifecycle intents, not an executable trading script.",
+                  "value": {
+                    "client_command_id": "btc-controller:cycle-001:terminate",
+                    "issued_at": 1893456120,
+                    "expires_at": 1893456180,
+                    "action": "terminate",
+                    "exchange_link_id": 17,
+                    "instrument_id": "BTC-USDT-SWAP",
+                    "position_id": "11111111-1111-4111-8111-111111111111"
+                  }
+                }
               }
             }
           }
@@ -418,7 +576,7 @@
                           }
                         },
                         {
-                          "id": "22222222-2222-4222-8222-222222222222",
+                          "id": "11111111-1111-4111-8111-111111111111",
                           "client_command_id": "demo-controller:cycle-001:open",
                           "action": "open",
                           "state": "handed_off",
@@ -495,7 +653,7 @@
                     "summary": "Synthetic OPEN owner evidence; not fill completion",
                     "description": "Synthetic documentation data, not an account snapshot, executable market configuration or production-availability assertion. IDs, quantities, prices, times and values are illustrative.",
                     "value": {
-                      "id": "22222222-2222-4222-8222-222222222222",
+                      "id": "11111111-1111-4111-8111-111111111111",
                       "client_command_id": "demo-controller:cycle-001:open",
                       "action": "open",
                       "state": "handed_off",
@@ -2553,7 +2711,7 @@
           }
         },
         "x-liftx-required-scope": "read",
-        "description": "Authorization bearer header and read scope are required. This is a WebSocket upgrade using scoped JSON control messages and a seven-byte binary data envelope. Trading mutations use HTTP commands. Credential and entitlement expiry close the authorized stream; revocation is enforced during stream lifetime."
+        "description": "Authenticated binary WebSocket upgrade (HTTP 101) for existing canonical state publications. One link per socket. positions includes attached-order state; orders_index only lists instrument membership, not executions. Instrument-restricted keys can subscribe only to tickers; other channels including position_pnl_history are link aggregates at this authorization boundary. No trading commands or receipt-change channel. Reconnect and reconcile current snapshots; state may coalesce. See /api/streams for the complete binary protocol, decoder and connection limits."
       }
     },
     "/v1/tradingview/events": {
@@ -2574,7 +2732,7 @@
                     "summary": "Synthetic guided alert receipt; new acceptance",
                     "description": "Synthetic documentation data, not an account snapshot, executable market configuration or production-availability assertion. IDs, quantities, prices, times and values are illustrative.",
                     "value": {
-                      "id": "22222222-2222-4222-8222-222222222222",
+                      "id": "11111111-1111-4111-8111-111111111111",
                       "client_command_id": "alert:55555555-5555-4555-8555-555555555555:1893456000:open",
                       "action": "open",
                       "state": "accepted",
@@ -2642,7 +2800,7 @@
                     "summary": "Synthetic guided alert receipt; identical retry",
                     "description": "Synthetic documentation data, not an account snapshot, executable market configuration or production-availability assertion. IDs, quantities, prices, times and values are illustrative.",
                     "value": {
-                      "id": "22222222-2222-4222-8222-222222222222",
+                      "id": "11111111-1111-4111-8111-111111111111",
                       "client_command_id": "alert:55555555-5555-4555-8555-555555555555:1893456000:open",
                       "action": "open",
                       "state": "accepted",
@@ -2691,6 +2849,244 @@
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/TradingViewEvent"
+              },
+              "examples": {
+                "guided_open": {
+                  "summary": "Guided Open",
+                  "description": "Synthetic private-token placeholder, account, catalog and lifecycle. Use the exact generated setup values; follow the prerequisite current-state rules for modify.",
+                  "value": {
+                    "token": "REPLACE_WITH_RESTRICTED_TRADINGVIEW_KEY",
+                    "command": {
+                      "client_command_id": "example-strategy:cycle-47:open",
+                      "issued_at": 1893456000,
+                      "expires_at": 1893456060,
+                      "action": "open",
+                      "target": "position",
+                      "exchange_link_id": 17,
+                      "instrument_id": "BTC-USDT-SWAP",
+                      "client_position_id": "example-strategy:cycle-47",
+                      "position_started_at": 1893456000,
+                      "source_instance_id": "11111111-1111-4111-8111-111111111111",
+                      "sequence": 101,
+                      "binding_revision": 1
+                    }
+                  }
+                },
+                "open": {
+                  "summary": "Open",
+                  "description": "Synthetic private-token placeholder, account, catalog and lifecycle. Use the exact generated setup values; follow the prerequisite current-state rules for modify.",
+                  "value": {
+                    "token": "REPLACE_WITH_RESTRICTED_TRADINGVIEW_KEY",
+                    "command": {
+                      "client_command_id": "example-strategy:cycle-47:open",
+                      "issued_at": 1893456000,
+                      "expires_at": 1893456060,
+                      "action": "open",
+                      "target": "position",
+                      "exchange_link_id": 17,
+                      "instrument_id": "BTC-USDT-SWAP",
+                      "client_position_id": "example-strategy:cycle-47",
+                      "position_started_at": 1893456000,
+                      "source_instance_id": "11111111-1111-4111-8111-111111111111",
+                      "sequence": 101,
+                      "binding_revision": 1,
+                      "request": {
+                        "action": 1,
+                        "exchange_link_id": 17,
+                        "instrument_id": "BTC-USDT-SWAP",
+                        "quantity_asset": "BTC",
+                        "position_side": 1,
+                        "open_order_type": 1,
+                        "open_prices_atomic": [
+                          "70000"
+                        ],
+                        "open_prices_scale": [
+                          0
+                        ],
+                        "open_quantities_atomic": [
+                          "1"
+                        ],
+                        "open_quantities_scale": [
+                          3
+                        ],
+                        "order_grid_enabled": false,
+                        "margin_mode": 1,
+                        "leverage": 2,
+                        "sl_enabled": true,
+                        "sl_type": 1,
+                        "sl_step_percent": 2000000,
+                        "sl_price_atomic": "68600",
+                        "sl_price_scale": 0,
+                        "sl_price_rearrangement": false,
+                        "sl_order_type": 2,
+                        "slx_enabled": true,
+                        "slx_tp_trailing_enabled": false,
+                        "slx_sl_trigger_price_trailing_enabled": true,
+                        "slx_sl_trigger_price_trailing_pl_percent_activation": 1000000,
+                        "slx_sl_trigger_price_trailing_indent_percent": 500000,
+                        "slx_sl_trigger_price_trailing_step": 250000,
+                        "slx_sl_trailing_breakeven_enabled": false,
+                        "tp_enabled": true,
+                        "tp_price_rearrangement": false,
+                        "tp_grid_enabled": false,
+                        "tp_order_type": 3,
+                        "tp_prices_atomic": [
+                          "72100"
+                        ],
+                        "tp_prices_scale": [
+                          0
+                        ],
+                        "tp_quantities_atomic": [
+                          "0"
+                        ],
+                        "tp_quantities_scale": [
+                          0
+                        ],
+                        "tp_quantity_percents": [
+                          1000000
+                        ],
+                        "tp_pnls": [
+                          0
+                        ]
+                      }
+                    }
+                  }
+                },
+                "terminate": {
+                  "summary": "Terminate",
+                  "description": "Synthetic private-token placeholder, account, catalog and lifecycle. Use the exact generated setup values; follow the prerequisite current-state rules for modify.",
+                  "value": {
+                    "token": "REPLACE_WITH_RESTRICTED_TRADINGVIEW_KEY",
+                    "command": {
+                      "client_command_id": "example-strategy:cycle-47:terminate",
+                      "issued_at": 1893456120,
+                      "expires_at": 1893456180,
+                      "action": "terminate",
+                      "target": "position",
+                      "exchange_link_id": 17,
+                      "instrument_id": "BTC-USDT-SWAP",
+                      "client_position_id": "example-strategy:cycle-47",
+                      "position_started_at": 1893456000,
+                      "source_instance_id": "11111111-1111-4111-8111-111111111111",
+                      "sequence": 103,
+                      "binding_revision": 1
+                    }
+                  }
+                },
+                "modify": {
+                  "summary": "Modify",
+                  "description": "Synthetic private-token placeholder, account, catalog and lifecycle. Use the exact generated setup values; follow the prerequisite current-state rules for modify.",
+                  "value": {
+                    "token": "REPLACE_WITH_RESTRICTED_TRADINGVIEW_KEY",
+                    "command": {
+                      "client_command_id": "example-strategy:cycle-47:modify",
+                      "issued_at": 1893456060,
+                      "expires_at": 1893456120,
+                      "action": "modify",
+                      "target": "position",
+                      "exchange_link_id": 17,
+                      "instrument_id": "BTC-USDT-SWAP",
+                      "client_position_id": "example-strategy:cycle-47",
+                      "position_started_at": 1893456000,
+                      "source_instance_id": "11111111-1111-4111-8111-111111111111",
+                      "sequence": 102,
+                      "binding_revision": 1,
+                      "expected_revision": 7,
+                      "request": {
+                        "action": 1,
+                        "exchange_link_id": 17,
+                        "instrument_id": "BTC-USDT-SWAP",
+                        "quantity_asset": "BTC",
+                        "position_side": 1,
+                        "open_order_type": 1,
+                        "open_prices_atomic": [
+                          "70000"
+                        ],
+                        "open_prices_scale": [
+                          0
+                        ],
+                        "open_quantities_atomic": [
+                          "1"
+                        ],
+                        "open_quantities_scale": [
+                          3
+                        ],
+                        "order_grid_enabled": false,
+                        "margin_mode": 1,
+                        "sl_enabled": true,
+                        "sl_type": 1,
+                        "sl_step_percent": 1000000,
+                        "sl_price_atomic": "69300",
+                        "sl_price_scale": 0,
+                        "sl_price_rearrangement": false,
+                        "sl_order_type": 2,
+                        "tp_enabled": true,
+                        "tp_price_rearrangement": false,
+                        "tp_grid_enabled": false,
+                        "tp_order_type": 3,
+                        "tp_prices_atomic": [
+                          "72100"
+                        ],
+                        "tp_prices_scale": [
+                          0
+                        ],
+                        "tp_quantities_atomic": [
+                          "0"
+                        ],
+                        "tp_quantities_scale": [
+                          0
+                        ],
+                        "tp_quantity_percents": [
+                          1000000
+                        ],
+                        "tp_pnls": [
+                          0
+                        ],
+                        "slx_enabled": false,
+                        "open_slot_ids": [
+                          "44444444-4444-4444-8444-444444444444"
+                        ],
+                        "tp_slot_ids": [
+                          "55555555-5555-4555-8555-555555555555"
+                        ]
+                      }
+                    }
+                  }
+                },
+                "ordinary_open": {
+                  "summary": "Ordinary open alert",
+                  "description": "Paste a generated private bundle into the TradingView Message field; TradingView replaces {{timenow}} before delivery.",
+                  "value": {
+                    "token": "REPLACE_WITH_RESTRICTED_TRADINGVIEW_KEY",
+                    "alert": {
+                      "fired_at": "{{timenow}}",
+                      "max_lag_seconds": 60,
+                      "action": "open",
+                      "target": "position",
+                      "exchange_link_id": 17,
+                      "instrument_id": "COPY_EXACT_CATALOG_ID",
+                      "source_instance_id": "11111111-1111-4111-8111-111111111111",
+                      "binding_revision": 1
+                    }
+                  }
+                },
+                "ordinary_terminate": {
+                  "summary": "Ordinary terminate alert",
+                  "description": "Paste a generated private bundle into the TradingView Message field; TradingView replaces {{timenow}} before delivery.",
+                  "value": {
+                    "token": "REPLACE_WITH_RESTRICTED_TRADINGVIEW_KEY",
+                    "alert": {
+                      "fired_at": "{{timenow}}",
+                      "max_lag_seconds": 60,
+                      "action": "terminate",
+                      "target": "strategy",
+                      "exchange_link_id": 17,
+                      "instrument_id": "COPY_EXACT_CATALOG_ID",
+                      "source_instance_id": "11111111-1111-4111-8111-111111111111",
+                      "binding_revision": 1
+                    }
+                  }
+                }
               }
             }
           }
@@ -3744,7 +4140,7 @@
                           }
                         },
                         {
-                          "id": "22222222-2222-4222-8222-222222222222",
+                          "id": "11111111-1111-4111-8111-111111111111",
                           "client_command_id": "demo-controller:cycle-001:open",
                           "action": "open",
                           "state": "handed_off",
@@ -3822,7 +4218,7 @@
                     "summary": "Synthetic OPEN owner evidence; not fill completion",
                     "description": "Synthetic documentation data, not an account snapshot, executable market configuration or production-availability assertion. IDs, quantities, prices, times and values are illustrative.",
                     "value": {
-                      "id": "22222222-2222-4222-8222-222222222222",
+                      "id": "11111111-1111-4111-8111-111111111111",
                       "client_command_id": "demo-controller:cycle-001:open",
                       "action": "open",
                       "state": "handed_off",
@@ -4190,7 +4586,8 @@
               {
                 "type": "null"
               }
-            ]
+            ],
+            "description": "Safe error reason, when available. A reason on operator_required does not prove absence of side effects or authorize replay; state remains authoritative for uncertainty."
           },
           "created_at": {
             "type": "integer",
@@ -5090,32 +5487,37 @@
         "type": "object",
         "properties": {
           "slot_id": {
-            "type": "string"
+            "type": "string",
+            "description": "Conditional: stable slot being amended; copy its current identity from the modification publication."
           },
           "order_id": {
             "type": "string",
             "format": "uuid",
-            "description": "Exact current Liftx physical order UUID, not an exchange order ID."
+            "description": "Conditional: exact existing physical order being amended; copy its current Liftx UUID. Exact current Liftx physical order UUID, not an exchange order ID."
           },
           "price_atomic": {
             "type": "string",
-            "pattern": "^-?[0-9]{1,128}$"
+            "pattern": "^-?[0-9]{1,128}$",
+            "description": "Optional paired price change; include price_scale when supplied."
           },
           "price_scale": {
             "type": "integer",
             "format": "int64",
             "minimum": 0,
-            "maximum": 30
+            "maximum": 30,
+            "description": "Optional paired price change; include price_atomic when supplied."
           },
           "quantity_atomic": {
             "type": "string",
-            "pattern": "^-?[0-9]{1,128}$"
+            "pattern": "^-?[0-9]{1,128}$",
+            "description": "Optional paired quantity change; include quantity_scale when supplied."
           },
           "quantity_scale": {
             "type": "integer",
             "format": "int64",
             "minimum": 0,
-            "maximum": 30
+            "maximum": 30,
+            "description": "Optional paired quantity change; include quantity_atomic when supplied."
           }
         },
         "required": [],
@@ -5127,19 +5529,20 @@
         "properties": {
           "action": {
             "type": "integer",
-            "const": 1
+            "const": 1,
+            "description": "Required."
           },
           "instrument_id": {
             "type": "string",
-            "description": "Opaque canonical catalog ID on the exact exchange link. Determines spot/derivative/inverse topology; never derive from chart ticker."
+            "description": "Required. Opaque canonical catalog ID on the exact exchange link. Determines spot/derivative/inverse topology; never derive from chart ticker."
           },
           "trading_currency": {
             "type": "string",
-            "description": "Eligible spot settlement currency; preserve canonical currency on modification."
+            "description": "Conditional: eligible spot settlement; preserve the current value on modification. Eligible spot settlement currency; preserve canonical currency on modification."
           },
           "quantity_asset": {
             "type": "string",
-            "description": "Catalog base or quote asset for input quantities. Normalization and venue contract conversion remain adapter-owned."
+            "description": "Required. Catalog base or quote asset for input quantities. Normalization and venue contract conversion remain adapter-owned."
           },
           "position_side": {
             "type": "integer",
@@ -5147,7 +5550,7 @@
               1,
               2
             ],
-            "description": "1 long; 2 short. Immutable after creation; exact catalog/account eligibility applies."
+            "description": "Required. 1 long; 2 short. Immutable after creation; exact catalog/account eligibility applies."
           },
           "open_order_type": {
             "type": "integer",
@@ -5157,25 +5560,28 @@
               2,
               3
             ],
-            "description": "1 limit, 2 market, 3 virtual limit. Supported combinations depend on the typed adapter and order role."
+            "description": "Required. 1 limit, 2 market, 3 virtual limit. Supported combinations depend on the typed adapter and order role."
           },
           "exchange_link_id": {
             "type": "integer",
             "format": "int64",
-            "minimum": 1
+            "minimum": 1,
+            "description": "Required."
           },
           "open_slot_ids": {
             "type": "array",
             "items": {
               "type": "string"
             },
-            "maxItems": 65535
+            "maxItems": 65535,
+            "description": "Conditional: modification retaining current stable OPEN row identities; omit on creation."
           },
           "order_amendments": {
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/OrderAmendment"
-            }
+            },
+            "description": "Optional: exact physical-order changes during modification; omit on creation."
           },
           "margin_mode": {
             "anyOf": [
@@ -5191,7 +5597,7 @@
                 "type": "null"
               }
             ],
-            "description": "Derivatives: 1 cross, 2 isolated. Required on creation and immutable thereafter."
+            "description": "Conditional: required for derivative creation; immutable thereafter. Derivatives: 1 cross, 2 isolated. Required on creation and immutable thereafter."
           },
           "leverage": {
             "anyOf": [
@@ -5205,10 +5611,11 @@
                 "type": "null"
               }
             ],
-            "description": "Required positive derivative creation leverage within the exact catalog/adapter limit; omit unchanged leverage on modify to avoid unnecessary preflight."
+            "description": "Conditional: required for derivative creation or an intentional leverage change; omit unchanged on modification. Required positive derivative creation leverage within the exact catalog/adapter limit; omit unchanged leverage on modify to avoid unnecessary preflight."
           },
           "order_grid_enabled": {
-            "type": "boolean"
+            "type": "boolean",
+            "description": "Required."
           },
           "num_open_orders": {
             "anyOf": [
@@ -5221,10 +5628,12 @@
               {
                 "type": "null"
               }
-            ]
+            ],
+            "description": "Conditional builder configuration: enabled OPEN grid row count."
           },
           "sl_enabled": {
-            "type": "boolean"
+            "type": "boolean",
+            "description": "Required."
           },
           "sl_type": {
             "anyOf": [
@@ -5240,7 +5649,7 @@
                 "type": "null"
               }
             ],
-            "description": "1 from position, 2 from average."
+            "description": "Conditional builder configuration: relative SL reference when SL is enabled. 1 from position, 2 from average."
           },
           "sl_step_percent": {
             "anyOf": [
@@ -5252,10 +5661,11 @@
                 "type": "null"
               }
             ],
-            "description": "Percentage points multiplied by 1,000,000; trading owner validates applicability."
+            "description": "Conditional builder configuration: relative SL distance when SL is enabled; percentage points times 1,000,000. Percentage points multiplied by 1,000,000; trading owner validates applicability."
           },
           "sl_price_rearrangement": {
-            "type": "boolean"
+            "type": "boolean",
+            "description": "Conditional: required when sl_enabled is true; omit when inactive."
           },
           "sl_order_type": {
             "type": "integer",
@@ -5265,13 +5675,15 @@
               2,
               3
             ],
-            "description": "1 limit, 2 market, 3 virtual limit. Supported combinations depend on the typed adapter and order role."
+            "description": "Conditional: required when sl_enabled is true; omit when inactive. 1 limit, 2 market, 3 virtual limit. Supported combinations depend on the typed adapter and order role."
           },
           "slx_enabled": {
-            "type": "boolean"
+            "type": "boolean",
+            "description": "Required."
           },
           "slx_tp_trailing_enabled": {
-            "type": "boolean"
+            "type": "boolean",
+            "description": "Conditional: explicit TP-trigger choice when SLx is enabled; omission defaults false. Requires TP and excludes price-trigger mode."
           },
           "slx_tp_breakeven": {
             "anyOf": [
@@ -5282,13 +5694,16 @@
               {
                 "type": "null"
               }
-            ]
+            ],
+            "description": "Conditional builder configuration: one-based TP trigger in TP-trigger SLx mode."
           },
           "slx_each_tp_trailing": {
-            "type": "boolean"
+            "type": "boolean",
+            "description": "Optional: continue TP-trigger trailing after the first trigger; omission defaults false."
           },
           "slx_sl_trailing_breakeven_enabled": {
-            "type": "boolean"
+            "type": "boolean",
+            "description": "Optional: selects the price-trigger breakeven alternative; omission defaults false."
           },
           "slx_sl_trailing_breakeven_indent_percent": {
             "anyOf": [
@@ -5300,10 +5715,11 @@
                 "type": "null"
               }
             ],
-            "description": "Percentage points multiplied by 1,000,000; trading owner validates applicability."
+            "description": "Conditional builder configuration: breakeven alternative enabled. Percentage points multiplied by 1,000,000; trading owner validates applicability."
           },
           "slx_sl_trigger_price_trailing_enabled": {
-            "type": "boolean"
+            "type": "boolean",
+            "description": "Conditional: explicit price-trigger choice when SLx is enabled; omission defaults false. Excludes TP-trigger mode."
           },
           "slx_sl_trigger_price_trailing_pl_percent_activation": {
             "anyOf": [
@@ -5315,7 +5731,7 @@
                 "type": "null"
               }
             ],
-            "description": "Percentage points multiplied by 1,000,000; trading owner validates applicability."
+            "description": "Conditional builder configuration: activation distance for price-trigger SLx. Percentage points multiplied by 1,000,000; trading owner validates applicability."
           },
           "slx_sl_trigger_price_trailing_indent_percent": {
             "anyOf": [
@@ -5327,7 +5743,7 @@
                 "type": "null"
               }
             ],
-            "description": "Percentage points multiplied by 1,000,000; trading owner validates applicability."
+            "description": "Conditional builder configuration: price-trigger SLx without the breakeven alternative. Percentage points multiplied by 1,000,000; trading owner validates applicability."
           },
           "slx_sl_trigger_price_trailing_step": {
             "anyOf": [
@@ -5339,16 +5755,19 @@
                 "type": "null"
               }
             ],
-            "description": "Percentage points multiplied by 1,000,000; trading owner validates applicability."
+            "description": "Conditional builder configuration: price-trigger SLx without the breakeven alternative. Percentage points multiplied by 1,000,000; trading owner validates applicability."
           },
           "tp_enabled": {
-            "type": "boolean"
+            "type": "boolean",
+            "description": "Required."
           },
           "tp_price_rearrangement": {
-            "type": "boolean"
+            "type": "boolean",
+            "description": "Conditional: required when tp_enabled is true; all TP row arrays must align."
           },
           "tp_grid_enabled": {
-            "type": "boolean"
+            "type": "boolean",
+            "description": "Conditional: required when tp_enabled is true; all TP row arrays must align."
           },
           "num_tp_orders": {
             "anyOf": [
@@ -5361,7 +5780,8 @@
               {
                 "type": "null"
               }
-            ]
+            ],
+            "description": "Conditional builder configuration: row count when TP and its grid are enabled."
           },
           "tp_quantity_percents": {
             "type": "array",
@@ -5372,7 +5792,7 @@
               "maximum": 2147483647
             },
             "maxItems": 65535,
-            "description": "Required for enabled TP. Preserve builder weights: single full TP uses 1000000; grid weights use percentage points times 1000000. Canonical protection normalization handles both."
+            "description": "Conditional: required when tp_enabled is true; all TP row arrays must align. Required for enabled TP. Preserve builder weights: single full TP uses 1000000; grid weights use percentage points times 1000000. Canonical protection normalization handles both."
           },
           "tp_pnls": {
             "type": "array",
@@ -5381,14 +5801,15 @@
               "format": "int64"
             },
             "maxItems": 65535,
-            "description": "Required for enabled TP. Rearranged TP: positive price-distance percent from fee-aware breakeven times 1000000, maximum 100000000; not leveraged ROI. Static unused entries may be zero."
+            "description": "Conditional: required when tp_enabled is true; all TP row arrays must align. Required for enabled TP. Rearranged TP: positive price-distance percent from fee-aware breakeven times 1000000, maximum 100000000; not leveraged ROI. Static unused entries may be zero."
           },
           "tp_slot_ids": {
             "type": "array",
             "items": {
               "type": "string"
             },
-            "maxItems": 65535
+            "maxItems": 65535,
+            "description": "Conditional: modification retaining current stable TP row identities; omit on creation."
           },
           "tp_order_type": {
             "type": "integer",
@@ -5398,7 +5819,7 @@
               2,
               3
             ],
-            "description": "1 limit, 2 market, 3 virtual limit. Supported combinations depend on the typed adapter and order role."
+            "description": "Conditional: required when tp_enabled is true; all TP row arrays must align. 1 limit, 2 market, 3 virtual limit. Supported combinations depend on the typed adapter and order role."
           },
           "open_prices_atomic": {
             "type": "array",
@@ -5406,7 +5827,8 @@
               "type": "string",
               "pattern": "^-?[0-9]{1,128}$"
             },
-            "maxItems": 65535
+            "maxItems": 65535,
+            "description": "Required."
           },
           "open_prices_scale": {
             "type": "array",
@@ -5415,7 +5837,8 @@
               "minimum": 0,
               "maximum": 30
             },
-            "maxItems": 65535
+            "maxItems": 65535,
+            "description": "Required."
           },
           "open_quantities_atomic": {
             "type": "array",
@@ -5423,7 +5846,8 @@
               "type": "string",
               "pattern": "^-?[0-9]{1,128}$"
             },
-            "maxItems": 65535
+            "maxItems": 65535,
+            "description": "Required."
           },
           "open_quantities_scale": {
             "type": "array",
@@ -5432,7 +5856,8 @@
               "minimum": 0,
               "maximum": 30
             },
-            "maxItems": 65535
+            "maxItems": 65535,
+            "description": "Required."
           },
           "tp_prices_atomic": {
             "type": "array",
@@ -5440,7 +5865,8 @@
               "type": "string",
               "pattern": "^-?[0-9]{1,128}$"
             },
-            "maxItems": 65535
+            "maxItems": 65535,
+            "description": "Conditional: required when tp_enabled is true; all TP row arrays must align."
           },
           "tp_prices_scale": {
             "type": "array",
@@ -5449,7 +5875,8 @@
               "minimum": 0,
               "maximum": 30
             },
-            "maxItems": 65535
+            "maxItems": 65535,
+            "description": "Conditional: required when tp_enabled is true; all TP row arrays must align."
           },
           "tp_quantities_atomic": {
             "type": "array",
@@ -5458,7 +5885,7 @@
               "pattern": "^-?[0-9]{1,128}$"
             },
             "maxItems": 65535,
-            "description": "Builder may use zero placeholders; canonical protection owner sizes from actual exposure and TP weights."
+            "description": "Conditional: required when tp_enabled is true; all TP row arrays must align. Builder may use zero placeholders; canonical protection owner sizes from actual exposure and TP weights."
           },
           "tp_quantities_scale": {
             "type": "array",
@@ -5467,34 +5894,41 @@
               "minimum": 0,
               "maximum": 30
             },
-            "maxItems": 65535
+            "maxItems": 65535,
+            "description": "Conditional: required when tp_enabled is true; all TP row arrays must align."
           },
           "sl_price_atomic": {
             "type": "string",
-            "pattern": "^-?[0-9]{1,128}$"
+            "pattern": "^-?[0-9]{1,128}$",
+            "description": "Conditional: SL initial/static price when enabled; include both price pair members."
           },
           "sl_price_scale": {
             "type": "integer",
             "minimum": 0,
-            "maximum": 30
+            "maximum": 30,
+            "description": "Conditional: accompanies sl_price_atomic; include both pair members."
           },
           "slx_activation_price_atomic": {
             "type": "string",
-            "pattern": "^-?[0-9]{1,128}$"
+            "pattern": "^-?[0-9]{1,128}$",
+            "description": "Optional: initial SLx seed when enabled; include both members of this price pair together."
           },
           "slx_activation_price_scale": {
             "type": "integer",
             "minimum": 0,
-            "maximum": 30
+            "maximum": 30,
+            "description": "Optional: initial SLx seed when enabled; include both members of this price pair together."
           },
           "slx_price_atomic": {
             "type": "string",
-            "pattern": "^-?[0-9]{1,128}$"
+            "pattern": "^-?[0-9]{1,128}$",
+            "description": "Optional: initial SLx seed when enabled; include both members of this price pair together."
           },
           "slx_price_scale": {
             "type": "integer",
             "minimum": 0,
-            "maximum": 30
+            "maximum": 30,
+            "description": "Optional: initial SLx seed when enabled; include both members of this price pair together."
           }
         },
         "required": [
@@ -5514,7 +5948,7 @@
           "tp_enabled"
         ],
         "additionalProperties": false,
-        "description": "Existing PositionRequest codec, also used by advanced TradingView. Paired row arrays must have equal lengths. Adapter batch limits and 256 KiB command body apply below the post-decode row ceiling. Creation and enabled protections require their operational fields. API modify requires outer expected_revision and fresh exact slot/order identities. TV modify must preserve OPEN rows. See position-request.md for all fields and units.",
+        "description": "Complete intended position configuration, not a merge patch. Required keys always appear; conditional builder fields express the selected feature. Inactive optional fields should be omitted. Decimal pairs and row arrays must remain aligned. Market capabilities and live lifecycle state are validated by existing trading owners. See /api/position-request and /api/precision-and-units.",
         "allOf": [
           {
             "if": {
@@ -6026,15 +6460,17 @@
             "type": "string",
             "minLength": 1,
             "maxLength": 128,
-            "description": "Unique immutable namespace event identity; liftx-group: prefix is reserved."
+            "description": "Required. Immutable intent identity within one integration namespace, 1\u2013128 UTF-8 bytes. Reuse unchanged for a retry; never for a new intent. Unique immutable namespace event identity; liftx-group: prefix is reserved."
           },
           "issued_at": {
             "type": "integer",
-            "format": "int64"
+            "format": "int64",
+            "description": "Required. Integer UTC Unix seconds. Unseen identity must be within five minutes, allowing at most 30 seconds of future skew."
           },
           "expires_at": {
             "type": "integer",
-            "format": "int64"
+            "format": "int64",
+            "description": "Required. Integer UTC Unix seconds after issued_at and at most 300 seconds later. An unseen expired intent cannot execute."
           },
           "action": {
             "type": "string",
@@ -6042,31 +6478,37 @@
               "open",
               "modify",
               "terminate"
-            ]
+            ],
+            "description": "Required. Trading intent; see action-specific request and target requirements."
           },
           "exchange_link_id": {
             "type": "integer",
             "minimum": 1,
-            "maximum": 9007199254740991
+            "maximum": 9007199254740991,
+            "description": "Required. Exact authorized linked account. Determines venue and environment; must match nested request when present."
           },
           "instrument_id": {
-            "type": "string"
+            "type": "string",
+            "description": "Required. Exact opaque ID selected from that link catalog. Preserve case and bytes; must match nested request when present."
           },
           "position_id": {
             "type": "string",
-            "format": "uuid"
+            "format": "uuid",
+            "description": "Conditional: required canonical position UUID for modify and terminate; forbidden for open, which allocates it once."
           },
           "expected_revision": {
             "type": "integer",
-            "minimum": 1
+            "minimum": 1,
+            "description": "Conditional: required positive current revision for API modify. Omit for open/terminate; it is not a termination fence."
           },
           "request": {
-            "$ref": "#/components/schemas/PositionRequest"
+            "$ref": "#/components/schemas/PositionRequest",
+            "description": "Conditional: complete PositionRequest required for open and modify; forbidden for terminate."
           },
           "target": {
             "type": "string",
             "const": "position",
-            "description": "Optional explicit exact-position target; group selectors are TradingView-only."
+            "description": "Optional: only position is supported by the API. Group termination is TradingView-only. Optional explicit exact-position target; group selectors are TradingView-only."
           }
         },
         "required": [
@@ -6143,15 +6585,17 @@
             "type": "string",
             "minLength": 1,
             "maxLength": 128,
-            "description": "Unique immutable namespace event identity; liftx-group: prefix is reserved."
+            "description": "Required. Immutable intent identity within one integration namespace, 1\u2013128 UTF-8 bytes. Reuse unchanged for a retry; never for a new intent. Unique immutable namespace event identity; liftx-group: prefix is reserved."
           },
           "issued_at": {
             "type": "integer",
-            "format": "int64"
+            "format": "int64",
+            "description": "Required. Integer UTC Unix seconds. Unseen identity must be within five minutes, allowing at most 30 seconds of future skew."
           },
           "expires_at": {
             "type": "integer",
-            "format": "int64"
+            "format": "int64",
+            "description": "Required. Integer UTC Unix seconds after issued_at and at most 300 seconds later. An unseen expired intent cannot execute."
           },
           "action": {
             "type": "string",
@@ -6161,43 +6605,53 @@
               "terminate",
               "cancel",
               "close"
-            ]
+            ],
+            "description": "Required. Trading intent; see action-specific request and target requirements."
           },
           "exchange_link_id": {
             "type": "integer",
             "minimum": 1,
-            "maximum": 9007199254740991
+            "maximum": 9007199254740991,
+            "description": "Required. Exact authorized linked account. Determines venue and environment; must match nested request when present."
           },
           "instrument_id": {
-            "type": "string"
+            "type": "string",
+            "description": "Required. Exact opaque ID selected from that link catalog. Preserve case and bytes; must match nested request when present."
           },
           "expected_revision": {
             "type": "integer",
-            "minimum": 1
+            "minimum": 1,
+            "description": "Optional: positive current revision fence for exact modify; forbidden for group termination."
           },
           "request": {
-            "$ref": "#/components/schemas/PositionRequest"
+            "$ref": "#/components/schemas/PositionRequest",
+            "description": "Conditional: complete request required for Advanced open and modify. Guided open uses its stored request. Forbidden for all termination targets."
           },
           "client_position_id": {
             "type": "string",
             "minLength": 1,
-            "maxLength": 128
+            "maxLength": 128,
+            "description": "Conditional: required for exact-position targeting; immutable lifecycle reference, not a Liftx UUID. Forbidden for group targets."
           },
           "position_started_at": {
             "type": "integer",
-            "minimum": 1
+            "minimum": 1,
+            "description": "Conditional: required positive immutable lifecycle start for exact-position targeting, no later than issued_at. Forbidden for group targets."
           },
           "source_instance_id": {
             "type": "string",
-            "format": "uuid"
+            "format": "uuid",
+            "description": "Required. Exact source UUID from the setup; one ordered producer per setup."
           },
           "sequence": {
             "type": "integer",
-            "minimum": 1
+            "minimum": 1,
+            "description": "Required. Positive source sequence, assigned once per intent and retained on retry."
           },
           "binding_revision": {
             "type": "integer",
-            "minimum": 1
+            "minimum": 1,
+            "description": "Required. Exact pinned revision returned by the setup."
           },
           "target": {
             "type": "string",
@@ -6206,7 +6660,7 @@
               "strategy",
               "market"
             ],
-            "description": "Omitted/position requires exact lifecycle reference. Strategy or market selects termination groups only; market requires the immutable grant."
+            "description": "Optional: defaults to position. Strategy/market selectors apply only to termination; market requires an additional grant. Omitted/position requires exact lifecycle reference. Strategy or market selects termination groups only; market requires the immutable grant."
           }
         },
         "required": [
@@ -6326,13 +6780,16 @@
         "properties": {
           "token": {
             "type": "string",
-            "writeOnly": true
+            "writeOnly": true,
+            "description": "Required. Dedicated restricted TradingView capability, not an ordinary API key. Keep private."
           },
           "command": {
-            "$ref": "#/components/schemas/TradingViewCommand"
+            "$ref": "#/components/schemas/TradingViewCommand",
+            "description": "Conditional: provide exactly one command or alert. Advanced Pine envelope with explicit command and lifecycle identities."
           },
           "alert": {
-            "$ref": "#/components/schemas/TradingViewAlert"
+            "$ref": "#/components/schemas/TradingViewAlert",
+            "description": "Conditional: provide exactly one alert or command. Ordinary alert format whose identity and lifecycle are derived by Liftx."
           }
         },
         "required": [
@@ -6369,14 +6826,16 @@
           "name": {
             "type": "string",
             "minLength": 1,
-            "maxLength": 80
+            "maxLength": 80,
+            "description": "Required. Human-readable name for this integration."
           },
           "kind": {
             "type": "string",
             "enum": [
               "api",
               "tradingview"
-            ]
+            ],
+            "description": "Required. Credential type for the requested administration route."
           },
           "scopes": {
             "type": "array",
@@ -6392,7 +6851,8 @@
                 "positions:terminate",
                 "templates:write"
               ]
-            }
+            },
+            "description": "Required. Explicit permitted capabilities; grant only those needed."
           },
           "exchange_link_ids": {
             "type": "array",
@@ -6403,7 +6863,8 @@
               "type": "integer",
               "minimum": 1,
               "maximum": 9007199254740991
-            }
+            },
+            "description": "Required. Exact authorized link IDs; no default venue or automatic link substitution."
           },
           "instrument_ids": {
             "type": "array",
@@ -6411,15 +6872,18 @@
             "uniqueItems": true,
             "items": {
               "type": "string"
-            }
+            },
+            "description": "Optional for an API key. Empty/omitted allows all instruments on the granted links; otherwise an exact catalog-ID allowlist."
           },
           "expires_at": {
             "type": "integer",
-            "format": "int64"
+            "format": "int64",
+            "description": "Required. Future integer UTC Unix seconds within one year of issuance."
           },
           "integration_id": {
             "type": "string",
-            "format": "uuid"
+            "format": "uuid",
+            "description": "Optional. Replace within an existing exact namespace policy; not permission expansion."
           }
         },
         "required": [
@@ -6437,11 +6901,13 @@
           "name": {
             "type": "string",
             "minLength": 1,
-            "maxLength": 80
+            "maxLength": 80,
+            "description": "Required. Human-readable name for this integration."
           },
           "kind": {
             "type": "string",
-            "const": "tradingview"
+            "const": "tradingview",
+            "description": "Required. tradingview."
           },
           "scopes": {
             "type": "array",
@@ -6455,7 +6921,8 @@
                 "positions:modify",
                 "positions:terminate"
               ]
-            }
+            },
+            "description": "Required. Explicit permitted capabilities; grant only those needed."
           },
           "exchange_link_ids": {
             "type": "array",
@@ -6466,7 +6933,8 @@
               "type": "integer",
               "minimum": 1,
               "maximum": 9007199254740991
-            }
+            },
+            "description": "Required. Exactly one linked account."
           },
           "instrument_ids": {
             "type": "array",
@@ -6475,18 +6943,21 @@
             "items": {
               "type": "string"
             },
-            "minItems": 1
+            "minItems": 1,
+            "description": "Required. Exactly one exact catalog instrument."
           },
           "expires_at": {
             "type": "integer",
-            "format": "int64"
+            "format": "int64",
+            "description": "Required. Future integer UTC Unix seconds within one year of issuance."
           },
           "mode": {
             "type": "string",
             "enum": [
               "guided",
               "advanced"
-            ]
+            ],
+            "description": "Required. guided stores the creation request; advanced requires the sender to supply it."
           },
           "position_request": {
             "anyOf": [
@@ -6496,15 +6967,18 @@
               {
                 "type": "null"
               }
-            ]
+            ],
+            "description": "Conditional: complete request required in guided mode; omit for advanced mode."
           },
           "max_quantity": {
             "type": "string",
-            "maxLength": 128
+            "maxLength": 128,
+            "description": "Required. Positive exact decimal string in normalized quantity units, per position; not margin or a total strategy budget."
           },
           "source_instance_id": {
             "type": "string",
-            "format": "uuid"
+            "format": "uuid",
+            "description": "Required. Fresh source UUID generated once for this setup; preserve it for its one ordered producer."
           },
           "position_mode": {
             "type": "string",
@@ -6512,11 +6986,11 @@
               "single",
               "multiple"
             ],
-            "description": "Single rejects a new OPEN while this setup has known active or pending/uncertain work. Multiple permits distinct simultaneous lifecycle references."
+            "description": "Required. single or multiple controls new OPEN occupancy only; independent from termination target. Single rejects a new OPEN while this setup has known active or pending/uncertain work. Multiple permits distinct simultaneous lifecycle references."
           },
           "allow_market_terminate": {
             "type": "boolean",
-            "description": "Explicit permission for termination targeting all captured Liftx positions on the exact linked market, including manual and other strategies. Immutable and fresh-auth bound."
+            "description": "Required explicit boolean. Additional permission to terminate manual and other strategies positions on this exact market. Explicit permission for termination targeting all captured Liftx positions on the exact linked market, including manual and other strategies. Immutable and fresh-auth bound."
           }
         },
         "required": [
@@ -6571,17 +7045,20 @@
           "password": {
             "type": "string",
             "maxLength": 128,
-            "writeOnly": true
+            "writeOnly": true,
+            "description": "Conditional: provide exactly one offered authentication method, password or apple_token."
           },
           "apple_token": {
             "type": "string",
             "maxLength": 4096,
-            "writeOnly": true
+            "writeOnly": true,
+            "description": "Conditional: provide exactly one offered authentication method; Apple proof must bind the returned nonce and current account."
           },
           "mfa_code": {
             "type": "string",
             "pattern": "^[0-9]{6}$",
-            "writeOnly": true
+            "writeOnly": true,
+            "description": "Conditional: required when the returned challenge has mfa_required true."
           }
         },
         "required": [],
@@ -7262,14 +7739,15 @@
             "type": "string",
             "format": "date-time",
             "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z$",
-            "description": "TradingView {{timenow}} after substitution. UTC whole-second trigger time; no offset or fractions."
+            "description": "Required. UTC whole-second RFC3339 timestamp ending Z; use the TradingView {{timenow}} placeholder. TradingView {{timenow}} after substitution. UTC whole-second trigger time; no offset or fractions."
           },
           "action": {
             "type": "string",
             "enum": [
               "open",
               "terminate"
-            ]
+            ],
+            "description": "Required. Ordinary alerts support only open and terminate."
           },
           "target": {
             "type": "string",
@@ -7277,34 +7755,41 @@
               "position",
               "strategy",
               "market"
-            ]
+            ],
+            "description": "Required. Position for open; strategy or additionally authorized market for terminate."
           },
           "exchange_link_id": {
             "type": "integer",
             "format": "int64",
-            "minimum": 1
+            "minimum": 1,
+            "description": "Required. Exact authorized linked account. Determines venue and environment; must match nested request when present."
           },
           "instrument_id": {
             "type": "string",
             "minLength": 1,
-            "maxLength": 128
+            "maxLength": 128,
+            "description": "Required. Exact opaque ID selected from that link catalog. Preserve case and bytes; must match nested request when present."
           },
           "source_instance_id": {
             "type": "string",
-            "format": "uuid"
+            "format": "uuid",
+            "description": "Required. Exact source UUID from the setup; one ordered producer per setup."
           },
           "binding_revision": {
             "type": "integer",
             "format": "int64",
-            "minimum": 1
+            "minimum": 1,
+            "description": "Required. Exact pinned revision returned by the setup."
           },
           "max_lag_seconds": {
             "type": "integer",
             "minimum": 1,
-            "maximum": 300
+            "maximum": 300,
+            "description": "Required. Integer delivery/execution freshness window from 1 to 300 seconds; generated messages use 60."
           },
           "request": {
-            "$ref": "#/components/schemas/PositionRequest"
+            "$ref": "#/components/schemas/PositionRequest",
+            "description": "Conditional: complete request required for Advanced open . Guided open uses its stored request. Forbidden for all termination targets."
           }
         },
         "required": [
@@ -7394,7 +7879,8 @@
               {
                 "type": "null"
               }
-            ]
+            ],
+            "description": "Safe error reason, when available. A reason on operator_required does not prove absence of side effects or authorize replay; state remains authoritative for uncertainty."
           },
           "created_at": {
             "type": "integer",

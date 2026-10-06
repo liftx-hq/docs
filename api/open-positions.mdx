@@ -1,33 +1,34 @@
 ---
 title: "Open a position"
-description: "Create one durable position intent with protections in its opening request."
+description: "Build catalog-sized market or limit entries with complete SL, SLx and TP configuration."
 ---
 
-Use `positions:open` and `POST /v1/commands`. For a reconciled controller also grant `read` within the intended account/instrument scope.
+Use `positions:open` and [POST /v1/commands](/api/reference/post-v1-commands). Also grant `read` in the intended link/instrument scope when your controller needs catalog discovery and lifecycle reconciliation.
 
-## Preflight in the client
+## Resolve the market before sizing
 
-1. Resolve the intended link and its exact instrument from authenticated catalog reads.
-2. Check the catalog's state, precision, minimums, maximums and supported account/order settings.
-3. Build a complete [PositionRequest](/api/position-request). Configure SL, SLx and TP at OPEN when they should protect that lifecycle.
-4. Choose a new immutable client command ID, a current UTC issuance time and a deadline no more than five minutes later.
-5. Store the command before sending it. Omit `position_id`; Liftx allocates it once for the accepted OPEN identity.
+1. Select the exact account through `/v1/exchange-links` and the instrument through `/v1/symbols/list`.
+2. Check product topology, trading state, tick/lot steps, minimum/maximum size, order roles and account configuration. Read fees and eligible settlement currency where applicable.
+3. Express each quantity in `quantity_asset` units. For a linear product, BTC input is BTC, not a venue contract count. Quote input is quote notional, not margin collateral.
+4. Build one complete [PositionRequest](/api/position-request), including protections that should belong to the lifecycle from creation.
+5. Save a new command identity, issuance time, deadline and full request before sending it. Omit `position_id`; Liftx allocates it once for that accepted OPEN.
 
-## Full OPEN command
+All examples on this page use a fictitious account link `17`, illustrative UUIDs and `2030-01-01` UTC timestamps. `BTC-USDT-SWAP` illustrates an exact canonical catalog ID for a supported BTC/USDT linear perpetual; it is not a universal symbol alias. Assume the selected catalog permits the depicted order roles, cross margin, 2x leverage, price ticks and `0.001 BTC` quantity. Resolve your own link and current catalog first. These values are not live quotes, minimum-size claims or trading recommendations.
 
-The following nonoperational example has synthetic timestamps and an intentionally invalid catalog placeholder. It requests a limit long with an initial SL, price-trigger SLx and TP. Replace configuration only after selecting a real approved demo market and checking its limits.
+## Limit entry with SL, SLx and TP
+
 ```json
 {
-  "client_command_id": "demo-controller:cycle-001:open",
+  "client_command_id": "btc-controller:cycle-001:open",
   "issued_at": 1893456000,
   "expires_at": 1893456060,
   "action": "open",
   "exchange_link_id": 17,
-  "instrument_id": "COPY_EXACT_CATALOG_ID",
+  "instrument_id": "BTC-USDT-SWAP",
   "request": {
     "action": 1,
     "exchange_link_id": 17,
-    "instrument_id": "COPY_EXACT_CATALOG_ID",
+    "instrument_id": "BTC-USDT-SWAP",
     "quantity_asset": "BTC",
     "position_side": 1,
     "open_order_type": 1,
@@ -41,7 +42,7 @@ The following nonoperational example has synthetic timestamps and an intentional
       "1"
     ],
     "open_quantities_scale": [
-      4
+      3
     ],
     "order_grid_enabled": false,
     "margin_mode": 1,
@@ -51,20 +52,19 @@ The following nonoperational example has synthetic timestamps and an intentional
     "sl_step_percent": 2000000,
     "sl_price_atomic": "68600",
     "sl_price_scale": 0,
-    "sl_price_rearrangement": true,
+    "sl_price_rearrangement": false,
     "sl_order_type": 2,
     "slx_enabled": true,
     "slx_tp_trailing_enabled": false,
-    "slx_each_tp_trailing": false,
     "slx_sl_trigger_price_trailing_enabled": true,
     "slx_sl_trigger_price_trailing_pl_percent_activation": 1000000,
     "slx_sl_trigger_price_trailing_indent_percent": 500000,
     "slx_sl_trigger_price_trailing_step": 250000,
     "slx_sl_trailing_breakeven_enabled": false,
     "tp_enabled": true,
-    "tp_price_rearrangement": true,
+    "tp_price_rearrangement": false,
     "tp_grid_enabled": false,
-    "tp_order_type": 1,
+    "tp_order_type": 3,
     "tp_prices_atomic": [
       "72100"
     ],
@@ -81,38 +81,126 @@ The following nonoperational example has synthetic timestamps and an intentional
       1000000
     ],
     "tp_pnls": [
-      3000000
+      0
     ]
   }
 }
 ```
+The active configuration is:
 
-Save a private reviewed command file and submit it once:
+| Part | Intent and applicable fields |
+| --- | --- |
+| Entry | `position_side:1` is long; `open_order_type:1` is limit. One row is `70,000 USDT` and `0.001 BTC`; `order_grid_enabled:false` needs no row count. |
+| Derivative account | `margin_mode:1` is cross; `leverage:2` is 2x. Both require support from this exact account/instrument. |
+| SL | Enabled, market-style exit (`sl_order_type:2`), first-entry reference (`sl_type:1`), 2% distance and static initial price `68,600`. `sl_price_rearrangement:false` keeps the pictured static price behavior. |
+| SLx | Price-trigger trailing enabled; TP-trigger and breakeven alternative disabled. Activation is 1%, indent 0.5%, step 0.25%, interpreted by Liftx's existing trailing owner and reference pricing. |
+| TP | Enabled with one virtual-limit exit (`tp_order_type:3`) at `72,100`; rearrangement/grid disabled. Weight `1000000` denotes the full TP. Zero input quantity is a builder placeholder, not a request to close zero. |
+
+All four OPEN decimal arrays and the three feature switches (`sl_enabled`, `slx_enabled`, `tp_enabled`) are required. Enabling a protection requires its applicable fields; inactive options are omitted here. Explicit initial SLx price pairs are optional: use the builder's fee-aware reference if supplying them. Do not calculate them from an assumed fill at the limit price.
+
+A rearranged SL or TP has different intent: use `sl_price_rearrangement:true` with the chosen SL reference/distance, or `tp_price_rearrangement:true` with valid price-distance `tp_pnls`. Do not treat the pictured static prices as fixed while also enabling rearrangement. [Protections and grids](/api/protections-and-grids) covers those alternatives and TP-trigger SLx.
+
+## Minimum shape for a market entry
+
+For the same illustrative derivative catalog, the following is a complete market OPEN with all protections disabled. It is a **separate alternative**, not an additional command to send after the limit example.
+
+```json
+{
+  "client_command_id": "btc-controller:market-example:open",
+  "issued_at": 1893456000,
+  "expires_at": 1893456060,
+  "action": "open",
+  "exchange_link_id": 17,
+  "instrument_id": "BTC-USDT-SWAP",
+  "request": {
+    "action": 1,
+    "exchange_link_id": 17,
+    "instrument_id": "BTC-USDT-SWAP",
+    "quantity_asset": "BTC",
+    "position_side": 1,
+    "open_order_type": 2,
+    "open_prices_atomic": [
+      "70000"
+    ],
+    "open_prices_scale": [
+      0
+    ],
+    "open_quantities_atomic": [
+      "1"
+    ],
+    "open_quantities_scale": [
+      3
+    ],
+    "order_grid_enabled": false,
+    "margin_mode": 1,
+    "leverage": 2,
+    "sl_enabled": false,
+    "slx_enabled": false,
+    "tp_enabled": false
+  }
+}
+```
+A market order still supplies one positive, tick-quantized reference price and quantity row. There is no zero-price sentinel. The reference price supports sizing and validation; it does not constrain the eventual fill. The example retains `70,000` only to demonstrate the format. Use a current reviewed builder/catalog reference for a real command.
+
+For spot, select its own catalog ID (for example `BTC-USDT` only when your catalog actually returns it), include the eligible `trading_currency`, and omit derivative-only margin/leverage fields. A `quantity_asset:"BTC"` quantity of `"1"` at scale `3` is `0.001 BTC`; a quote-asset input would have different units. Account for fees and the minimum orderable exit size: the smallest permitted gross spot entry does not necessarily leave a fee-reduced amount large enough to close in a separate order.
+
+For an OPEN grid, set `order_grid_enabled:true`, supply `num_open_orders` and aligned price/quantity rows. That remains one Liftx position lifecycle. Independently submitted OPEN commands create separate lifecycles even when a venue nets their exposure together.
+
+## Submit and follow the result
 
 ```sh
 curl --fail-with-body \
   -H "Authorization: Bearer ${LIFTX_API_KEY}" \
   -H 'Content-Type: application/json' \
-  --data-binary @open-command.json \
+  --data-binary @reviewed-open.json \
   https://api.liftx.io/v1/commands
 ```
 
-Do not run the downloadable [schema example](/examples/api/open-command.json) as a live trade. Its purpose is to show the complete nesting and number formats.
+New acceptance returns HTTP `202`:
 
-## Observe the lifecycle
+```json
+{
+  "id": "11111111-1111-4111-8111-111111111111",
+  "client_command_id": "btc-controller:cycle-001:open",
+  "action": "open",
+  "state": "accepted",
+  "position_id": "11111111-1111-4111-8111-111111111111",
+  "error_code": null,
+  "created_at": 1893456000,
+  "updated_at": 1893456000
+}
+```
+A later receipt read can return HTTP `200`:
 
-A new acceptance returns a receipt with one `position_id`. Store both identifiers. Poll the receipt for admission progress and read the exact position for order state, fills and `alloc_net_exposure_*`. `handed_off` does not mean a limit order filled. `execution_observed` does not prove protection or closure.
+```json
+{
+  "id": "11111111-1111-4111-8111-111111111111",
+  "client_command_id": "btc-controller:cycle-001:open",
+  "action": "open",
+  "state": "handed_off",
+  "position_id": "11111111-1111-4111-8111-111111111111",
+  "error_code": null,
+  "created_at": 1893456000,
+  "updated_at": 1893456001
+}
+```
+`handed_off` establishes the correlated durable OPEN creation. It does not certify that the exchange accepted an order or that it filled. Read the exact position and its orders, allocations and protections using [position state](/api/position-state). An accepted ID can precede the position's first publication.
 
-If a response is lost, resend the exact saved command. A changed client ID creates a different intent and can open another position. A new timestamp under the old ID conflicts with the old immutable payload.
+## Rejection and ambiguous outcomes
 
-## Market orders and grids
+An inner instrument that differs from the envelope produces HTTP `400`:
 
-A supported market OPEN uses `open_order_type:2` and the same required arrays. Use an exported valid draft; do not assume an arbitrary zero price works for sizing or validation. Market execution has no fill-price guarantee.
+```json
+{
+  "success": false,
+  "error": {
+    "code": "SCOPE_MISMATCH",
+    "message": "Position request must match command scope"
+  }
+}
+```
+A catalog/account or trading-readiness rejection can instead occur **after** acceptance and appear on the receipt. Keep following the accepted UUID. If the HTTP response is lost, resend the exact saved command; creating a new client ID can open another position.
 
-An OPEN grid sets `order_grid_enabled:true` with corresponding row count, price and quantity arrays. Rows belong to the same Liftx lifecycle. Multiple independently opened positions are different lifecycles even when they share a market or venue exposure slot.
+Leverage preflight can perform exchange I/O before a later admission failure. A command is not one atomic exchange/database transaction. `operator_required` preserves unresolved effects and blocks blind replay. Do not infer that a failed request left every account setting unchanged.
 
-## Spot, short and derivatives
-
-Use the catalog to select product type. Spot uses eligible settlement configuration; derivatives use supported margin mode and leverage. A short is `position_side:2` where the account and instrument permit it. Do not implement a universal “sell means short” translation: a sell could be a close, a new short or an unsupported spot operation.
-
-Leverage preflight is a venue operation and cannot be modeled as an atomic database transaction with local command admission. If effects become uncertain, the receipt preserves uncertainty for reconciliation instead of claiming a side-effect-free failure.
+A short uses `position_side:2` only where supported. The API does not translate a generic sell signal into either short or close: choose `open` with the intended direction or [terminate](/api/terminate-positions) an existing position explicitly. TradingView uses the same underlying request and trading owners through its [guided or advanced setup](/integrations/tradingview/overview).

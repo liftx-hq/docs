@@ -1,35 +1,165 @@
 ---
 title: "Open a scoped state stream"
-description: "This HTTP GET upgrades to WebSocket (101)."
+description: "Upgrade with a Bearer header, subscribe within one exact link and decode versioned binary data."
 openapi: "/api/openapi.json GET /v1/stream"
 playground: "simple"
 ---
 
-<Note>Preview contract. Production availability remains subject to activation and release qualification. Examples are synthetic; the documentation cannot submit requests.</Note>
+<Note>Preview contract. Production availability remains subject to activation and release qualification. Examples use illustrative identities and UTC times; the documentation cannot submit requests.</Note>
 
-## Authorization
+## Authorization and upgrade
 
-`read` in the upgrade Authorization header.
+Connect to `wss://api.liftx.io/v1/stream` with a client that supports `Authorization: Bearer ...` in its WebSocket upgrade. `read` permission and current Pro/trial entitlement are required. There is no key query parameter or key-bearing WebSocket subprotocol.
 
-## Behavior
-
-This HTTP GET upgrades to WebSocket (101). Send scoped JSON text controls and decode the documented versioned binary messages. Browser WebSocket clients cannot normally set the required header; do not move secrets into URLs. Mutations remain HTTP commands.
-
-## Upgrade example
+A library generates the nonce and validates the server's accept value. This illustrative handshake uses the standard example nonce; a real client generates a fresh one.
 
 ```http
-GET /v1/stream
+GET /v1/stream HTTP/1.1
+Host: api.liftx.io
 Authorization: Bearer YOUR_API_KEY_FROM_PRIVATE_STORAGE
 Connection: Upgrade
 Upgrade: websocket
 Sec-WebSocket-Version: 13
-Sec-WebSocket-Key: CLIENT_GENERATED_HANDSHAKE_NONCE
+Sec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==
 ```
 
-Use a WebSocket library to construct the handshake and verify its response. The client controls and complete channel codecs are in the [stream guide](/api/streams).
+### HTTP 101
 
-## Response and errors
+```http
+HTTP/1.1 101 Switching Protocols
+Connection: Upgrade
+Upgrade: websocket
+Sec-WebSocket-Accept: s3pPLMBiTxaQ9kYGzzhZRbK+xOo=
+```
 
-The generated response schema below is the wire contract. Preserve fixed-point strings, nullable fields and endpoint-specific envelopes. Inspect HTTP status and Content-Type before decoding failures; reused trading routes may return JSON or plain text. Authentication, entitlement and exact link/instrument restrictions apply in addition to endpoint validation. See [errors and recovery](/api/errors-and-limits).
+The upgrade does not itself select an account channel. After it succeeds, send the following controls as **JSON text frames**. State arrives in versioned **binary application messages**, not plain JSON WebSocket messages.
 
-Read the [related guide](/api/streams) for lifecycle, units and recovery semantics.
+## Subscribe to an authorized account
+
+For a key permitting all instruments on the illustrative link `17`:
+
+```json
+{
+  "op": "subscribe",
+  "channels": [
+    {
+      "type": "positions",
+      "exchange_link_id": 17,
+      "status": "active",
+      "offset": 0,
+      "limit": 50,
+      "request_id": 1
+    },
+    {
+      "type": "positions_index",
+      "exchange_link_id": 17
+    },
+    {
+      "type": "orders_index",
+      "exchange_link_id": 17
+    }
+  ]
+}
+```
+| Control part | Requirement |
+| --- | --- |
+| `op` | `subscribe`, `unsubscribe` or `resync`, where supported by the selected channel. |
+| `channels` | 1-32 channel objects in one text message, bounded to 16 KiB. |
+| `type`, `exchange_link_id` | Required exact channel and authorized link. A connection cannot switch links after scope is established. |
+| Positions subscription | `status:active` or `inactive`, `offset` 0-10,000,000 and `limit` 1-200; optional `include_total` and positive `request_id`. |
+| Ticker subscription | Exact catalog `instrument_id`. At most one ticker channel per control. |
+| History subscription | Exact `position_id` and positive safe-integer `request_id`, with the documented connection-local request ordering. |
+
+Field names are exact, case-sensitive and unique. Send only the keys allowed for the operation and channel. Instrument-restricted keys cannot subscribe to link-wide balances, positions pages, private indexes or the history-hint channel; use permitted exact-instrument tickers and authorized exact-position HTTP reads instead.
+
+For an instrument-restricted key permitting the catalog's illustrative `BTC-USDT-SWAP`:
+
+```json
+{
+  "op": "subscribe",
+  "channels": [
+    {
+      "type": "tickers",
+      "exchange_link_id": 17,
+      "instrument_id": "BTC-USDT-SWAP"
+    }
+  ]
+}
+```
+Use a separate authorized connection for a different link. Do not send a catalog symbol from one link as authority for another account.
+
+## Server message example
+
+An account positions-index response is a binary message with a seven-byte header: message type, little-endian payload length, protocol version and channel. For channel `4`, version `1`, its **decoded JSON payload** can be:
+
+```json
+{
+  "exchange_link_id": 17,
+  "kind": "positions_index_snapshot",
+  "server_epoch": "illustrative-server-epoch",
+  "session_gen": "1",
+  "rev": 1,
+  "active_total": 1,
+  "inactive_total": 0,
+  "complete": true,
+  "items": [
+    {
+      "exchange_link_id": 17,
+      "instrument_id": "BTC-USDT-SWAP"
+    }
+  ]
+}
+```
+This is an instrument membership index, not a Position object or an order inventory. Preserve the exact generation string and revisions. Only a complete baseline supports later deltas. A gap, new epoch/generation or `snapshot_required` control invalidates dependent cached state.
+
+The [stream guide](/api/streams) specifies every channel, the seven-byte frame layout, balance/ticker binary codecs, JSON payload shapes, history correlation and bounded decoder example. Do not feed an entire binary WebSocket message directly to a JSON parser.
+
+## Resync and unsubscribe
+
+Request a fresh index after detecting a gap:
+
+```json
+{
+  "op": "resync",
+  "channels": [
+    {
+      "type": "positions_index",
+      "exchange_link_id": 17
+    }
+  ]
+}
+```
+Unsubscribe an exact ticker:
+
+```json
+{
+  "op": "unsubscribe",
+  "channels": [
+    {
+      "type": "tickers",
+      "exchange_link_id": 17,
+      "instrument_id": "BTC-USDT-SWAP"
+    }
+  ]
+}
+```
+Balances, positions pages, tickers and history do not use index `resync`; rebuild them with the channel's documented subscription/read flow. Keep bounded receive queues and reconstruct complete state before resuming decisions after reconnect.
+
+## Errors and connection end
+
+Without `read`, the upgrade is refused with HTTP `403` and JSON:
+
+```json
+{
+  "success": false,
+  "error": {
+    "code": "SCOPE_DENIED",
+    "message": "Read permission required"
+  }
+}
+```
+Authentication, entitlement or capacity can also refuse the handshake. Check status and Content-Type before attempting to decode stream data. After HTTP `101`, malformed/unauthorized controls or a slow consumer can close the stream generation; there is no new HTTP JSON error response inside the upgraded connection.
+
+Credential/entitlement expiry ends authorization at its deadline. Local revocation cancels the registered stream; periodic authority checks detect out-of-process changes. A disconnect is not evidence that trading positions were canceled or closed.
+
+Trading mutations still use [POST /v1/commands](/api/reference/post-v1-commands). This stream carries canonical state, not a separate command execution path or a receipt subscription. Read [command receipts](/api/reference/get-v1-commands-get) for command progress and reconcile the affected position for actual effects.

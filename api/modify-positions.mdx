@@ -1,49 +1,57 @@
 ---
 title: "Modify positions and attached orders"
-description: "Use a fresh revision and exact current order identities for a complete modification."
+description: "Use a fresh revision and exact current row identities for a complete modification."
 ---
 
-Use `positions:modify` to submit a supported change and `read` to obtain current state. MODIFY is a complete intended `PositionRequest`, not JSON Patch and not a replay of the original OPEN request.
+Use `positions:modify` to submit changes and `read` to obtain current state. MODIFY supplies a complete intended `PositionRequest`; it is not JSON Patch and not a replay of the original OPEN JSON.
 
-## Read the current publication
+## Read the current modification publication
 
 ```sh
 curl --fail-with-body --get \
   -H "Authorization: Bearer ${LIFTX_API_KEY}" \
   --data-urlencode 'id=11111111-1111-4111-8111-111111111111' \
   --data-urlencode 'exchange_link_id=17' \
-  --data-urlencode 'instrument_id=COPY_EXACT_CATALOG_ID' \
+  --data-urlencode 'instrument_id=BTC-USDT-SWAP' \
   https://api.liftx.io/v1/positions/get-for-modification
 ```
 
-This returns `success/message/data`, where `data` is the current **Position publication**, not a ready-made request. Construct the intended request from current rows and protection configuration. Keep the returned `revision`, current `slot_id` values and exact internal physical `order_id` values.
+The response uses `success/message/data`; `data` is a current **Position publication**, not a ready-made modification request. Use its revision, current OPEN/TP rows, stable `slot_id` values, current internal physical `order_id` values and protection configuration. See the [endpoint schema](/api/reference/get-v1-positions-get-for-modification) for the complete publication.
 
-## Build one explicit change
+## Build the intended configuration
 
-1. Preserve `position_side`, margin mode, link, instrument and eligible spot settlement configuration.
-2. Preserve every existing OPEN and TP row that should remain, including its current slot identity and current quantity/price semantics after fills.
-3. Change only the intended configuration. If targeting an existing physical order, include its exact `order_id` in `order_amendments`.
-4. Omit unchanged leverage to avoid an unnecessary leverage preflight.
-5. Set outer `expected_revision` to the freshly observed positive revision.
-6. Allocate a new client command ID for this modification and persist the complete request.
+| Requirement | Client action |
+| --- | --- |
+| Exact identity | Keep the same position UUID, link, instrument and long/short side. Direction cannot change after creation. |
+| Current version | Set outer `expected_revision` to the fresh positive `revision`. A correctly typed but stale revision is still a conflict. |
+| Current rows | Preserve each OPEN and TP row that should remain, with aligned prices, quantities and stable slot IDs. Account for actual fills and current builder semantics. |
+| Account settings | Keep the existing margin mode and eligible spot settlement configuration. Omit unchanged leverage to avoid exchange preflight I/O. |
+| Protections | Send the complete intended SL/SLx/TP configuration, including enable flags. Omission is not a merge operation. |
+| Physical amendment | Include the current internal `order_id` and `slot_id` in `order_amendments` only when targeting that exact physical generation. |
+| Command identity | Save a new command ID and complete intent for this deliberate change; reuse it unchanged only for transport retry. |
 
-## Full modification example
+All examples on this page use a fictitious account link `17`, illustrative UUIDs and `2030-01-01` UTC timestamps. `BTC-USDT-SWAP` illustrates an exact canonical catalog ID for a supported BTC/USDT linear perpetual; it is not a universal symbol alias. Assume the selected catalog permits the depicted order roles, cross margin, 2x leverage, price ticks and `0.001 BTC` quantity. Resolve your own link and current catalog first. These values are not live quotes, minimum-size claims or trading recommendations.
 
-This synthetic example assumes a current revision of 7 and one current OPEN and TP slot. It changes the static SL to 69,000 and disables SLx while retaining the pictured opening and TP rows. The placeholders are not valid live slot identities. **Use this only if a fresh publication actually matches the assumed rows and quantities.**
+## Full protection modification
+
+Assume a fresh revision `7` with one OPEN slot `44444444-4444-4444-8444-444444444444` and one TP slot `55555555-5555-4555-8555-555555555555`. Both are synthetic UUIDs representing values read from the publication, not IDs the client chooses for existing rows. Assume the current row prices and quantities exactly match this request.
+
+This moves the static SL from `68,600` to `69,300` (1% below the depicted `70,000` first-entry reference), disables SLx, and retains the entry and static full TP. Unchanged leverage is omitted.
+
 ```json
 {
-  "client_command_id": "demo-controller:cycle-001:modify-001",
+  "client_command_id": "btc-controller:cycle-001:modify-001",
   "issued_at": 1893456060,
   "expires_at": 1893456120,
   "action": "modify",
   "exchange_link_id": 17,
-  "instrument_id": "COPY_EXACT_CATALOG_ID",
+  "instrument_id": "BTC-USDT-SWAP",
   "position_id": "11111111-1111-4111-8111-111111111111",
   "expected_revision": 7,
   "request": {
     "action": 1,
     "exchange_link_id": 17,
-    "instrument_id": "COPY_EXACT_CATALOG_ID",
+    "instrument_id": "BTC-USDT-SWAP",
     "quantity_asset": "BTC",
     "position_side": 1,
     "open_order_type": 1,
@@ -57,22 +65,21 @@ This synthetic example assumes a current revision of 7 and one current OPEN and 
       "1"
     ],
     "open_quantities_scale": [
-      4
+      3
     ],
     "order_grid_enabled": false,
     "margin_mode": 1,
     "sl_enabled": true,
     "sl_type": 1,
-    "sl_step_percent": 2000000,
-    "sl_price_atomic": "69000",
+    "sl_step_percent": 1000000,
+    "sl_price_atomic": "69300",
     "sl_price_scale": 0,
     "sl_price_rearrangement": false,
     "sl_order_type": 2,
-    "slx_enabled": false,
     "tp_enabled": true,
-    "tp_price_rearrangement": true,
+    "tp_price_rearrangement": false,
     "tp_grid_enabled": false,
-    "tp_order_type": 1,
+    "tp_order_type": 3,
     "tp_prices_atomic": [
       "72100"
     ],
@@ -89,57 +96,105 @@ This synthetic example assumes a current revision of 7 and one current OPEN and 
       1000000
     ],
     "tp_pnls": [
-      3000000
+      0
     ],
+    "slx_enabled": false,
     "open_slot_ids": [
-      "SYNTHETIC_CURRENT_OPEN_SLOT"
+      "44444444-4444-4444-8444-444444444444"
     ],
     "tp_slot_ids": [
-      "SYNTHETIC_CURRENT_TP_SLOT"
+      "55555555-5555-4555-8555-555555555555"
     ]
   }
 }
 ```
-
-Download the illustrative [modify-command.json](/examples/api/modify-command.json). The current row values are essential; the file is not a generic template to replay after arbitrary fills.
-
-## Amend one physical order
-
-Inside the complete request, a targeted amendment can have this shape:
+Submit the saved command through `POST /v1/commands`. HTTP `202` returns:
 
 ```json
 {
-  "order_amendments":[
+  "id": "22222222-2222-4222-8222-222222222222",
+  "client_command_id": "btc-controller:cycle-001:modify-001",
+  "action": "modify",
+  "state": "accepted",
+  "position_id": "11111111-1111-4111-8111-111111111111",
+  "error_code": null,
+  "created_at": 1893456060,
+  "updated_at": 1893456060
+}
+```
+After an ordinary successful owner return, HTTP `200` from receipt detail can show:
+
+```json
+{
+  "id": "22222222-2222-4222-8222-222222222222",
+  "client_command_id": "btc-controller:cycle-001:modify-001",
+  "action": "modify",
+  "state": "execution_observed",
+  "position_id": "11111111-1111-4111-8111-111111111111",
+  "error_code": null,
+  "created_at": 1893456060,
+  "updated_at": 1893456061
+}
+```
+`execution_observed` is not an acknowledgment that every persistence write or exchange action completed. Reconcile the current position, row generations and protections before dependent work. This command does not become a fill or flatness proof merely because its receipt is resolved.
+
+## Amend an existing pending order
+
+This fragment belongs inside a complete request built from fresh state. It changes the current OPEN order to `69,900` for `0.001 BTC`. Update that row's `open_prices_*` / `open_quantities_*` arrays to the same intended values and preserve its current `open_slot_ids` entry.
+
+```json
+{
+  "order_amendments": [
     {
-      "slot_id":"SYNTHETIC_CURRENT_OPEN_SLOT",
-      "order_id":"33333333-3333-4333-8333-333333333333",
-      "price_atomic":"69900",
-      "price_scale":0,
-      "quantity_atomic":"1",
-      "quantity_scale":4
+      "slot_id": "44444444-4444-4444-8444-444444444444",
+      "order_id": "66666666-6666-4666-8666-666666666666",
+      "price_atomic": "69900",
+      "price_scale": 0,
+      "quantity_atomic": "1",
+      "quantity_scale": 3
     }
   ]
 }
 ```
+Both IDs above are illustrative. An exchange-native order ID is not a Liftx `order_id`. A retained slot can have a newer physical successor, so the slot alone does not authorize an amendment of an old order. Price and quantity are optional paired values on an amendment; supply the pair for each value being changed.
 
-This is a fragment, not a complete command. It must correspond to the current physical order generation and the intended row configuration. Never substitute a venue order ID, assume an old successor is current or amend using a stale cached snapshot.
+## Remove a pending attached row
 
-## Cancel a pending attached row
+There is no arbitrary exchange-order cancellation endpoint. Supported row removal is expressed through the complete intended rows and retained slot list, subject to the existing lifecycle rules. Omitting a current slot can request cancellation; accidental omission therefore changes trading intent. Preserve filled row history and build from current state instead of historical OPEN JSON.
 
-There is no external arbitrary-order cancellation endpoint. Supported attached-row removal is expressed through a complete current modification and its retained slot list, subject to the existing lifecycle rules. Omitting a current slot can request cancellation; therefore accidental omission can have trading consequences. Do not remove filled rows or reconstruct a configuration from historical OPEN JSON.
+For the whole lifecycle, use [terminate](/api/terminate-positions). A pending order can fill during cancellation; a stale client observation cannot promise a cancel-only outcome. The existing modification owner registers the cancellation barrier, cancels outside its position lock, checks the exact generation and reconciles fresh state before replacement/protection work.
 
-To stop the entire lifecycle, use [terminate](/api/terminate-positions). It also handles a pending-to-filled race; a client-side “still pending” observation cannot guarantee that exposure remained zero.
+## Revision conflicts and uncertain effects
 
-## Conflicts and uncertainty
+Omitting the required revision fails the initial POST with HTTP `400`:
 
-A stale revision is a conflict. Read a fresh publication, reassess the intended change, and create a deliberately new command. Do not automatically substitute the new revision into an old request; rows, fills and protection references may also have changed.
+```json
+{
+  "success": false,
+  "error": {
+    "code": "REVISION_REQUIRED",
+    "message": "Modification requires the current position revision"
+  }
+}
+```
+A valid revision can become stale before execution. If there were no prior possible effects, a later receipt GET returns HTTP `200` with a rejection like:
 
-A timeout after submission is not a rejection. Preserve the same identity for a transport retry and inspect the receipt. `operator_required` means the available evidence does not safely resolve side effects; do not replay the whole modification or submit compensating trades.
+```json
+{
+  "id": "22222222-2222-4222-8222-222222222222",
+  "client_command_id": "btc-controller:cycle-001:modify-001",
+  "action": "modify",
+  "state": "rejected",
+  "position_id": "11111111-1111-4111-8111-111111111111",
+  "error_code": "POSITION_REVISION_CONFLICT",
+  "created_at": 1893456060,
+  "updated_at": 1893456061
+}
+```
+This rejection is an alternative outcome for the same illustrative command, not a second state after the successful outcome above. Read a fresh publication, reassess the entire intended change, and allocate a new command only if it is still wanted. Do not simply substitute the new revision into an old request.
 
-The execution owner preserves cancellation-barrier registration, dispatches cancellation without holding the position lock, checks the exact generation, then reconciles fresh state before replacement and protection work. Clients must not precompute a replacement plan across that boundary.
+If earlier leverage I/O or another effect makes the outcome uncertain, the receipt can instead be `operator_required` with `EXECUTION_UNCERTAIN`. A lost response likewise does not prove rejection. Inspect the original receipt; do not replay the modification with a new identity or invent compensating trades.
 
-Leverage preflight may precede a later revision or cap rejection. A modification is not an atomic transaction across the exchange and Liftx state; receipts distinguish uncertain side effects.
+## TradingView boundary
 
-## TradingView limitation
-
-Advanced Pine can express the full payload, but cannot retrieve the current Liftx publication or consume the webhook result. TradingView capped MODIFY must preserve OPEN rows. State-dependent OPEN amendments, conflict reconciliation and multi-position workflows belong in an API controller with current read access. There is no blind group MODIFY.
+Advanced TradingView payloads use the same request model, but capped MODIFY must preserve OPEN rows. Pine cannot retrieve Liftx's current publication or consume the webhook response. Use an API controller with current reads for state-dependent row amendments and conflict reconciliation. There is no blind group MODIFY. See [TradingView integration](/integrations/tradingview/overview) for its source ordering and optional revision contract.

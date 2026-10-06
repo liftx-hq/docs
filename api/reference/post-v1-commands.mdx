@@ -1,36 +1,55 @@
 ---
 title: "Submit a trading command"
-description: "A new intent returns 202 with a durable receipt; an identical retry returns 200 with the original receipt."
+description: "Complete OPEN, MODIFY and TERMINATE requests, acceptance receipts and admission errors."
 openapi: "/api/openapi.json POST /v1/commands"
 playground: "simple"
 ---
 
-<Note>Preview contract. Production availability remains subject to activation and release qualification. Examples are synthetic; the documentation cannot submit requests.</Note>
+<Note>Preview contract. Production availability remains subject to activation and release qualification. Examples are illustrative; the documentation cannot submit requests.</Note>
 
-## Authorization
+Submit one immutable intent using a scoped API key. Liftx persists the intent before an existing trading owner executes it. A new command returns `202 Accepted`; an identical retry returns `200 OK` with the current receipt for the original command.
 
-`positions:open`, `positions:modify` or `positions:terminate`, selected by the action.
+## Headers and request rules
 
-## Behavior
+```http
+POST /v1/commands HTTP/1.1
+Host: api.liftx.io
+Authorization: Bearer YOUR_API_KEY_FROM_PRIVATE_STORAGE
+Content-Type: application/json
+```
 
-A new intent returns 202 with a durable receipt; an identical retry returns 200 with the original receipt. OPEN allocates one position UUID; MODIFY requires a fresh expected_revision; TERMINATE omits request. Reusing an identity with different intent conflicts. Acceptance does not certify a fill or flatness.
+Use `positions:open`, `positions:modify` or `positions:terminate` for the corresponding action. Pro or an eligible trial is required. This endpoint accepts one JSON object up to 256 KiB, with exact case-sensitive field names and no duplicate or unknown keys. Compressed bodies are unsupported. Decimal coefficients are strings; do not convert money through binary floating-point.
 
-## JSON body example
+| Field | Required or conditional | Meaning |
+| --- | --- | --- |
+| `client_command_id` | Required for every command | Immutable identity within the integration namespace; 1-128 UTF-8 bytes; `liftx-group:` is reserved. |
+| `issued_at` | Required | UTC Unix seconds. Unseen intent must be no more than 300 seconds old or 30 seconds ahead of the admission clock. |
+| `expires_at` | Required | UTC Unix seconds, later than issuance and no more than 300 seconds later; must not have elapsed for a new command. |
+| `action` | Required | Exactly `open`, `modify` or `terminate`. |
+| `exchange_link_id`, `instrument_id` | Required | Exact authorized link and its catalog instrument. |
+| `target` | Optional | Omit or use `position`. Strategy/market groups belong to the TradingView endpoint. |
+| `position_id` | Required for MODIFY/TERMINATE; omit for OPEN | Canonical Liftx position UUID. |
+| `expected_revision` | Required for API MODIFY | Positive revision from a fresh modification publication. It does not replace current row identities. |
+| `request` | Required for OPEN/MODIFY; omit for TERMINATE | Complete [PositionRequest](/api/position-request); inner link/instrument must equal the envelope. |
 
-The following shows the request shape, not live credentials or executable market defaults. Replace timestamps only when creating a new reviewed intent; never mutate them on a command retry.
+Omit TradingView-only fields (`client_position_id`, `position_started_at`, `source_instance_id`, `sequence`, `binding_revision`) from API commands. Optional inactive fields do not need placeholder values. `request:null` is not a TERMINATE request.
+
+## OPEN: limit entry with SL, SLx and TP
+
+All examples on this page use a fictitious account link `17`, illustrative UUIDs and `2030-01-01` UTC timestamps. `BTC-USDT-SWAP` illustrates an exact canonical catalog ID for a supported BTC/USDT linear perpetual; it is not a universal symbol alias. Assume the selected catalog permits the depicted order roles, cross margin, 2x leverage, price ticks and `0.001 BTC` quantity. Resolve your own link and current catalog first. These values are not live quotes, minimum-size claims or trading recommendations.
 
 ```json
 {
-  "client_command_id": "demo-controller:cycle-001:open",
+  "client_command_id": "btc-controller:cycle-001:open",
   "issued_at": 1893456000,
   "expires_at": 1893456060,
   "action": "open",
   "exchange_link_id": 17,
-  "instrument_id": "COPY_EXACT_CATALOG_ID",
+  "instrument_id": "BTC-USDT-SWAP",
   "request": {
     "action": 1,
     "exchange_link_id": 17,
-    "instrument_id": "COPY_EXACT_CATALOG_ID",
+    "instrument_id": "BTC-USDT-SWAP",
     "quantity_asset": "BTC",
     "position_side": 1,
     "open_order_type": 1,
@@ -44,7 +63,7 @@ The following shows the request shape, not live credentials or executable market
       "1"
     ],
     "open_quantities_scale": [
-      4
+      3
     ],
     "order_grid_enabled": false,
     "margin_mode": 1,
@@ -54,20 +73,19 @@ The following shows the request shape, not live credentials or executable market
     "sl_step_percent": 2000000,
     "sl_price_atomic": "68600",
     "sl_price_scale": 0,
-    "sl_price_rearrangement": true,
+    "sl_price_rearrangement": false,
     "sl_order_type": 2,
     "slx_enabled": true,
     "slx_tp_trailing_enabled": false,
-    "slx_each_tp_trailing": false,
     "slx_sl_trigger_price_trailing_enabled": true,
     "slx_sl_trigger_price_trailing_pl_percent_activation": 1000000,
     "slx_sl_trigger_price_trailing_indent_percent": 500000,
     "slx_sl_trigger_price_trailing_step": 250000,
     "slx_sl_trailing_breakeven_enabled": false,
     "tp_enabled": true,
-    "tp_price_rearrangement": true,
+    "tp_price_rearrangement": false,
     "tp_grid_enabled": false,
-    "tp_order_type": 1,
+    "tp_order_type": 3,
     "tp_prices_atomic": [
       "72100"
     ],
@@ -84,16 +102,186 @@ The following shows the request shape, not live credentials or executable market
       1000000
     ],
     "tp_pnls": [
-      3000000
+      0
     ]
   }
 }
 ```
+This requests a long `0.001 BTC` limit entry at `70,000 USDT`, static SL at `68,600`, price-trigger trailing SLx, and a full-position virtual-limit TP at `72,100`. SLx activation, indent and step are percentage points times 1,000,000: `1%`, `0.5%` and `0.25%`. TP weight `1000000` means one full TP; its zero quantity placeholder is sized by the existing protection owner from actual exposure. See [OPEN](/api/open-positions) for market/spot differences and catalog sizing.
 
-## Response and errors
+### New acceptance: HTTP 202
 
-The generated response schema below is the wire contract. Preserve fixed-point strings, nullable fields and endpoint-specific envelopes. Inspect HTTP status and Content-Type before decoding failures; reused trading routes may return JSON or plain text. Authentication, entitlement and exact link/instrument restrictions apply in addition to endpoint validation. See [errors and recovery](/api/errors-and-limits).
+```json
+{
+  "id": "11111111-1111-4111-8111-111111111111",
+  "client_command_id": "btc-controller:cycle-001:open",
+  "action": "open",
+  "state": "accepted",
+  "position_id": "11111111-1111-4111-8111-111111111111",
+  "error_code": null,
+  "created_at": 1893456000,
+  "updated_at": 1893456000
+}
+```
+The current OPEN allocator uses the new command UUID as the position UUID, so these two fields match. Persist both returned fields instead of deriving one in client code. A position ID in an accepted receipt does not prove that the canonical position exists yet, that its order was placed or that it filled.
 
-Do not automatically repeat a mutation after transport ambiguity. Trading commands reuse the exact immutable identity; credential issuance and template writes require their documented metadata/read reconciliation.
+## MODIFY: retain rows and adjust protection
 
-Read the [related guide](/api/commands-and-receipts) for lifecycle, units and recovery semantics.
+The next request assumes a **fresh** publication with revision `7` and exactly the OPEN/TP rows and synthetic slot IDs shown below. It moves the static SL to `69,300`, disables SLx and retains the OPEN and TP configuration. This is a complete request, not a patch. Do not reuse these assumed rows after fills or a manual change.
+
+```json
+{
+  "client_command_id": "btc-controller:cycle-001:modify-001",
+  "issued_at": 1893456060,
+  "expires_at": 1893456120,
+  "action": "modify",
+  "exchange_link_id": 17,
+  "instrument_id": "BTC-USDT-SWAP",
+  "position_id": "11111111-1111-4111-8111-111111111111",
+  "expected_revision": 7,
+  "request": {
+    "action": 1,
+    "exchange_link_id": 17,
+    "instrument_id": "BTC-USDT-SWAP",
+    "quantity_asset": "BTC",
+    "position_side": 1,
+    "open_order_type": 1,
+    "open_prices_atomic": [
+      "70000"
+    ],
+    "open_prices_scale": [
+      0
+    ],
+    "open_quantities_atomic": [
+      "1"
+    ],
+    "open_quantities_scale": [
+      3
+    ],
+    "order_grid_enabled": false,
+    "margin_mode": 1,
+    "sl_enabled": true,
+    "sl_type": 1,
+    "sl_step_percent": 1000000,
+    "sl_price_atomic": "69300",
+    "sl_price_scale": 0,
+    "sl_price_rearrangement": false,
+    "sl_order_type": 2,
+    "tp_enabled": true,
+    "tp_price_rearrangement": false,
+    "tp_grid_enabled": false,
+    "tp_order_type": 3,
+    "tp_prices_atomic": [
+      "72100"
+    ],
+    "tp_prices_scale": [
+      0
+    ],
+    "tp_quantities_atomic": [
+      "0"
+    ],
+    "tp_quantities_scale": [
+      0
+    ],
+    "tp_quantity_percents": [
+      1000000
+    ],
+    "tp_pnls": [
+      0
+    ],
+    "slx_enabled": false,
+    "open_slot_ids": [
+      "44444444-4444-4444-8444-444444444444"
+    ],
+    "tp_slot_ids": [
+      "55555555-5555-4555-8555-555555555555"
+    ]
+  }
+}
+```
+An accepted modification has its own receipt UUID and the existing position UUID:
+
+```json
+{
+  "id": "22222222-2222-4222-8222-222222222222",
+  "client_command_id": "btc-controller:cycle-001:modify-001",
+  "action": "modify",
+  "state": "accepted",
+  "position_id": "11111111-1111-4111-8111-111111111111",
+  "error_code": null,
+  "created_at": 1893456060,
+  "updated_at": 1893456060
+}
+```
+Read [modify positions](/api/modify-positions) before amending a physical order or removing a row. Omit unchanged leverage; asking to set it can cause exchange I/O before a later conflict is discovered.
+
+## TERMINATE: cancel pending work or close exposure
+
+```json
+{
+  "client_command_id": "btc-controller:cycle-001:terminate",
+  "issued_at": 1893456120,
+  "expires_at": 1893456180,
+  "action": "terminate",
+  "exchange_link_id": 17,
+  "instrument_id": "BTC-USDT-SWAP",
+  "position_id": "11111111-1111-4111-8111-111111111111"
+}
+```
+Do not send a position request, quantity or stale pending/open classification. The existing terminal owner reconciles fills, cancels pending work and closes remaining exposure as appropriate. A new acceptance is:
+
+```json
+{
+  "id": "33333333-3333-4333-8333-333333333333",
+  "client_command_id": "btc-controller:cycle-001:terminate",
+  "action": "terminate",
+  "state": "accepted",
+  "position_id": "11111111-1111-4111-8111-111111111111",
+  "error_code": null,
+  "created_at": 1893456120,
+  "updated_at": 1893456120
+}
+```
+See [termination outcomes](/api/terminate-positions) for durable close/cancel receipts and the separate checks for completed closure.
+
+## Admission errors versus execution outcomes
+
+These are errors from this HTTP submission, with the exact integration error envelope.
+
+HTTP `409 Conflict`, if a known client ID is reused with changed intent:
+
+```json
+{
+  "success": false,
+  "error": {
+    "code": "COMMAND_CONFLICT",
+    "message": "Command identity already belongs to a different payload"
+  }
+}
+```
+HTTP `400 Bad Request`, if API MODIFY omits the outer revision:
+
+```json
+{
+  "success": false,
+  "error": {
+    "code": "REVISION_REQUIRED",
+    "message": "Modification requires the current position revision"
+  }
+}
+```
+Other admission errors include `INVALID_JSON` (400), `SCOPE_MISMATCH` (400), `SCOPE_DENIED` (403), `STALE_COMMAND` (409), `PENDING_CAPACITY` (429), and `ADMISSION_UNAVAILABLE` (503). An acceptance commit whose result is unknown returns `ACCEPTANCE_UNCERTAIN` (503): retry the exact saved identity and payload, not a newly timestamped command.
+
+After `202`, execution errors appear in the **receipt**, not in a second HTTP submission response. For example, an otherwise valid modification with no earlier effects can later be `rejected` with `POSITION_REVISION_CONFLICT`; uncertain side effects instead remain `operator_required`. A receipt GET still returns HTTP `200` for either state. See [receipt states and recovery](/api/commands-and-receipts).
+
+## Submit a reviewed file
+
+```sh
+curl --fail-with-body \
+  -H "Authorization: Bearer ${LIFTX_API_KEY}" \
+  -H 'Content-Type: application/json' \
+  --data-binary @reviewed-command.json \
+  https://api.liftx.io/v1/commands
+```
+
+Create a current deadline only for a deliberately new intent. For a transport retry, retransmit the exact saved command. Identical known retries may return a later receipt state; they do not execute the mutation again. Use [receipt detail](/api/reference/get-v1-commands-get) for command progress and [position state](/api/position-state) or the [stream](/api/reference/get-v1-stream) for trading outcomes.

@@ -11,7 +11,15 @@ This is a state stream. Trading commands remain durable HTTP requests. The conne
 
 All channel controls belong to one exact `exchange_link_id`. A connection cannot switch to another link by sending another control. Use a separate authorized connection when another link is required, rather than multiplexing account authority implicitly.
 
-Instrument-restricted credentials cannot subscribe to link-wide balances, positions pages or private indexes. An exact-instrument ticker or authorized exact-position history remains subject to scope checks. Expiry has an exact connection deadline. Local revocation cancels registered streams, and an authority sweep detects out-of-process changes within its 30-second interval.
+Instrument-restricted credentials can subscribe only to authorized exact-instrument tickers. The current stream scope gate treats every other channel as a link aggregate, including `position_pnl_history`; those subscriptions require a key without instrument restrictions. An exact position ID does not bypass that gate. History still checks position ownership and exact link authority. There is no exact-position state subscription for an instrument-restricted key; use authorized exact-position HTTP reads when that restriction is required.
+
+Expiry has an exact connection deadline. Local revocation cancels registered streams, and an authority sweep checks out-of-process changes every 30 seconds. Registration precedes a final authority check before upgrade, so revocation cannot miss a newly registered lease.
+
+### Connection capacity
+
+The current service permits at most 128 concurrent integration streams per Base process. A stream holds its slot until disconnect. The shared WebSocket admission also permits at most 8 connections per user and 64 per client IP, counting other clients using that same admission owner. Each connection remains bound to one link. Integration-pool exhaustion returns HTTP 503; shared user/IP capacity returns HTTP 429 before upgrade.
+
+These are resource-safety bounds, separate from unmetered plan access. Reuse a connection for its link's permitted channels, and qualify capacity for the intended number of users, links and concurrent clients. A second strategy on the same link does not need a second stream solely because it has a different strategy identity.
 
 ## Client controls: JSON text frames
 
@@ -19,7 +27,7 @@ Instrument-restricted credentials cannot subscribe to link-wide balances, positi
 {
   "op":"subscribe",
   "channels":[
-    {"type":"positions","exchange_link_id":17,"status":"active","offset":0,"limit":50,"include_total":true,"request_id":1},
+    {"type":"positions","exchange_link_id":17,"status":"active","offset":0,"limit":50,"request_id":1},
     {"type":"positions_index","exchange_link_id":17},
     {"type":"orders_index","exchange_link_id":17}
   ]
@@ -37,7 +45,9 @@ Each message has 1–32 channels and at most 16 KiB. Fields are exact, unique an
 | `tickers` | Exact `instrument_id` | Same instrument | No |
 | `position_pnl_history` | Canonical `position_id`, positive safe-integer `request_id` | Exact same position and request ID | No |
 
-Position page offset is 0–10,000,000 and limit is 1–200. Each control can include at most one ticker channel and at most one position-history channel. History selection uses a monotonically increasing request ID within that connection; an identical current tuple can be repeated. Do not reuse an older request ID for a different history demand.
+Position-page byte fitting can return fewer rows than the requested `limit` while `has_more` is true. Advance the next offset by returned `positions.length`; an empty page with more indicated is incomplete/no progress, not a reason for an unbounded request loop.
+
+Position page offset is 0–10,000,000 and limit is 1–200. Request `include_total` only when a total is needed; pagination uses `has_more`. Each control can include at most one ticker channel and at most one position-history channel. History selection uses a monotonically increasing request ID within that connection; an identical current tuple can be repeated. Do not reuse an older request ID for a different history demand.
 
 ```json
 {"op":"resync","channels":[{"type":"positions_index","exchange_link_id":17}]}
@@ -135,6 +145,8 @@ Common fields are `exchange_link_id`, `kind`, `session_gen` (an exact decimal **
 
 Positions index messages also include `server_epoch`, `active_total` and `inactive_total`. These count positions, while the `items` array is an instrument index, not one row per position. The orders index is likewise an instrument membership index, not a full executable-order inventory.
 
+An order change produces an `orders_index` delta only when instrument membership changes. A partial fill, amendment or another open order on an already-present instrument can leave membership unchanged and emit no index delta. Observe attached order rows and cumulative execution accounting through `positions`; do not interpret `orders_index` as individual order/fill reports. There is no separate physical-order execution-report or command-receipt channel on this stream.
+
 ```json
 {
   "exchange_link_id":17,
@@ -177,5 +189,7 @@ A transport decoder alone is not a production SDK. A real client must implement 
 ## Reconnect and backpressure
 
 Slow consumers are disconnected or instructed to rebuild snapshots under bounded backpressure. Reconnect with bounded backoff and jitter, discard obsolete session mappings, obtain fresh complete state and only then resume dependent decisions. A stream gap is not evidence that orders were canceled or that exposure is zero.
+
+The stream can coalesce successive publications into current state. It does not promise delivery of every intermediate transition or durable event replay. Track position revisions and cumulative execution amounts, and reconcile after a gap; counting received messages is not fill accounting. Command acceptance and receipt changes remain distinct from state publication. Read the known receipt when its outcome is needed, including rejection or expiry that produces no position update.
 
 Use a single consumer state owner per connection. Coalesce related state updates; avoid spawning one exchange socket, polling loop or unconstrained worker for every position or strategy.
