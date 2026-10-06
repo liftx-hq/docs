@@ -168,7 +168,7 @@ When `snapshot_required` is true, do not continue making trading decisions from 
 
 ## Minimal decoder example
 
-Download [decode_stream.py](/examples/api/decode_stream.py) for a bounded standard-library parser of the documented framing, balance and ticker wire formats. It does not open a connection, store credentials, reconstruct position FSMs or submit commands. JSON channels are returned as decoded values for a separate versioned application model.
+Download [decode_stream.py](https://raw.githubusercontent.com/liftx-hq/docs/main/examples/api/decode_stream.py) for a bounded standard-library parser of the documented framing, balance and ticker wire formats. It does not open a connection, store credentials, reconstruct position FSMs or submit commands. JSON channels are returned as decoded values for a separate versioned application model.
 
 The decoder retains fractional JSON numbers as Python `decimal.Decimal`, integers as exact Python integers and fixed-point coefficient strings as strings. It does not convert money through binary floating-point or turn a large finite exponent into floating-point infinity. Application schema validation must still reject values outside each field's documented bounds.
 
