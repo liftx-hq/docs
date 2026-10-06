@@ -1,0 +1,70 @@
+---
+title: TradingView placeholders
+description: Which TradingView substitutions belong in Liftx JSON, and when Pine must construct the message.
+---
+
+TradingView placeholders substitute alert-time values into supported alert messages. Liftx's ordinary JSON uses `{{timenow}}` for the trigger timestamp. The fixed market, permissions and position request still come from the Liftx setup.
+
+## Supported ordinary-message substitution
+
+```json
+{
+  "fired_at": "{{timenow}}",
+  "max_lag_seconds": 60
+}
+```
+
+This is a fragment of `alert`, not a complete webhook message. TradingView replaces `{{timenow}}` with UTC text such as `2030-01-01T12:00:00Z`. Liftx requires that exact whole-second UTC shape. The synthetic date is illustrative; replaying it does not produce a current event.
+
+Do not replace trigger time with the bar's opening time. The deadline and identity must describe the event being emitted.
+
+## Placeholder reference and Liftx boundaries
+
+| Placeholder | TradingView value | Use with Liftx |
+| --- | --- | --- |
+| `{{timenow}}` | Trigger time, second precision | Keep in ordinary `alert.fired_at` |
+| `{{time}}` | Opening time of the triggering bar | Not an alternative for `fired_at`; may already be stale |
+| `{{ticker}}` | Chart symbol text | Does not replace a canonical `instrument_id` |
+| `{{exchange}}` | Chart data-feed exchange | Does not choose the authenticated Liftx exchange link |
+| `{{open}}`, `{{high}}`, `{{low}}`, `{{close}}` | Chart bar prices | Do not insert decimal prices into atomic coefficient fields |
+| `{{volume}}` | Chart bar volume | Not an order size or canonical quantity |
+| `{{interval}}` | Alert resolution; can report `1` for price/Range alerts | Not a command identity or ordering sequence |
+| `{{syminfo.currency}}`, `{{syminfo.basecurrency}}` | Chart asset codes | Not authority to change the selected instrument or cap unit |
+| `{{plot_0}}` through `{{plot_19}}` | Indicator output values | Can inform a custom strategy, but are not Liftx state |
+| `{{plot("Name")}}` | Supported named plot output | Same boundary as numbered plots; observe provider naming restrictions |
+| `{{strategy.order.alert_message}}` | The order's Pine-computed message | Use as the entire Message field for a deliberately implemented order-fill integration |
+| `{{strategy.order.action}}` | Emulator `buy` or `sell` | No automatic translation to Liftx open, terminate or reversal |
+| `{{strategy.order.contracts}}` | Emulator order quantity | Not necessarily the adapter's canonical unit |
+| `{{strategy.order.price}}` | Emulator fill price | Not an actual Liftx/exchange fill |
+| `{{strategy.order.id}}` | Script order identifier | Can repeat; insufficient as a unique command or lifecycle reference |
+| `{{strategy.order.comment}}` | Script order comment | Not a command unless the script deliberately constructs the required envelope elsewhere |
+| `{{strategy.position_size}}` | Emulator signed position size | Not Liftx exposure |
+| `{{strategy.market_position}}`, `{{strategy.prev_market_position}}` | Emulator direction states | Not confirmation of Liftx open/flat state |
+| `{{strategy.market_position_size}}`, `{{strategy.prev_market_position_size}}` | Emulator absolute sizes | Not authority for partial-close sizing or current position modification |
+
+These provider substitutions are described in [TradingView's placeholder guide](https://www.tradingview.com/support/solutions/43000531021-how-to-use-a-variable-value-in-alert/). Liftx's schema intentionally admits only its documented fields; adding chart metadata as arbitrary JSON properties is rejected.
+
+## Why a decimal placeholder is not an atomic price
+
+Liftx represents decimals as a coefficient string and scale. A price of 123.45 is `"12345"` at scale `2`:
+
+```json
+{
+  "open_prices_atomic": ["12345"],
+  "open_prices_scale": [2]
+}
+```
+
+Substituting `{{close}}` might produce `"123.45"`, which is not an integer coefficient. Choosing a scale does not remove the decimal point. Dynamic prices require explicit conversion in Pine or a controller, using the selected instrument's tick precision and the [decimal contract](/api/position-request). Quantities also need correct base/quote interpretation, lot validation and the setup's canonical cap.
+
+Do not assume the chart feed and execution venue have identical tick sizes, trading sessions, contract multipliers or supported order types.
+
+## Three message mechanisms
+
+| Alert mechanism | Message construction |
+| --- | --- |
+| Ordinary price/indicator or `alertcondition()` alert | Put the generated complete ordinary JSON in Message. TradingView substitutes supported placeholders. |
+| Pine `alert()` | Pine computes the complete dynamic JSON passed to `alert()`. Use live Pine values; do not expect placeholder expansion inside the computed text. |
+| Strategy order-fill alert | Message is `{{strategy.order.alert_message}}`; every relevant order supplies the complete envelope in `alert_message`. Do not rely on recursive substitution inside that envelope. |
+
+Use one mechanism per ordered producer. Mixing order-fill messages and `alert()` commands for the same intent can produce two independent events. See [strategy order-fill integration](/integrations/tradingview/strategy-alerts).

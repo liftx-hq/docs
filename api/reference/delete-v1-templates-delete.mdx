@@ -1,0 +1,31 @@
+---
+title: "Delete an order template"
+description: "Deletes the exact account-owned template, not a position or its orders."
+openapi: "/api/openapi.json DELETE /v1/templates/delete"
+playground: "simple"
+---
+
+<Note>Preview contract. Production availability remains subject to activation and release qualification. Examples are synthetic; the documentation cannot submit requests.</Note>
+
+## Authorization
+
+`templates:write`; account template authority.
+
+## Behavior
+
+Deletes the exact account-owned template, not a position or its orders. Success is 204 with no body; absent/inaccessible templates return the owner error. Reconcile an ambiguous response before explicitly repeating.
+
+## Request example
+
+```http
+DELETE /v1/templates/delete?id=44444444-4444-4444-8444-444444444444
+Authorization: Bearer YOUR_API_KEY_FROM_PRIVATE_STORAGE
+```
+
+## Response and errors
+
+The generated response schema below is the wire contract. A successful response has no body; do not attempt JSON decoding. Inspect HTTP status and Content-Type before decoding failures; reused trading routes may return JSON or plain text. Authentication, entitlement and exact link/instrument restrictions apply in addition to endpoint validation. See [errors and recovery](/api/errors-and-limits).
+
+Do not automatically repeat a mutation after transport ambiguity. Trading commands reuse the exact immutable identity; credential issuance and template writes require their documented metadata/read reconciliation.
+
+Read the [related guide](/api/templates-and-history) for lifecycle, units and recovery semantics.

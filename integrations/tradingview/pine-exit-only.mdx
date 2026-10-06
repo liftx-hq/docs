@@ -1,0 +1,120 @@
+---
+title: Exit-only Pine example
+description: Confirmed-bar group termination without any opening payload or inferred position reference.
+---
+
+<Warning>
+Public sample only: dummy key, synthetic link/instrument and an intentionally expired credential timestamp. It starts disabled and cannot connect as published. Obtain the fully populated private script from Liftx, and keep it disabled while production execution is unavailable. Never publish the real generated copy.
+</Warning>
+
+The Exit-only example never opens positions. It emits a strategy or explicitly authorized market termination when the confirmed close crosses below a configured threshold.
+
+## Configure the real generated copy
+
+1. Select the intended linked account and instrument in Liftx Trading.
+2. Create an **Advanced** setup with terminate permission only. No imported opening request is required, but the selected market must resolve its unit and the setup still requires a positive quantity cap. That cap does not grant OPEN permission.
+3. Decide which positions the new setup can actually manage. A fresh namespace has no own positions; **This strategy’s positions** may therefore match none. To select manual or other strategy positions, explicitly grant market termination and choose **All positions in this market**.
+4. Generate **Exit-only · confirmed-bar termination signals**.
+5. Use standard time-based candles of at least one minute. Set a future **Start time** and a positive **TERMINATE when close crosses below** threshold.
+6. After activation, enable it and create **Any alert() function call** before Start time, using the Liftx webhook URL.
+
+The example does not infer an exact position from chart state. Every group freezes the captured membership, up to 64 targets. It is not a permanent market pause and does not cover positions opened after capture. Review child receipts and remaining exposure.
+
+## Complete source
+
+[Download the public Pine example](/examples/tradingview/exit-only.pine).
+
+```pine
+//@version=6
+indicator("Liftx exit-only signals", overlay = true)
+
+// PRIVATE: this script contains a restricted credential. Never publish/share it.
+// Fixed target: link 17, instrument COPY_EXACT_CATALOG_ID.
+// The chart supplies signal data; it cannot change this fixed trading target.
+// One key is one ordered producer: use a separate setup/key for another alert
+// or independent strategy. The same running alert can reuse its key for cycles.
+// Never mix this Pine alert with an ordinary OPEN/EXIT alert pair on this key.
+// Use an approved demo link. Prepare while disabled; enable only after Liftx
+// webhook activation. Set future times in the chart's timezone, then create
+// ONE alert: this indicator / Any alert() function call / Liftx webhook URL.
+// Changing chart inputs does not update the server's frozen alert copy.
+// Never restart/recreate an alert with this setup. Use a new Liftx setup instead.
+
+const int liftxCredentialExpiresAt = 1000
+
+// Termination selection does not change the setup's immutable opening policy.
+// "One strategy position" uses the exact retained lifecycle reference.
+// "This strategy’s positions" includes earlier unresolved cycles from this key.
+// "All positions in this market" includes manual and other strategies' Liftx
+// positions on the fixed link/instrument and requires the explicit setup grant.
+string liftxTerminateSelection = input.string("This strategy’s positions", "On a termination signal", options = ["This strategy’s positions"])
+string liftxTerminateTarget = liftxTerminateSelection == "This strategy’s positions" ? "strategy" : ""
+if liftxTerminateTarget == ""
+    runtime.error("Invalid termination target. Do not widen scope; use an authorized selection.")
+
+// Every intent uses this one envelope; group targets omit position references.
+liftxMessage(string action, string positionRef, int positionStarted, int sequence, int issued, string requestJSON, string target = "position") =>
+    string commandID = "11111111-1111-4111-8111-111111111111:" + str.tostring(sequence) + ":" + action
+    string message = "{\"token\":\"REPLACE_WITH_RESTRICTED_TRADINGVIEW_KEY\",\"command\":{\"client_command_id\":" + '"' + commandID + '"'
+    message += ',"issued_at":' + str.tostring(issued) + ',"expires_at":' + str.tostring(issued + 60)
+    message += ',"action":"' + action + '"' + ",\"exchange_link_id\":17,\"instrument_id\":\"COPY_EXACT_CATALOG_ID\",\"source_instance_id\":\"11111111-1111-4111-8111-111111111111\",\"binding_revision\":1"
+    message += ',"target":"' + target + '"'
+    message += target == "position" ? ',"client_position_id":"' + positionRef + '","position_started_at":' + str.tostring(positionStarted) : ""
+    message += ',"sequence":' + str.tostring(sequence)
+    message += (requestJSON == "" ? "" : ',"request":' + requestJSON) + '}}'
+    message
+
+// Confirmed-bar signal example, not a recommended trading strategy.
+// Use standard time-based candles of at least one minute. No historical orders.
+// Group termination runs even without a local OPEN signal, including zero targets.
+// Termination wins if custom entry and exit conditions coincide on one bar.
+// Exit-only: this example never opens positions or infers an active reference.
+
+bool liftxEnabled = input.bool(false, "Enable exit-only signals", tooltip = "Emits confirmed-bar intents only. No execution feedback or automatic delivery retry.")
+int liftxStartAt = input.time(0, "Start time (chart timezone)")
+float liftxTerminateBelow = input.float(0.0, "TERMINATE when close crosses below", minval = 0.0)
+
+// Replace only these signal conditions for your own strategy. They are chart
+// prices, not saved order/protection prices or Liftx execution feedback.
+bool liftxTerminateSignal = ta.crossunder(close, liftxTerminateBelow)
+
+varip bool liftxArmed = false
+varip int liftxLastBar = 0
+
+if barstate.isrealtime and liftxEnabled
+    if not liftxArmed
+        if not chart.is_standard or not (timeframe.isminutes or timeframe.isdwm)
+            runtime.error("Use a standard time-based chart of at least one minute.")
+        if liftxStartAt <= timenow or liftxStartAt >= liftxCredentialExpiresAt
+            runtime.error("Create this alert before a future Start time, before credential expiry. After interruption, inspect Liftx and create a new setup; do not restart this alert.")
+        if liftxTerminateBelow <= 0
+            runtime.error("Choose a positive TERMINATE threshold price.")
+        liftxArmed := true
+    if timenow >= liftxCredentialExpiresAt
+        runtime.error("Credential expired. Signals have stopped; inspect Liftx and manage remaining orders or exposure there.")
+    if barstate.isconfirmed and time_close >= liftxStartAt and time_close > liftxLastBar
+        liftxLastBar := time_close
+        if timenow < time_close or timenow >= time_close + 60000
+            runtime.error("The confirmed bar is outside the 60-second delivery window. Stop this alert and inspect Liftx before creating a new setup.")
+        int issued = int(time_close / 1000)
+        if liftxTerminateSignal
+            alert(liftxMessage("terminate", "", 0, time_close, issued, "", liftxTerminateTarget), alert.freq_once_per_bar_close)
+
+// Same-bar event identity and timestamps are deterministic. Delivery retries
+// must preserve the original full JSON. No state or exposure recovery on restart.
+plot(liftxArmed ? 1 : 0, "Local signals armed (not execution)", display = display.data_window)
+
+// Missing updates, credential expiry, stopped alerts, or delivery failure can
+// prevent termination. Signal state never means accepted, filled, canceled or flat.
+// The chart's local state is independent of the server alert and its delivery.
+// After an interruption, stop the alert and inspect Activity AND the actual
+// positions in Liftx. Manage remaining orders and exposure there.
+```
+
+## Before adapting the sample
+
+The generated private copy replaces the dummy `token`, link, catalog ID, source UUID, binding revision and `liftxCredentialExpiresAt`. This Exit-only script has no opening payload. Do not turn the public sample into a live sender by changing only its token.
+
+Retain one ordered producer per setup, preserve event identities on delivery retries and never reuse a lifecycle reference for a new position. [Pine setup](/integrations/tradingview/pine), [canonical command fields](/integrations/tradingview/command-format) and [target semantics](/integrations/tradingview/targets-and-lifecycles) explain the contract.
+
+After any interruption, inspect Activity and actual positions, manage remaining orders/exposure and create a fresh source for a new alert. The example has no execution feedback, automatic delivery retry, automatic rearm or restart recovery.

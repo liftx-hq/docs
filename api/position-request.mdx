@@ -1,0 +1,172 @@
+---
+title: "Complete position JSON"
+description: "Every OPEN, SL, SLx, TP, grid and modification field in the canonical request."
+---
+
+API OPEN/MODIFY and advanced TradingView signals embed one canonical `PositionRequest`. Guided TradingView setup saves this same request during setup. There is no separate exchange-specific webhook order language.
+
+The safest starting point is a valid Liftx order draft and **Use current order setup** in integration settings. Export a request for the exact account and instrument. Adapter capabilities and current trading state still decide whether a well-formed request can execute.
+
+## Market, direction and decimal units
+
+| Field | Contract |
+| --- | --- |
+| `action` | `1` for this open/edit request model; outer command action chooses OPEN or MODIFY |
+| `exchange_link_id` | Exact authorized account link; equal to the command envelope |
+| `instrument_id` | Exact catalog identifier; equal to the envelope; preserves case and bytes |
+| `quantity_asset` | Catalog base or quote asset in which input quantity rows are expressed |
+| `position_side` | `1` long or `2` short; immutable after creation |
+| `trading_currency` | Eligible spot settlement currency when applicable; preserve current value on modification |
+| `margin_mode` | Derivative creation: `1` cross or `2` isolated; immutable thereafter |
+| `leverage` | Positive derivative creation leverage, within the exact instrument/account limit; wire maximum 32,767. Omit unchanged leverage on modification. |
+
+Spot versus derivative, dated versus perpetual, and linear versus inverse come from the chosen catalog instrument, not a `spot/futures` boolean or ticker suffix. Not every account supports every direction, margin mode or order role.
+
+A coefficient string `"12345"` with scale `2` means `123.45`. Coefficients have at most 128 digits; scales are 0–30. Array pairs have matching lengths, and related order arrays preserve row order. Decode bounds allow at most 65,535 rows per batch, while actual adapter limits and the 256 KiB request bound are stricter operational constraints.
+
+An input of `"525497"` at scale `1` with `quantity_asset:"USDT"` means **52,549.7 USDT**. It is not 52,549.7 BTC and not a margin amount. A TradingView maximum is checked after canonical normalization: base units for spot/linear, quote-face units for inverse. It is a per-position cap, not an aggregate strategy budget or guaranteed quote-spending cap.
+
+## OPEN rows
+
+| Field | Contract |
+| --- | --- |
+| `open_order_type` | `1` limit, `2` market, `3` virtual limit, subject to supported order roles |
+| `open_prices_atomic`, `open_prices_scale` | Price rows in fixed-point form |
+| `open_quantities_atomic`, `open_quantities_scale` | Quantity rows in `quantity_asset` units |
+| `order_grid_enabled` | Enables the existing OPEN grid configuration |
+| `num_open_orders` | Number of OPEN rows for the enabled grid |
+| `open_slot_ids` | On modification, exact current stable OPEN slot identities aligned with the intended rows |
+
+All four OPEN arrays are required even for a market order. Preserve the exported builder convention for market price rows; a market order is not a guarantee of that indicated price. Do not infer adapter support from the numeric order-type enum alone.
+
+## Stop loss
+
+| Field | Contract |
+| --- | --- |
+| `sl_enabled` | Required switch controlling ordinary SL |
+| `sl_price_rearrangement` | Required when SL is enabled; Liftx recalculates its price from the configured reference as exposure changes |
+| `sl_order_type` | Required when SL is enabled; supported role-specific order type |
+| `sl_type` | `1` distance from the first OPEN row price; `2` distance from the average entry reference |
+| `sl_step_percent` | Percentage points × 1,000,000; 2% is 2,000,000 |
+| `sl_price_atomic`, `sl_price_scale` | Exact initial/static SL price |
+
+A static SL price and a rearranged SL have different intent. Use the builder's appropriate fields instead of assuming that a price copied from a chart remains the effective fee/fill-aware stop forever.
+
+## Take profit
+
+| Field | Contract |
+| --- | --- |
+| `tp_enabled` | Required switch controlling TP |
+| `tp_price_rearrangement` | Required when TP enabled; applies the configured fee-aware reference logic |
+| `tp_grid_enabled` | Required when TP enabled; enables multiple TP rows |
+| `num_tp_orders` | Count for an enabled TP grid |
+| `tp_order_type` | Required supported TP order type |
+| `tp_prices_atomic`, `tp_prices_scale` | Required price rows |
+| `tp_quantities_atomic`, `tp_quantities_scale` | Required quantity rows; builder may use zero placeholders because actual exposure drives protection sizing |
+| `tp_quantity_percents` | Required positive int32 weights; retain the builder's normalization convention |
+| `tp_pnls` | Required price-distance percentages; static unused entries may be zero |
+| `tp_slot_ids` | On modification, current stable TP slots aligned with intended rows |
+
+A single full TP uses weight `1000000`. Grid weights use percentage points × 1,000,000, so a 50/50 grid uses `[50000000,50000000]`. Existing protection normalization handles this distinction. Do not reinterpret a single full TP as a 1% close.
+
+For rearranged TP, `tp_pnls` measures positive **price distance from fee-aware breakeven**, multiplied by 1,000,000 and bounded to 100,000,000 (100%). It is not leveraged ROI. Liftx sizes protection against actual exposure; zero builder quantity placeholders do not mean the intended exit is zero.
+
+## SLx modes
+
+`slx_enabled` is required. SLx is owned by Liftx once configured; the strategy does not need to send each trailing tick.
+
+| Mode or option | Fields | Meaning |
+| --- | --- | --- |
+| TP-trigger trailing | `slx_tp_trailing_enabled` | Requires TP. Mutually exclusive with price-trigger trailing. |
+| First TP trigger | `slx_tp_breakeven` | One-based TP trigger that first moves the stop to breakeven |
+| Continue after each TP | `slx_each_tp_trailing` | Subsequent configured triggers trail using the previous TP |
+| Price-trigger trailing | `slx_sl_trigger_price_trailing_enabled` | Uses price-distance activation rather than TP events |
+| Activation distance | `slx_sl_trigger_price_trailing_pl_percent_activation` | Percentage points × 1,000,000 |
+| Trailing indent | `slx_sl_trigger_price_trailing_indent_percent` | Percentage points × 1,000,000 |
+| Trailing step | `slx_sl_trigger_price_trailing_step` | Percentage points × 1,000,000 |
+| Breakeven alternative | `slx_sl_trailing_breakeven_enabled` | Price-trigger mode can use breakeven instead of ordinary indent/step |
+| Breakeven indent | `slx_sl_trailing_breakeven_indent_percent` | Percentage points × 1,000,000 |
+| Initial activation price | `slx_activation_price_atomic`, `slx_activation_price_scale` | Optional paired initial price |
+| Initial SLx price | `slx_price_atomic`, `slx_price_scale` | Optional paired initial stop price |
+
+Do not enable both trigger families in one request. Feature applicability, positive distances and reference-price constraints are validated by the existing protection logic. Enabling every boolean is not a valid “maximum functionality” request.
+
+## Exact order amendments
+
+`order_amendments` contains the current `slot_id`, exact physical Liftx `order_id` UUID, and paired `price_atomic`/`price_scale` and/or `quantity_atomic`/`quantity_scale`. A venue order ID is not interchangeable with the Liftx UUID. Slot identity alone cannot safely identify a replaced physical order generation.
+
+Use the current modification publication. Removing a row or slot from the complete intended configuration can request cancellation; preserving its exact identity expresses continuity. Read [modification](/api/modify-positions) before constructing a request.
+
+## Complete illustrative derivative request
+
+This request uses a fictitious link and instrument and fixed synthetic quantities. It demonstrates the shape, not valid live venue configuration, position sizing advice or an immediately executable strategy.
+```json
+{
+  "action": 1,
+  "exchange_link_id": 17,
+  "instrument_id": "COPY_EXACT_CATALOG_ID",
+  "quantity_asset": "BTC",
+  "position_side": 1,
+  "open_order_type": 1,
+  "open_prices_atomic": [
+    "70000"
+  ],
+  "open_prices_scale": [
+    0
+  ],
+  "open_quantities_atomic": [
+    "1"
+  ],
+  "open_quantities_scale": [
+    4
+  ],
+  "order_grid_enabled": false,
+  "margin_mode": 1,
+  "leverage": 2,
+  "sl_enabled": true,
+  "sl_type": 1,
+  "sl_step_percent": 2000000,
+  "sl_price_atomic": "68600",
+  "sl_price_scale": 0,
+  "sl_price_rearrangement": true,
+  "sl_order_type": 2,
+  "slx_enabled": true,
+  "slx_tp_trailing_enabled": false,
+  "slx_each_tp_trailing": false,
+  "slx_sl_trigger_price_trailing_enabled": true,
+  "slx_sl_trigger_price_trailing_pl_percent_activation": 1000000,
+  "slx_sl_trigger_price_trailing_indent_percent": 500000,
+  "slx_sl_trigger_price_trailing_step": 250000,
+  "slx_sl_trailing_breakeven_enabled": false,
+  "tp_enabled": true,
+  "tp_price_rearrangement": true,
+  "tp_grid_enabled": false,
+  "tp_order_type": 1,
+  "tp_prices_atomic": [
+    "72100"
+  ],
+  "tp_prices_scale": [
+    0
+  ],
+  "tp_quantities_atomic": [
+    "0"
+  ],
+  "tp_quantities_scale": [
+    0
+  ],
+  "tp_quantity_percents": [
+    1000000
+  ],
+  "tp_pnls": [
+    3000000
+  ]
+}
+```
+
+Download [position-request.json](/examples/api/position-request.json). Optional inactive fields can be omitted; conditionally enabled fields must remain complete. The [OpenAPI contract](/api/openapi.json) defines nullability and wire bounds.
+
+## Modification boundaries
+
+API MODIFY requires an outer `expected_revision`. Preserve immutable direction, margin mode, spot settlement and current row identities. Do not submit the original OPEN request after fills or manual changes.
+
+TradingView capped modification preserves OPEN rows; use the direct API for supported OPEN amendments. No group modification exists because positions can have different fills, slots and generations. Pine cannot retrieve the current Liftx state or read webhook responses; state-dependent changes need a controller using the API and streams.

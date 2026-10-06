@@ -1,0 +1,90 @@
+---
+title: "Templates, history and reporting"
+description: "Manage account templates and consume canonical P&L reporting safely."
+---
+
+Templates store reusable configuration. Creating, updating or deleting a template does not place or cancel an exchange order and creates no trading-command receipt.
+
+## Template permissions and lifecycle
+
+| Operation | Permission | Successful result |
+| --- | --- | --- |
+| `GET /templates/list` | `read` | Bare JSON array of templates |
+| `GET /templates/get?id=…` | `read` | Bare template object |
+| `POST /templates/create` | `templates:write` | Created template object, with server-owned identity/timestamps |
+| `PUT /templates/update?id=…` | `templates:write` | `204`, empty body |
+| `DELETE /templates/delete?id=…` | `templates:write` | `204`, empty body |
+
+Templates belong to the authenticated account, not an instrument-specific integration namespace. A template key can therefore affect account templates even when its trading scope is narrower.
+
+Template requests retain the existing full model. They are not PositionRequest objects: templates contain relative grid settings/weights, and no exact linked account plus instrument order execution. Writes are bounded at 64 KiB.
+
+## Read, edit and save a template
+
+```sh
+curl --fail-with-body --get \
+  -H "Authorization: Bearer ${LIFTX_API_KEY}" \
+  --data-urlencode 'id=44444444-4444-4444-8444-444444444444' \
+  https://api.liftx.io/v1/templates/get
+```
+
+Start from the returned full template, edit its intended configuration, and send it to update:
+
+```sh
+curl --fail-with-body --request PUT \
+  -H "Authorization: Bearer ${LIFTX_API_KEY}" \
+  -H 'Content-Type: application/json' \
+  --data-binary @reviewed-template.json \
+  'https://api.liftx.io/v1/templates/update?id=44444444-4444-4444-8444-444444444444'
+```
+
+The query ID selects the current account-owned template. The server owns account identity; caller-supplied ownership does not grant another account's authority. Creation assigns its own UUID and timestamps even though the full request codec requires those fields to be present. See the generated reference for the exact model.
+
+If a template write times out, reconcile through template reads before an explicit retry. Template CRUD does not implement the trading-command identity/receipt protocol; blind retry of creation can produce another template.
+
+## Template field families
+
+- Identity and timestamps: `id`, `user_id`, `name`, `created_at`, `updated_at`.
+- Product/direction/margin: `instrument_type`, `position_side`, optional `margin_mode`, `leverage`.
+- OPEN: `order_grid_enabled`, optional count/step/factor, `open_price_deltas`, `open_quantity_percent`, `open_order_type`.
+- SL/SLx: enable flags, reference/percent settings, supported order type and the selected SLx trigger family.
+- TP: enable/rearrangement/grid flags, optional count/step/factor, `tp_pnls`, `tp_quantity_percent`, `tp_order_type`.
+
+Preserve exported integer scaling. Template singular `open_quantity_percent`/`tp_quantity_percent` names are different from the position request's `tp_quantity_percents`. Do not rename fields by analogy.
+
+## Dashboard history
+
+```sh
+curl --fail-with-body --get \
+  -H "Authorization: Bearer ${LIFTX_API_KEY}" \
+  --data-urlencode 'exchange_link_id=17' \
+  --data-urlencode 'environment=demo' \
+  --data-urlencode 'currency=USDT' \
+  --data-urlencode 'market=futures' \
+  https://api.liftx.io/v1/dashboard/history
+```
+
+Use the link's actual environment and a supported reporting currency. `market` is reporting selection `all`, `spot` or `futures`; it is not an execution instrument selector. Supply either positive Unix-second `before` or `after`, never both. Optional `pair_id` comes from the reporting pair catalog.
+
+The response contains `revision`, `scope`, `as_of`, `points`, `before`, `after` and `selection`. Retain its completeness/coverage information. Historical values and current position state answer different questions; an accounting history page is not an execution acknowledgement.
+
+## Reporting pairs
+
+```sh
+curl --fail-with-body --get \
+  -H "Authorization: Bearer ${LIFTX_API_KEY}" \
+  --data-urlencode 'exchange_link_id=17' \
+  --data-urlencode 'environment=demo' \
+  --data-urlencode 'currency=USDT' \
+  --data-urlencode 'market=all' \
+  --data-urlencode 'search=BTC' \
+  https://api.liftx.io/v1/dashboard/pairs
+```
+
+Follow `next_cursor` unchanged while it is nonempty. Pair options are reporting identities drawn from actual trading dimensions, including closed-only pairs. A `pair_id` is not a canonical executable `instrument_id`. Do not derive one from the other.
+
+Both dashboard endpoints are link aggregates. Instrument-restricted keys cannot use them. Snapshot admission may return `429`; temporary reporting unavailability can return `503` with `Retry-After`. Back off instead of multiplying polling workers.
+
+## Position P&L history
+
+`GET /v1/positions/pnl-history?id=…` reads an authorized exact position's canonical history. An optional positive `after` boundary requests subsequent data. Preserve fixed-point decimals and UTC timestamps. A scoped `position_pnl_history` stream subscription supplies notifications that tell the client when to read or reset history; it is not a second trading engine.

@@ -1,0 +1,31 @@
+---
+title: "Read modification state"
+description: "Returns the current active Position publication with revision, slots and physical order identities."
+openapi: "/api/openapi.json GET /v1/positions/get-for-modification"
+playground: "simple"
+---
+
+<Note>Preview contract. Production availability remains subject to activation and release qualification. Examples are synthetic; the documentation cannot submit requests.</Note>
+
+## Authorization
+
+`read` for the exact active position.
+
+## Behavior
+
+Returns the current active Position publication with revision, slots and physical order identities. It is not a ready-to-submit PositionRequest. Construct a complete intended request, preserve current rows and send its revision as expected_revision on a new MODIFY command. A stale or absent active runtime position is not a safe basis for modification.
+
+## Request example
+
+```http
+GET /v1/positions/get-for-modification?id=11111111-1111-4111-8111-111111111111&exchange_link_id=17&instrument_id=COPY_EXACT_CATALOG_ID
+Authorization: Bearer YOUR_API_KEY_FROM_PRIVATE_STORAGE
+```
+
+All IDs and dates are illustrative. URL-encode opaque query values and supply each allowed key once. Optional filters and their types appear in the generated schema below.
+
+## Response and errors
+
+The generated response schema below is the wire contract. Preserve fixed-point strings, nullable fields and endpoint-specific envelopes. Inspect HTTP status and Content-Type before decoding failures; reused trading routes may return JSON or plain text. Authentication, entitlement and exact link/instrument restrictions apply in addition to endpoint validation. See [errors and recovery](/api/errors-and-limits).
+
+Read the [related guide](/api/modify-positions) for lifecycle, units and recovery semantics.

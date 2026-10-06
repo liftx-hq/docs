@@ -1,0 +1,64 @@
+---
+title: "Session-owned Settings API"
+description: "Document credential administration without granting it to trading API keys."
+---
+
+These routes document the Liftx Settings application's authenticated contract. They are **not ordinary bot endpoints**. An API key or TradingView capability cannot create keys, expand its permissions, change account security or authenticate these routes.
+
+Use [Settings → Integrations](https://app.liftx.io/settings/integrations) for customer administration. The web application preserves its session and CSRF boundary. The reference shows Base path contracts; it does not instruct third-party clients to bypass the application session.
+
+## Operations
+
+| Method/path | Purpose |
+| --- | --- |
+| `GET /integrations/credentials` | Credential metadata and `tradingview_available` |
+| `POST /integrations/credentials` | Issue a key after exact fresh approval; one-time secret |
+| `POST /integrations/credentials/revoke` | Revoke one credential UUID |
+| `GET /integrations/bindings` | Unrevoked TradingView setup metadata |
+| `POST /integrations/bindings` | Create an approved exact TradingView binding and credential |
+| `POST /integrations/bindings/revoke` | Disconnect an integration namespace |
+| `POST /integrations/reauth/start` | Start five-minute purpose/payload-bound fresh authentication |
+| `POST /integrations/reauth/verify` | Verify password or bound Apple proof and MFA when required |
+| `GET /integrations/commands` | Account-level Activity receipt page |
+| `GET /integrations/commands/get` | Exact account-owned receipt and group detail |
+
+## Fresh approval flow
+
+1. Allocate a canonical UUID `operation_id` for the exact draft.
+2. Start with `purpose:"credential"` or `"binding"` and the full proposed request.
+3. Use an offered authentication method. The Apple flow must use the returned nonce and the subject already linked to this account.
+4. Verify exactly one of `password` or `apple_token`, plus `mfa_code` when required.
+5. Issue the exact approved request with the same operation ID before approval expiry.
+
+The approval binds the operation ID, session bearer, purpose and payload digest. It is consumed atomically. Five proof attempts share one five-minute budget. This is fresh approval within the same account, not account linking or a new login identity.
+
+## Credential request
+
+```json
+{
+  "name":"Demo controller",
+  "kind":"api",
+  "scopes":["read","positions:open","positions:modify","positions:terminate"],
+  "exchange_link_ids":[17],
+  "instrument_ids":["COPY_EXACT_CATALOG_ID"],
+  "expires_at":1893542400
+}
+```
+
+This is a nonoperational shape example. A real expiry must be in the future and within one year of the request. Optional `integration_id` is for replacement within an existing exact namespace policy.
+
+The issuance response contains `credential` metadata and a one-time `secret` on new issuance. A committed duplicate cannot recover the secret. After a lost response, inspect metadata and revoke a key whose secret was not retained before explicitly creating another.
+
+## TradingView binding policy
+
+In addition to restricted credential fields, a binding has `mode`, `position_mode`, `allow_market_terminate`, positive decimal-string `max_quantity`, fresh source UUID and guided `position_request` when applicable. One exact link and instrument are required. The returned immutable `revision` accompanies subsequent signals.
+
+`single`/`multiple` controls OPEN occupancy, while the signal's exact-position/strategy/market target controls what termination selects. The explicit market grant is additional authority, including manual and other strategies' positions in that exact market. It is not enabled by choosing multiple-position mode.
+
+## Metadata, retention and revocation
+
+Active metadata is listed first, followed by recent history, up to 100 rows. Inactive credentials become eligible for cleanup 30 days after their own expiry or revocation, provided retained command evidence no longer references them. Unrevoked keyless TradingView setups remain visible for disconnection. A credential's expiry does not itself remove its setup or free the unrevoked-binding capacity.
+
+Export metadata you need beyond its retention window without exporting secrets. The Settings Activity list retains the command receipt semantics described in [commands and receipts](/api/commands-and-receipts).
+
+Confirmed revocation is `200 {"revoked":true}`. If the result is `REVOCATION_UNCERTAIN`, refresh metadata before an explicit retry. New handoff authorization changes do not interrupt trading-owned protection or recovery.

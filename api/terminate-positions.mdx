@@ -1,0 +1,52 @@
+---
+title: "Cancel or close a position"
+description: "Use the existing terminal lifecycle to cancel pending work and close remaining exposure."
+---
+
+Use `positions:terminate` with command action `terminate`. The lifecycle owner selects the appropriate cancellation or closure behavior from current state.
+
+A pending position can fill while cancellation is being dispatched. Termination handles the resulting remaining exposure; it is not a promise to cancel only if nothing filled. API clients should not select a separate engine based on a stale pending/open label.
+
+## Full command
+```json
+{
+  "client_command_id": "demo-controller:cycle-001:terminate",
+  "issued_at": 1893456120,
+  "expires_at": 1893456180,
+  "action": "terminate",
+  "exchange_link_id": 17,
+  "instrument_id": "COPY_EXACT_CATALOG_ID",
+  "position_id": "11111111-1111-4111-8111-111111111111"
+}
+```
+
+The dates, IDs and instrument are synthetic. Download [terminate-command.json](/examples/api/terminate-command.json). The exact position UUID can come from the OPEN receipt or an authorized read. Omit `request` entirely; `request:null` is not the termination shape.
+
+## What to observe
+
+1. Keep the returned receipt UUID.
+2. Inspect `state`, any `error_code`, and recorded terminal request kind/sequence.
+3. Read the actual position and its attached orders. Check exposure and unresolved order work.
+4. Continue monitoring until the canonical lifecycle establishes the relevant completion; a command handoff alone does not establish flatness.
+
+`handed_off` means durable terminal ownership exists. Mailbox acceptance is not proof that exchange execution has begun. A later fill, delayed exchange evidence or reconciliation can still affect the position.
+
+## Idempotent transport retry
+
+Resubmit the exact original command if its HTTP outcome is unknown. Do not issue repeated new terminate identities to accelerate processing. The owner already orders terminal work and protects against unsafe overlapping execution.
+
+If access is revoked or entitlement expires after the owner has taken responsibility, owned terminal work can continue. Revocation itself is not termination.
+
+## Many positions
+
+The ordinary API command targets one position. A controller can deliberately enumerate a complete authorized snapshot, freeze its own reviewed list and submit bounded per-position commands with independent identities. This is not an atomic account-wide close, and positions opened later are outside that list.
+
+TradingView provides explicit strategy/market group termination through its restricted setup policy. Those groups freeze at most 64 targets and can have partial outcomes. They do not create a permanent market pause or close arbitrary exchange positions outside Liftx management. See [TradingView](/integrations/tradingview/overview).
+
+## Unsupported shortcuts
+
+- `DELETE /orders/...` and arbitrary venue order cancellation are not API endpoints.
+- `cancel` and `close` are not ordinary API action values; use `terminate`. Canonical TradingView commands can normalize those aliases to the same owner.
+- There is no cancel-only alias that promises to leave existing exposure untouched.
+- A receipt, a zero-target group or a temporarily empty/incomplete list does not prove market flatness.
+- An atomic close-and-reverse instruction is not implemented. Use current position evidence before a dependent opposite OPEN.

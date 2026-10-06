@@ -1,0 +1,75 @@
+---
+title: "API keys and permissions"
+description: "Create, restrict, rotate and revoke a Liftx API key."
+---
+
+Create API keys in [Liftx Settings → Integrations](https://app.liftx.io/settings/integrations), on the **API** tab. TradingView uses its own tab and a different restricted key type. An ordinary API key does not authenticate the webhook.
+
+## Create a key
+
+1. Open **API**, choose **Create API key**, and fill the **New API key** form.
+2. Enter a descriptive **Name**, such as `Portfolio monitor — demo` or `Strategy controller — production`.
+3. Set **Expires in days**. Choose only the lifetime needed; the maximum is one year.
+4. Select the required permissions from the table below.
+5. Select **Exchange links**. Verify both the linked account and its `demo` or `live` environment. A key can include 1–32 authorized links.
+6. Optionally enter exact **Canonical instrument IDs**, one per line. Copy them from the selected link's catalog; do not enter chart aliases. Up to 64 unique IDs are allowed. An empty list permits instruments on the selected links.
+7. Submit the form and complete fresh password or linked Apple authentication. If account MFA is enabled, complete that verification too.
+8. Save the one-time secret in a private secret manager. Dismiss the secret after saving it.
+
+Fresh approval is bound to the exact requested permissions and expires after five minutes. It is consumed once. Changing a policy requires approval for that policy; it is not enough to possess an already issued key.
+
+## Permission switches
+
+| UI switch | Wire scope | Grants |
+| --- | --- | --- |
+| Read balances, positions and orders | `read` | Authorized metadata, catalogs, snapshots, history, templates and streams; exact receipt access as documented |
+| Open positions | `positions:open` | New position commands within the key's link/instrument scope |
+| Modify positions and orders | `positions:modify` | Supported changes to one current position and its attached orders/protections |
+| Cancel pending positions or close exposure | `positions:terminate` | Existing termination owner: cancel remaining pending work and close remaining exposure as required |
+| Manage order templates | `templates:write` | Account-owned template creation, update and deletion; does not execute a trade |
+
+Permissions are independent. A write-only trading key can submit an allowed command and inspect its own namespace receipts without `read`. Give a controller `read` when it needs position reconciliation. `templates:write` does not imply template read access.
+
+Discovery accepts any valid ordinary API credential. Listing linked accounts and all other data reads require `read`. Receipt detail permits an owning namespace, or a same-account `read` key whose exact link/instrument restrictions authorize the receipt.
+
+## Instrument restrictions and aggregate reads
+
+A key restricted to one instrument cannot read an entire account/link aggregate that would disclose other instruments. For example, balances, positions pages, fee schedules, dashboard history and private aggregate stream subscriptions are unavailable to an instrument-restricted key. Use exact position reads, exact-instrument catalog selection and ticker subscriptions within its scope.
+
+Templates are account-owned. Granting template read or write permits the corresponding account template operation; templates do not become isolated to the key's selected instrument.
+
+## Send a key
+
+```http
+Authorization: Bearer YOUR_API_KEY_FROM_PRIVATE_STORAGE
+```
+
+Send exactly one Authorization header. Do not put the key in the query string, a cookie, WebSocket subprotocol, Pine script or TradingView message. The webhook uses its separately issued TradingView body capability.
+
+Secrets contain 256 random bits. The service stores only a digest and displays the secret once. Metadata such as a prefix, name, scopes, expiration and revocation time lets you identify a key without recovering its secret.
+
+## Secret disposal and ambiguous issuance
+
+The UI clears the displayed secret when hidden, on navigation, lock, logout or account change. Copy it before switching away. If issuance times out or its response is lost, inspect the credential list. Do not repeatedly press Create or automatically replay issuance. A committed duplicate can return metadata, but cannot recover the one-time secret; revoke an unusable new credential before explicitly issuing another.
+
+## Replacement, rotation and revocation
+
+A replacement credential retains the existing integration namespace and its exact policy. This preserves command deduplication and TradingView lifecycle ownership. Changing permissions or scope is a new approved policy, not an unreviewed extension of the old key.
+
+After updating the intended client and confirming its use, revoke the old credential. Revoking a key blocks new authorized handoffs; it does not remove existing positions or interrupt protection, termination or recovery already owned by Liftx. Stopping a bot is not the same operation as closing its positions.
+
+A confirmed revocation response is `200` with `revoked:true`. `REVOCATION_UNCERTAIN` means an attempted database update could not be confirmed. Inspect current metadata before an explicit retry; never treat a timeout as successful revocation.
+
+Metadata inspection and revocation remain available in authenticated Settings after entitlement expires. External reads, new issuance and trading handoffs require current entitlement. Streams close when their key or entitlement expires and enforce revocation throughout their lifetime.
+
+## Practical key boundaries
+
+| Client | Recommended permissions and isolation |
+| --- | --- |
+| Reporting service | `read`; selected links; instrument restrictions only if aggregate reads are unnecessary |
+| Position controller | `read`, `positions:open`, `positions:modify`, `positions:terminate`; exact intended links |
+| Exit service | `positions:terminate`, plus `read` for reconciliation; no OPEN permission |
+| Template editor | `read`, `templates:write`; acknowledge account template access |
+| TradingView strategy | Separate TradingView setup/key; exact link, instrument and source policy |
+
+Keep independent strategies in separate namespaces when command identity, auditing and permissions must be independent. Ordinary API position authority is bounded by credential scope, not automatically by who opened the position; use dedicated links or a controller ownership policy where stronger strategy isolation is required.

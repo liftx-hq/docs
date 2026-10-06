@@ -1,0 +1,53 @@
+---
+title: "Read integration Activity"
+description: "Inspect command evidence, group outcomes, and positions without confusing an accepted signal with execution."
+---
+
+Open [Settings → Integrations](https://app.liftx.io/settings/integrations), then **Activity**. The screen loads the latest account commands on entry. Subsequent updates are manual; it is not a continuously refreshing trading monitor.
+
+## Controls
+
+| Control | What it does |
+| --- | --- |
+| **Refresh latest** | Loads the newest receipt page and closes any expanded group detail. |
+| **Older commands** | Loads the next cursor page when available. It replaces the visible page rather than appending an unlimited history. |
+| **View targets** | Loads the frozen child receipts for a group termination. |
+| **Refresh targets** | Reloads that group's current evidence. |
+| **Hide targets** | Closes the expanded detail. |
+
+Each command card shows the action, the client command ID, last update time, and the available position ID and error code. A saved close/cancel request also shows its terminal sequence. Use the position ID to inspect the actual position and its orders in Liftx; the receipt card is not a position-balance display.
+
+## Status labels
+
+| Activity label | API state | Read it as |
+| --- | --- | --- |
+| **Accepted** | `accepted` | Durable intent exists and awaits handoff. |
+| **Submitting** | `dispatching` | A worker owns the handoff; work may already have side effects. |
+| **Managed by Liftx** | `handed_off` | Durable owner evidence exists. Execution or closure can still be pending. |
+| **Execution observed** | `execution_observed` | An owner path was observed without command-correlated durable completion evidence. It is not proof of a fill or flat exposure. |
+| **Rejected** | `rejected` | Inspect the error code and current state before deciding on a new intent. |
+| **Expired** | `expired` | The execution deadline elapsed before handoff. |
+| **Needs review** | `operator_required` | The outcome cannot be safely resolved automatically. Reconcile the exact position. |
+| **Mixed outcomes** | `partial` | A group resolved with differing child outcomes. Inspect each target. |
+
+A **Close request saved** or **Cancel request saved** line proves the corresponding owner request and sequence were recorded. It does not mean that all orders are cancelled, exposure is flat, or the position's lifecycle has completed.
+
+## Group termination
+
+A group card identifies **This setup's positions** or **All Liftx positions on the target**, its frozen target count, and counts by receipt status. Select **View targets** to inspect each captured position separately. At most 64 child targets belong to one group.
+
+A zero-target group can succeed with **Execution observed** and no child rows. That records an empty capture and its ordering fence. It does not prove there are no positions on the exchange, no other accounts with exposure, or no later OPEN signals.
+
+Group admission captures its membership once. Reading or refreshing it does not add newly opened positions or retry unsuccessful children.
+
+## Investigate a TradingView signal
+
+1. Confirm that the intended TradingView alert is enabled and triggered. Inspect its alert log and **Webhook status**.
+2. Open Liftx Activity and select **Refresh latest**. Correlate the setup/source and command identity from the generated message; ordinary alerts derive identity from source, UTC trigger second, and action.
+3. Read the receipt state and any error code. Inspect every target for a group.
+4. Inspect the actual Liftx position, orders, and remaining exposure.
+5. If the outcome is uncertain or delivery failed, manage remaining exposure deliberately. Do not create a new command identity merely to force a retry.
+
+No row can mean that admission never succeeded; it is not a complete diagnosis of a network failure. Conversely, a missing response does not prove there was no accepted command. Use the [TradingView troubleshooting guide](/integrations/tradingview/troubleshooting) and [receipt contract](/api/commands-and-receipts).
+
+Resolved receipts are retained for 30 days. Unresolved work remains until resolution. Export records needed for a longer audit history through the scoped API; Activity is not a permanent archive.

@@ -1,0 +1,25 @@
+---
+title: "MCP · Planned"
+description: "Future AI-client access will reuse Liftx API authorization and command semantics."
+---
+
+<Info>
+MCP is not activated. `https://mcp.liftx.io/mcp` is a reserved future endpoint, not a usable connection URL. No MCP tools, listener, client-registration flow, or OAuth endpoints are available in this release.
+</Info>
+
+The planned MCP adapter will let compatible clients access the same scoped account data and durable trading commands as the API. It will not create a separate trading engine or grant access outside the user's selected accounts, instruments, operations, and subscription entitlement.
+
+The planned authorization model uses OAuth with PKCE and resource-bound access. Read access and trading permissions will be separate, and trading consent will name the requested operations and targets. Final setup instructions will be published only after the server and each supported client are verified.
+
+## Expected execution model
+
+A future trading tool will return a command receipt, not a claim that an order filled or exposure is flat. Uncertainty, idempotency, revocation, and current-state modification requirements will remain the same as in the [API command contract](/api/commands-and-receipts).
+
+AI-generated requests and external content will not authorize scope expansion or new trades by themselves. Client approval is an additional control and cannot replace Liftx's server authorization.
+
+## Client guides
+
+- [ChatGPT status](/mcp/chatgpt)
+- [Claude status](/mcp/claude)
+
+Do not paste an API key or TradingView capability into an AI conversation. A documentation search assistant, if offered by the documentation host, searches public pages; it is not the future Liftx trading MCP server and has no authority over positions.

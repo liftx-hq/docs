@@ -1,0 +1,31 @@
+---
+title: "Read settlement currencies"
+description: "Returns eligible settlement currencies in success/message/data."
+openapi: "/api/openapi.json GET /v1/symbols/trading-currencies"
+playground: "simple"
+---
+
+<Note>Preview contract. Production availability remains subject to activation and release qualification. Examples are synthetic; the documentation cannot submit requests.</Note>
+
+## Authorization
+
+`read` for the exact link/instrument.
+
+## Behavior
+
+Returns eligible settlement currencies in success/message/data. Use a valid choice for spot trading_currency. Do not substitute quantity_asset or a derivative margin setting.
+
+## Request example
+
+```http
+GET /v1/symbols/trading-currencies?exchange_link_id=17&instrument_id=COPY_EXACT_CATALOG_ID
+Authorization: Bearer YOUR_API_KEY_FROM_PRIVATE_STORAGE
+```
+
+All IDs and dates are illustrative. URL-encode opaque query values and supply each allowed key once. Optional filters and their types appear in the generated schema below.
+
+## Response and errors
+
+The generated response schema below is the wire contract. Preserve fixed-point strings, nullable fields and endpoint-specific envelopes. Inspect HTTP status and Content-Type before decoding failures; reused trading routes may return JSON or plain text. Authentication, entitlement and exact link/instrument restrictions apply in addition to endpoint validation. See [errors and recovery](/api/errors-and-limits).
+
+Read the [related guide](/api/accounts-and-instruments) for lifecycle, units and recovery semantics.

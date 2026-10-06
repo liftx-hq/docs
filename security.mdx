@@ -1,0 +1,48 @@
+---
+title: "Credential and execution security"
+description: "Scope keys, handle one-time secrets, rotate access, and reconcile uncertain execution."
+---
+
+## Credential boundaries
+
+Ordinary API keys use `Authorization: Bearer …`. TradingView uses a separate restricted capability in the JSON body because its alert configuration does not provide arbitrary authorization headers. A TradingView capability does not authenticate API reads or account-security routes.
+
+Liftx issues random 256-bit secrets and stores digests. The plaintext is shown once. Use least-privilege permissions, exact accounts and instruments, and an appropriate expiry. Separate credentials isolate independent bots and strategies.
+
+Creating a key or granting broader authority requires fresh password or Apple authentication and MFA when enabled. Approval is purpose-bound, valid for five minutes, and consumed once. A saved draft or an old login is not an approval for a different policy.
+
+## Copy and store secrets
+
+- Copy the one-time value into the intended private secret store or private TradingView alert/script configuration.
+- Do not put a key in a URL, query string, public script, repository, issue, screenshot, analytics event, log, or AI prompt.
+- The documentation site's API reference is read-only: it does not provide a form that executes trades or forwards credentials through a documentation proxy.
+- Liftx clears displayed secrets on navigation and other session-security transitions. Use **Copy complete setup** before leaving a new TradingView setup.
+- If issuance times out, inspect the credential list. Do not automatically issue another key; the first operation may have succeeded and its secret cannot be recovered.
+
+TradingView stores alert messages and a server-side snapshot of Pine scripts. Anyone able to view those values may obtain the restricted capability. Keep scripts private, redact screenshots, and rotate a disclosed secret. Do not use an exchange API key, a Liftx password, or an ordinary Liftx API key as the TradingView body token.
+
+## Rotation and revocation
+
+A replacement credential retains its integration namespace and policy. Rotation does not turn one strategy into another or authorize a different market. Recreate a setup through fresh authorization when its policy must change.
+
+Revoking a key blocks new authorized handoffs. Disconnecting a TradingView setup revokes the setup's authority. Inspect metadata after the action; an uncertain revocation response is not proof of success. Access to authenticated metadata inspection and revocation remains available after subscription expiry.
+
+Revocation and expiry do not abandon protection, termination, or recovery work already owned by Liftx's trading lifecycle. Inspect and manage remaining positions independently.
+
+## Webhook transport
+
+TradingView delivers an HTTPS POST to the fixed Liftx webhook URL. Liftx validates the restricted body capability and exact setup policy. Source-IP filtering is an additional ingress control; it is not a cryptographic assertion of provider identity. Customers do not configure a TradingView client-certificate chain in Liftx.
+
+Send valid JSON, including a JSON content type. `application/json; charset=utf-8` is supported. Keep the token in the generated body, not in the URL. Delivery has a short deadline and is not guaranteed; see [TradingView troubleshooting](/integrations/tradingview/troubleshooting).
+
+## Idempotency and uncertainty
+
+A command ID identifies one immutable intent inside its namespace. Preserve its whole body, including issuance and expiry, on transport retry. A new ID means a new intent and may execute again.
+
+A durable receipt and a position publication answer different questions. Inspect both. If an outcome is `operator_required`, reconcile the exact position rather than replaying a modification or opening compensating exposure. Do not use a stale OPEN request as a modification template after fills or manual changes.
+
+## Report an issue privately
+
+Send suspected security vulnerabilities to [security@liftx.io](mailto:security@liftx.io). For setup assistance use [support@liftx.io](mailto:support@liftx.io).
+
+Include the affected documentation URL, the operation, a redacted response code, and a synthetic reproduction. Do not send secrets or publish exploit details, account identifiers, private financial data, or live credential values in a public issue.

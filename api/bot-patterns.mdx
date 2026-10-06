@@ -1,0 +1,66 @@
+---
+title: "Professional bot patterns"
+description: "Compose supported operations without inventing atomicity, feedback or strategy isolation."
+---
+
+A production controller maintains three distinct records: strategy intent, Liftx command receipt and observed position state. They advance at different times. Use persistent intent IDs and bounded execution queues rather than infer success from an HTTP response or a chart signal.
+
+## One continuous strategy
+
+For each intended lifecycle:
+
+1. Create and persist a new OPEN identity and full request.
+2. Submit it and keep its single allocated position UUID.
+3. Observe the receipt and position publication separately.
+4. Modify only from a current revision and exact row identities.
+5. Submit one terminal intent when the strategy decides to exit.
+6. Observe terminal evidence and actual position/exposure before a dependent next cycle.
+
+If a strategy intentionally allows overlapping positions, each OPEN has its own lifecycle identity and accounting. Do not reuse a position UUID as a strategy-wide mutable slot.
+
+## Two independent strategies or markets
+
+Use separate keys/namespaces for independent strategies. A BTC strategy and ETH strategy can each select their intended exact catalog market. Chart aliases are not routing rules. TradingView currently pins one market per setup, so two markets require two setups.
+
+API permissions are account/link/instrument authority, not automatic namespace ownership restrictions over position mutations. A controller must additionally enforce its intended strategy ownership when credentials overlap. Prefer least privilege and separate links when stronger isolation is needed.
+
+## DCA, pyramiding and partial exits
+
+Choose between an OPEN grid inside one position and several independent OPEN lifecycles based on desired management semantics. They are not interchangeable. TP grids express supported partial exit distribution against actual exposure. Preserve per-position fills and identities when amending the remaining configuration.
+
+TradingView `multiple` mode permits multiple lifecycles under its exact setup, while `single` prevents a new OPEN when known active or unresolved work occupies that setup. A per-position quantity cap is not a total portfolio exposure cap.
+
+## Reversal
+
+There is no atomic close-and-reverse command. An API controller can request termination, reconcile actual exposure and outstanding work, then decide whether a new opposite OPEN is valid. A Pine-only producer cannot read Liftx confirmation. TradingView emulator flatness does not prove the exchange is flat.
+
+## Circuit breaker
+
+Separate stopping new strategy signals from managing existing positions. Revoke a compromised key to block new handoffs; use an authorized termination workflow for remaining positions. Owner-managed protections continue after key revocation. A group terminate captures a finite set; it does not permanently prohibit later opens.
+
+## Recovery after process restart
+
+Load persisted immutable intents and their receipts before generating new work. Recover position UUIDs from accepted OPEN receipts rather than opening substitutes. Rebuild complete position state after a stream gap. An unresolved modification requires reconciliation; “the process restarted” is not evidence that no side effect happened.
+
+Keep local state bounded and archive resolved evidence according to your retention needs. Never log Authorization headers, restricted TradingView tokens or full secret-bearing webhook bodies.
+
+## Avoid duplicate signal producers
+
+Choose one event family per trading intent. An order-fill alert and a Pine `alert()` representing the same decision are two independent messages unless deliberately given the exact same canonical immutable identity. Ordinary TradingView alerts and Pine sequences must not share a setup source. Use the generated mode-specific helper and a separate key for every independent producer.
+
+## Headless operation
+
+Integration demand uses the exact-link connection owner. An open browser is not the lifetime owner of an admitted API position. This does not mean a closed browser verifies production readiness: qualify your intended deployment, keys, link readiness and recovery behavior in demo before real trading.
+
+## Qualification checklist
+
+- Check authorization denial for the wrong key kind, link, instrument and action.
+- Verify one OPEN identity produces one receipt/position across identical retries.
+- Verify conflicting payloads and stale identities are rejected.
+- Exercise supported OPEN, current-revision MODIFY and terminal outcomes, including pending cancellation and filled closure.
+- Confirm protection ownership under fills and disconnections.
+- Check key expiry, revocation, incomplete snapshots and overload behavior.
+- Separate simulated strategy fills from real Liftx execution evidence.
+- Confirm two independent namespaces remain correctly targeted.
+
+Examples describe supported building blocks and their limits. They do not certify every exchange/account combination, guarantee execution latency or replace deployment-specific end-to-end validation.

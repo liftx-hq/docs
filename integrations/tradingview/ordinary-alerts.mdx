@@ -1,0 +1,119 @@
+---
+title: JSON alerts without Pine
+description: A complete entry-and-exit setup using TradingView price or indicator alerts and generated Liftx JSON.
+---
+
+Ordinary alerts are the simplest supported setup. One Liftx key can serve a coordinated OPEN/EXIT pair. Each distinct OPEN starts a new lifecycle; EXIT terminates this setup's eligible positions, or matching market positions if explicitly permitted.
+
+<Warning>
+Complete [Liftx setup](/integrations/tradingview/setup) first. Keep alerts disabled until production execution is available. The examples below deliberately contain an invalid key and synthetic target; copy the actual messages generated in your private Liftx session.
+</Warning>
+
+## Step 1: save the generated bundle
+
+In the one-time **Save your TradingView setup** panel, select **Ordinary alerts**. Review the generated OPEN message, the **On an EXIT alert** selector and the EXIT message. Select **Copy complete setup**, then save it in a private editor before opening TradingView.
+
+The bundle contains labeled sections. Only the JSON object for the selected action belongs in an alert's **Message** field. The webhook URL belongs in **Notifications → Webhook URL**. Do not paste the entire bundle into Message.
+
+## Step 2: create the entry alert
+
+Open [TradingView Supercharts](https://www.tradingview.com/chart/) and create a price or indicator alert. Labels can vary with the selected condition; configure these values:
+
+| TradingView field | Entry value |
+| --- | --- |
+| **Condition** | Your intended price or indicator entry condition |
+| **Trigger/frequency** | A frequency appropriate to the signal; avoid more than one distinct OPEN per second for this setup |
+| **Expiration** | Within the Liftx credential's lifetime |
+| **Alert name** | A clear name such as `Liftx BTC trend · OPEN` |
+| **Message** | The complete generated OPEN JSON, including its top-level `token` and `alert` |
+| **Notifications → Webhook URL** | `https://hooks.liftx.io/v1/tradingview/events` |
+
+The chart's threshold is the trigger condition. It does not replace a price in the saved Liftx order request. A limit price, SL or TP imported from the builder remains that configured value.
+
+### Guided OPEN message
+
+```json
+{
+  "token": "REPLACE_WITH_RESTRICTED_TRADINGVIEW_KEY",
+  "alert": {
+    "fired_at": "{{timenow}}",
+    "max_lag_seconds": 60,
+    "action": "open",
+    "target": "position",
+    "exchange_link_id": 17,
+    "instrument_id": "COPY_EXACT_CATALOG_ID",
+    "source_instance_id": "11111111-1111-4111-8111-111111111111",
+    "binding_revision": 1
+  }
+}
+```
+
+Guided mode loads the opening request saved with the setup. Advanced mode adds the complete canonical `request` inside `alert`; use the generated value and the [position field reference](/api/position-request). Do not send only the fields that changed.
+
+## Step 3: create the exit alert
+
+Create a second price or indicator alert for the intended exit condition. Use the same webhook URL and the generated EXIT JSON:
+
+```json
+{
+  "token": "REPLACE_WITH_RESTRICTED_TRADINGVIEW_KEY",
+  "alert": {
+    "fired_at": "{{timenow}}",
+    "max_lag_seconds": 60,
+    "action": "terminate",
+    "target": "strategy",
+    "exchange_link_id": 17,
+    "instrument_id": "COPY_EXACT_CATALOG_ID",
+    "source_instance_id": "11111111-1111-4111-8111-111111111111",
+    "binding_revision": 1
+  }
+}
+```
+
+| TradingView field | Exit value |
+| --- | --- |
+| **Condition** | Your intended exit condition |
+| **Trigger/frequency** | A deliberate frequency; at most one distinct EXIT per second per setup |
+| **Expiration** | Within the key lifetime; sufficient to cover the intended strategy run |
+| **Alert name** | A paired name such as `Liftx BTC trend · EXIT` |
+| **Message** | The complete generated EXIT JSON |
+| **Notifications → Webhook URL** | The same Liftx hooks URL |
+
+**This strategy’s positions** produces `target: "strategy"`. **All positions in this market** produces `target: "market"` and is available only with the separately granted permission. EXIT omits `request`; it cancels pending work and closes remaining exposure through Liftx's termination owner.
+
+Ordinary EXIT does not know the reference of one earlier OPEN. It cannot selectively close one lifecycle or modify protections. Use [Pine exact references](/integrations/tradingview/pine) when selection must be specific, and an API controller when current position state is required.
+
+## Field-by-field contract
+
+| Field | Requirement |
+| --- | --- |
+| `token` | Dedicated restricted TradingView key; never an ordinary API key |
+| `alert.fired_at` | Keep `{{timenow}}` exactly. TradingView supplies UTC trigger time, to the nearest second. |
+| `alert.max_lag_seconds` | Integer 1–300; generated messages use 60. An unseen signal past this deadline cannot start execution. |
+| `alert.action` | Exactly `open` or `terminate` in ordinary messages |
+| `alert.target` | `position` for OPEN; `strategy` or authorized `market` for EXIT |
+| `alert.exchange_link_id` | Exact positive numeric link ID from the generated setup |
+| `alert.instrument_id` | Exact opaque catalog ID from the generated setup |
+| `alert.source_instance_id` | Generated UUID identifying this one ordered producer |
+| `alert.binding_revision` | Exact revision from the setup |
+| `alert.request` | Complete canonical request for Advanced OPEN; omitted for Guided OPEN and all EXIT messages |
+
+Unknown, duplicate, incorrectly cased or extra fields are rejected. Do not add `command`, `sequence`, `client_command_id`, `position_id` or position references to the `alert` object. The ordinary adapter derives those identities itself.
+
+## Identity, retries and same-second signals
+
+Liftx derives the event identity from this setup's source, the UTC trigger second and action. It derives a fresh lifecycle reference for OPEN and a 60-second deadline with the default template. An unchanged delivery retry returns the original receipt.
+
+This supports **one distinct OPEN and one distinct EXIT per second per setup**. Identical same-second events are indistinguishable from retries. Different content for the same identity conflicts; editing the message does not make it a new event.
+
+EXIT orders after OPEN in the same second. If the exit arrives first, its fence rejects the older unseen open. If the open arrives first, the exit can capture it. This prevents late delivery from automatically reopening a just-terminated cycle; it is not a delivery guarantee.
+
+Use this pair as one coordinated source. Do not clone it across charts, share it with independent strategies, or mix it with Pine commands under the same key. Create a separate setup for another strategy or market.
+
+## Validate the complete path
+
+After activation, use an explicitly selected demo link and a small valid imported order. Confirm the alert is created and enabled, then observe a deliberate trigger. Check TradingView's alert log and webhook status, Liftx **Activity → Refresh latest**, and the actual position/orders. Trigger the paired exit and repeat those checks. A `202` means accepted, not filled or flat.
+
+If the ordinary pair stops or loses delivery, inspect outstanding positions before creating a replacement setup. A fresh exit-only setup using `strategy` has no ownership of the old setup's positions. Manage them directly in Liftx or use an intentionally authorized market target.
+
+See TradingView's [webhook configuration guide](https://www.tradingview.com/support/solutions/43000529348-how-to-configure-webhook-alerts/) for the provider's dialog and [placeholder reference](/integrations/tradingview/placeholders) for supported substitutions.

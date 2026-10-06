@@ -1,0 +1,145 @@
+---
+title: "Modify positions and attached orders"
+description: "Use a fresh revision and exact current order identities for a complete modification."
+---
+
+Use `positions:modify` to submit a supported change and `read` to obtain current state. MODIFY is a complete intended `PositionRequest`, not JSON Patch and not a replay of the original OPEN request.
+
+## Read the current publication
+
+```sh
+curl --fail-with-body --get \
+  -H "Authorization: Bearer ${LIFTX_API_KEY}" \
+  --data-urlencode 'id=11111111-1111-4111-8111-111111111111' \
+  --data-urlencode 'exchange_link_id=17' \
+  --data-urlencode 'instrument_id=COPY_EXACT_CATALOG_ID' \
+  https://api.liftx.io/v1/positions/get-for-modification
+```
+
+This returns `success/message/data`, where `data` is the current **Position publication**, not a ready-made request. Construct the intended request from current rows and protection configuration. Keep the returned `revision`, current `slot_id` values and exact internal physical `order_id` values.
+
+## Build one explicit change
+
+1. Preserve `position_side`, margin mode, link, instrument and eligible spot settlement configuration.
+2. Preserve every existing OPEN and TP row that should remain, including its current slot identity and current quantity/price semantics after fills.
+3. Change only the intended configuration. If targeting an existing physical order, include its exact `order_id` in `order_amendments`.
+4. Omit unchanged leverage to avoid an unnecessary leverage preflight.
+5. Set outer `expected_revision` to the freshly observed positive revision.
+6. Allocate a new client command ID for this modification and persist the complete request.
+
+## Full modification example
+
+This synthetic example assumes a current revision of 7 and one current OPEN and TP slot. It changes the static SL to 69,000 and disables SLx while retaining the pictured opening and TP rows. The placeholders are not valid live slot identities. **Use this only if a fresh publication actually matches the assumed rows and quantities.**
+```json
+{
+  "client_command_id": "demo-controller:cycle-001:modify-001",
+  "issued_at": 1893456060,
+  "expires_at": 1893456120,
+  "action": "modify",
+  "exchange_link_id": 17,
+  "instrument_id": "COPY_EXACT_CATALOG_ID",
+  "position_id": "11111111-1111-4111-8111-111111111111",
+  "expected_revision": 7,
+  "request": {
+    "action": 1,
+    "exchange_link_id": 17,
+    "instrument_id": "COPY_EXACT_CATALOG_ID",
+    "quantity_asset": "BTC",
+    "position_side": 1,
+    "open_order_type": 1,
+    "open_prices_atomic": [
+      "70000"
+    ],
+    "open_prices_scale": [
+      0
+    ],
+    "open_quantities_atomic": [
+      "1"
+    ],
+    "open_quantities_scale": [
+      4
+    ],
+    "order_grid_enabled": false,
+    "margin_mode": 1,
+    "sl_enabled": true,
+    "sl_type": 1,
+    "sl_step_percent": 2000000,
+    "sl_price_atomic": "69000",
+    "sl_price_scale": 0,
+    "sl_price_rearrangement": false,
+    "sl_order_type": 2,
+    "slx_enabled": false,
+    "tp_enabled": true,
+    "tp_price_rearrangement": true,
+    "tp_grid_enabled": false,
+    "tp_order_type": 1,
+    "tp_prices_atomic": [
+      "72100"
+    ],
+    "tp_prices_scale": [
+      0
+    ],
+    "tp_quantities_atomic": [
+      "0"
+    ],
+    "tp_quantities_scale": [
+      0
+    ],
+    "tp_quantity_percents": [
+      1000000
+    ],
+    "tp_pnls": [
+      3000000
+    ],
+    "open_slot_ids": [
+      "SYNTHETIC_CURRENT_OPEN_SLOT"
+    ],
+    "tp_slot_ids": [
+      "SYNTHETIC_CURRENT_TP_SLOT"
+    ]
+  }
+}
+```
+
+Download the illustrative [modify-command.json](/examples/api/modify-command.json). The current row values are essential; the file is not a generic template to replay after arbitrary fills.
+
+## Amend one physical order
+
+Inside the complete request, a targeted amendment can have this shape:
+
+```json
+{
+  "order_amendments":[
+    {
+      "slot_id":"SYNTHETIC_CURRENT_OPEN_SLOT",
+      "order_id":"33333333-3333-4333-8333-333333333333",
+      "price_atomic":"69900",
+      "price_scale":0,
+      "quantity_atomic":"1",
+      "quantity_scale":4
+    }
+  ]
+}
+```
+
+This is a fragment, not a complete command. It must correspond to the current physical order generation and the intended row configuration. Never substitute a venue order ID, assume an old successor is current or amend using a stale cached snapshot.
+
+## Cancel a pending attached row
+
+There is no external arbitrary-order cancellation endpoint. Supported attached-row removal is expressed through a complete current modification and its retained slot list, subject to the existing lifecycle rules. Omitting a current slot can request cancellation; therefore accidental omission can have trading consequences. Do not remove filled rows or reconstruct a configuration from historical OPEN JSON.
+
+To stop the entire lifecycle, use [terminate](/api/terminate-positions). It also handles a pending-to-filled race; a client-side “still pending” observation cannot guarantee that exposure remained zero.
+
+## Conflicts and uncertainty
+
+A stale revision is a conflict. Read a fresh publication, reassess the intended change, and create a deliberately new command. Do not automatically substitute the new revision into an old request; rows, fills and protection references may also have changed.
+
+A timeout after submission is not a rejection. Preserve the same identity for a transport retry and inspect the receipt. `operator_required` means the available evidence does not safely resolve side effects; do not replay the whole modification or submit compensating trades.
+
+The execution owner preserves cancellation-barrier registration, dispatches cancellation without holding the position lock, checks the exact generation, then reconciles fresh state before replacement and protection work. Clients must not precompute a replacement plan across that boundary.
+
+Leverage preflight may precede a later revision or cap rejection. A modification is not an atomic transaction across the exchange and Liftx state; receipts distinguish uncertain side effects.
+
+## TradingView limitation
+
+Advanced Pine can express the full payload, but cannot retrieve the current Liftx publication or consume the webhook result. TradingView capped MODIFY must preserve OPEN rows. State-dependent OPEN amendments, conflict reconciliation and multi-position workflows belong in an API controller with current read access. There is no blind group MODIFY.

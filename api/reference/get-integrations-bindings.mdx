@@ -1,0 +1,32 @@
+---
+title: "List TradingView setups"
+description: "Returns unrevoked bindings with exact link/instrument, source, immutable revision, quantity cap and management policy."
+openapi: "/api/openapi.json GET /integrations/bindings"
+playground: "simple"
+---
+
+<Note>Preview contract. Production availability remains subject to activation and release qualification. Examples are synthetic; the documentation cannot submit requests.</Note>
+
+## Authorization
+
+Authenticated Liftx Settings session.
+
+## Behavior
+
+Returns unrevoked bindings with exact link/instrument, source, immutable revision, quantity cap and management policy. An expired credential does not automatically remove its setup.
+
+This is a session-owned application contract, not an ordinary API-key endpoint. Use [Settings → Integrations](https://app.liftx.io/settings/integrations). The public API base URL does not grant session access.
+
+## Request example
+
+```http
+GET /integrations/bindings
+```
+
+All IDs and dates are illustrative. URL-encode opaque query values and supply each allowed key once. Optional filters and their types appear in the generated schema below.
+
+## Response and errors
+
+The generated response schema below is the wire contract. Preserve fixed-point strings, nullable fields and endpoint-specific envelopes. Inspect HTTP status and Content-Type before decoding failures; reused trading routes may return JSON or plain text. Authentication, entitlement and exact link/instrument restrictions apply in addition to endpoint validation. See [errors and recovery](/api/errors-and-limits).
+
+Read the [related guide](/api/settings-contract) for lifecycle, units and recovery semantics.

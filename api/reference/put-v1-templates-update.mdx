@@ -1,0 +1,62 @@
+---
+title: "Update an order template"
+description: "Use the query id and a complete reviewed template."
+openapi: "/api/openapi.json PUT /v1/templates/update"
+playground: "simple"
+---
+
+<Note>Preview contract. Production availability remains subject to activation and release qualification. Examples are synthetic; the documentation cannot submit requests.</Note>
+
+## Authorization
+
+`templates:write`; account template authority.
+
+## Behavior
+
+Use the query id and a complete reviewed template. The server enforces account ownership. Success is 204 with no body. This endpoint has no trading-command idempotency key; reconcile after transport ambiguity.
+
+## JSON body example
+
+The following shows the request shape, not live credentials or executable market defaults. Replace timestamps only when creating a new reviewed intent; never mutate them on a command retry.
+
+```json
+{
+  "id": "44444444-4444-4444-8444-444444444444",
+  "user_id": 0,
+  "name": "Illustrative derivative limit",
+  "instrument_type": 2,
+  "position_side": 1,
+  "margin_mode": 1,
+  "leverage": 2,
+  "order_grid_enabled": false,
+  "open_price_deltas": [],
+  "open_quantity_percent": [
+    1000000
+  ],
+  "sl_enabled": false,
+  "sl_price_rearrangement": false,
+  "slx_enabled": false,
+  "slx_tp_trailing_enabled": false,
+  "slx_each_tp_trailing": false,
+  "slx_sl_trailing_breakeven_enabled": false,
+  "slx_sl_trigger_price_trailing_enabled": false,
+  "tp_enabled": false,
+  "tp_price_rearrangement": false,
+  "tp_grid_enabled": false,
+  "tp_pnls": [],
+  "tp_quantity_percent": [],
+  "open_order_type": 1,
+  "sl_order_type": 2,
+  "tp_order_type": 1,
+  "created_at": 0,
+  "updated_at": 0
+}
+```
+
+## Response and errors
+
+The generated response schema below is the wire contract. A successful response has no body; do not attempt JSON decoding. Inspect HTTP status and Content-Type before decoding failures; reused trading routes may return JSON or plain text. Authentication, entitlement and exact link/instrument restrictions apply in addition to endpoint validation. See [errors and recovery](/api/errors-and-limits).
+
+Do not automatically repeat a mutation after transport ambiguity. Trading commands reuse the exact immutable identity; credential issuance and template writes require their documented metadata/read reconciliation.
+
+Read the [related guide](/api/templates-and-history) for lifecycle, units and recovery semantics.

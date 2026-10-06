@@ -1,0 +1,120 @@
+---
+title: Create and manage a TradingView setup
+description: Every permission, opening policy, quantity cap and one-time secret control in Liftx Settings.
+---
+
+<Warning>
+Setup preparation does not activate webhook execution. If Liftx labels the setup **Prepared** or shows execution unavailable, save the private configuration and keep TradingView alerts disabled.
+</Warning>
+
+## Before opening the form
+
+1. Sign in to [Liftx Settings → Integrations](https://app.liftx.io/settings/integrations) with Pro or an active trial.
+2. In Trading, select the intended connected exchange account and an instrument from its catalog. Prefer a supported demo account for initial validation.
+3. Prepare a valid **new** order draft without submitting it. Select direction, quantities, OPEN rows, SL, SLx, TP, grids, rearrangement, leverage and applicable account options in the normal order builder.
+4. Finish any position-modification session. The integration imports a new-order setup, not an in-progress edit of an existing position.
+5. Enable TradingView two-factor authentication in [account settings](https://www.tradingview.com/settings/#account-settings). TradingView requires 2FA for webhooks; follow its [2FA guide](https://www.tradingview.com/support/solutions/43000572460-how-to-configure-2fa/).
+6. Return to Liftx **Settings → Integrations → TradingView → Connect TradingView**.
+
+Advanced setups without OPEN permission can omit the imported draft, but still need a loaded link/instrument with known quantity units and a positive cap. Guided mode always needs an imported opening request.
+
+## Name and lifetime
+
+| Field | How to fill it | Meaning |
+| --- | --- | --- |
+| **Name** | A descriptive strategy and market name, such as `BTC trend · demo` | Required, up to 80 UTF-8 bytes. Avoid credentials or private account details in names. |
+| **Expires in days** | An integer from 1 to 365; the initial value is 90 | Bounds credential lifetime. A TradingView alert can remain enabled after this time, but its new commands will no longer be authorized. |
+
+Set the alert's expiration no later than the key's expiration. Plan credential maintenance before a strategy needs an exit; expiry does not flatten positions.
+
+## Permissions
+
+| Liftx label | Scope | What it permits |
+| --- | --- | --- |
+| **Open positions** | `positions:open` | New lifecycles within the setup's exact link, instrument, quantity cap and opening policy |
+| **Modify positions and orders** | `positions:modify` | Advanced exact-position modification within the existing position contract; TradingView must preserve current OPEN rows and their identities |
+| **Cancel pending positions or close exposure** | `positions:terminate` | Termination of an exact owned lifecycle or an authorized group; cancellation of pending work and closure of remaining exposure |
+
+New TradingView setups initially select OPEN and terminate. Modify is offered in **Advanced** mode. Changing to Guided removes modify permission. A quantity cap does not grant OPEN permission by itself.
+
+TradingView keys do not expose the ordinary API's read or template-management permissions. A key that only terminates positions cannot open one. A key that only opens positions cannot send an exit; use that restriction only with a separately planned position-management workflow.
+
+## Signal mode
+
+| Choice | Opening request | Later edits |
+| --- | --- | --- |
+| **Guided · use your Liftx order setup** | Stored with the setup. OPEN messages omit `request`. | Changing the Trading order builder later does not change the saved setup. Guided supports OPEN and termination. |
+| **Advanced · include the full request in each alert** | Each OPEN carries the full canonical `request`. Liftx still imports the builder to create the first valid example. | Custom senders can supply permitted configuration changes. Modify requires current state; an old opening payload is not a safe modification template. |
+
+Both modes use the same position engine, decimal representation and exchange adapter. Advanced is not broader market authority, and it does not bypass the cap or lifecycle validation.
+
+## Opening policy
+
+| Choice | Behavior | What it does not imply |
+| --- | --- | --- |
+| **One position at a time** | Rejects a new OPEN while the setup has known active or unresolved own work. Allows another cycle after completion is established. | No queued automatic reopen, no account-wide one-position guarantee and no promise that a Pine exit signal made exposure flat |
+| **Multiple concurrent positions** | Each OPEN with a fresh lifecycle reference can create an independent position. | The per-position cap does not cap aggregate exposure across those positions |
+
+Use one position at a time for an entry/exit cycle that should not overlap known earlier work. Use multiple positions for deliberate independent entries or pyramiding. Existing account and instrument restrictions still apply.
+
+## Termination permission
+
+**Allow terminating every Liftx position on this link and instrument** is off initially.
+
+- **Off:** exact and group termination stays within positions owned by this setup.
+- **On:** with terminate scope, `target: "market"` can select matching Liftx positions opened manually or by other strategies on the exact same linked account and instrument.
+
+This permission authorizes a possible target. It does not make every exit market-wide. Choose **On an EXIT alert** or **On a termination signal** separately when generating a message or script. Opening policy and the market grant are fixed for the setup. See [target semantics](/integrations/tradingview/targets-and-lifecycles).
+
+## Import the market and order draft
+
+The form displays the selected link and canonical instrument. Click **Use current order setup**. Once imported, the button becomes **Replace imported order setup**.
+
+The import preserves the builder's complete opening and protection configuration. Review the reported opening-order count and target. Importing a different market clears an incompatible cap so that a previous asset quantity is not silently reused.
+
+Do not submit the draft just to create an integration. The import captures configuration; it does not open a position.
+
+## Maximum OPEN quantity: use the displayed unit
+
+The field resolves to **Maximum OPEN per position (asset)**. Enter a positive decimal in that displayed unit, without a currency symbol or thousands separators.
+
+| Instrument topology | Enforced unit | Example interpretation |
+| --- | --- | --- |
+| Spot or linear derivative | Canonical base asset | If the label is BTC, `0.001` caps the combined OPEN rows of each position at 0.001 BTC |
+| Inverse derivative | Canonical quote face value | If the label is USD quote face, the entered amount is USD face value, not BTC collateral or venue contract count |
+
+The imported builder amount may use a different asset. For example, a builder amount entered in USDT does not turn a BTC cap into a USDT spending cap. At a purely illustrative price of 50,000 USDT/BTC, 0.001 BTC has a 50 USDT notional; that value changes with price. It is not a guaranteed spending limit. Exchange minimums, lots and adapter normalization still apply.
+
+The cap covers the sum of OPEN rows **per position**. It is not an account budget, a maximum loss, a margin limit or a total across concurrent positions. Derivative leverage does not redefine the unit. Select the canonical instrument to determine the unit; there is no free-form BTC/USDT selector that can reinterpret it.
+
+## Confirm and save the secret once
+
+1. Select **Confirm and create**.
+2. Complete the offered fresh password or Apple authentication, plus MFA when enabled. The approval is purpose-bound, expires after five minutes and is consumed once.
+3. Read the resulting setup summary and status.
+4. In **Save your TradingView setup**, select **Ordinary alerts** or **Pine (advanced)** and the desired exit target.
+5. Use **Copy complete setup** before switching away. Store the bundle temporarily in a private editor, then copy its URL and each message/script separately to TradingView.
+6. Select **I saved it — hide the secret** when finished.
+
+Liftx displays the random secret once and stores only its digest. Hiding the app, navigation, lock, logout or account change clears the displayed secret and generated private content. A secret cannot be recovered from the key list. Do not publish a populated Pine script or commit the private bundle.
+
+The one-time panel also offers **Copy secret**, **Copy webhook URL**, individual message/script copy buttons, and **Copy complete setup**. Copy secret copies the credential alone; it is not a complete alert message. Copy complete setup preserves all currently selected authorized content in a labeled private bundle. The same disposal rules apply to every displayed form of the secret.
+
+If creation returns an ambiguous network error, refresh metadata first. Do not repeatedly click Create: issuance may have succeeded even if the response was lost. Review or revoke the resulting credential before deliberately creating another.
+
+## Existing setup controls
+
+| Control or label | Meaning |
+| --- | --- |
+| **Prepared** | Credential exists but webhook execution is unavailable. Keep alerts disabled. |
+| **Active** | Credential is within its lifetime and activation is available; this does not prove delivery or execution. |
+| **Expired** | New requests fail authorization. Existing position management continues. |
+| **No available key** | Setup metadata remains, but no usable credential is listed. |
+| **Refresh** | Reloads settings metadata. |
+| **Create replacement key** | Retains the integration namespace, market, scopes and policy. The old key remains active until revoked. |
+| **Revoke key** | Stops new requests using that credential. Other keys for the same integration are separate. |
+| **Disconnect integration** | Stops signals through all credentials for that setup. |
+
+Replacement does not transfer a running Pine alert's local sequence or retained position references. Do not restart a Pine producer under a rotated token and assume its state survived. Inspect existing positions and create a fresh setup/source for a new Pine alert.
+
+Revocation, expiry and disconnection prevent new handoffs; they do not interrupt protection, termination or recovery already owned by Liftx. They also do not submit a new close command. Metadata and revocation remain accessible after Pro/trial entitlement expires.

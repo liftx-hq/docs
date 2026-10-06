@@ -1,0 +1,106 @@
+---
+title: "Protections, grids and rearrangement"
+description: "Configure fill-aware protection once and retain Liftx execution ownership."
+---
+
+OPEN, SL, SLx and TP belong to the position lifecycle. A strategy declares its intent; Liftx manages order reconciliation, protection sizing, cancellation evidence and replacement generations. There is no second protection engine attached to a webhook.
+
+## Configure protection at OPEN
+
+Include the desired protection configuration in the initial canonical request. This lets the same lifecycle react to actual fills. A Pine indicator does not need to produce a webhook for every trailing adjustment.
+
+| Requirement | Configuration |
+| --- | --- |
+| Fixed SL price | `sl_enabled:true`, exact SL price pair, supported SL order type, `sl_price_rearrangement:false` |
+| Fill-aware relative SL | SL enabled plus its reference type/distance, `sl_price_rearrangement:true` |
+| One full TP | TP enabled, one row, `tp_grid_enabled:false`, builder full weight `1000000` |
+| Partial TP ladder | TP enabled, TP grid rows and positive normalized weights |
+| Recompute TP from breakeven | `tp_price_rearrangement:true` and valid `tp_pnls` distances |
+| Move to breakeven after a TP | SLx TP-trigger family with the one-based trigger |
+| Trail after price activation | SLx price-trigger family with activation/indent/step or its breakeven alternative |
+
+These are configuration patterns; account capability and current owner validation still apply. Always send conditionally required arrays and fields from the [complete request](/api/position-request).
+
+## OPEN grid fragment
+
+```json
+{
+  "order_grid_enabled":true,
+  "num_open_orders":2,
+  "open_order_type":1,
+  "open_prices_atomic":["70000","69500"],
+  "open_prices_scale":[0,0],
+  "open_quantities_atomic":["1","1"],
+  "open_quantities_scale":[4,4]
+}
+```
+
+This fragment represents two illustrated limit rows of `0.0001` each when the full request's quantity asset is BTC. It is not a complete request. Minimum size, valid price, total size and adapter batch constraints must be checked against the actual selected instrument.
+
+## TP ladder fragment
+
+```json
+{
+  "tp_enabled":true,
+  "tp_price_rearrangement":true,
+  "tp_grid_enabled":true,
+  "num_tp_orders":2,
+  "tp_order_type":1,
+  "tp_prices_atomic":["71400","72800"],
+  "tp_prices_scale":[0,0],
+  "tp_quantities_atomic":["0","0"],
+  "tp_quantities_scale":[0,0],
+  "tp_quantity_percents":[50000000,50000000],
+  "tp_pnls":[2000000,4000000]
+}
+```
+
+The 50/50 weights express distribution across actual protected exposure. The price distances are 2% and 4% from the fee-aware reference, not leveraged returns. The initial illustrated prices do not replace Liftx's rearrangement result after fills.
+
+A single full TP uses `1000000`, while grid percentage-point weights use a different existing normalization convention. Preserve builder values; do not convert one into the other by guessing.
+
+## TP-trigger SLx fragment
+
+```json
+{
+  "slx_enabled":true,
+  "slx_tp_trailing_enabled":true,
+  "slx_tp_breakeven":1,
+  "slx_each_tp_trailing":true,
+  "slx_sl_trigger_price_trailing_enabled":false,
+  "slx_sl_trailing_breakeven_enabled":false
+}
+```
+
+This replaces the price-trigger SLx fragment in a compatible full request; it is not added while leaving the conflicting trigger enabled. TP must exist. The first selected trigger moves toward the configured breakeven behavior; subsequent owner-managed triggers can trail from prior TP levels.
+
+## Price-trigger SLx fragment
+
+```json
+{
+  "slx_enabled":true,
+  "slx_tp_trailing_enabled":false,
+  "slx_each_tp_trailing":false,
+  "slx_sl_trigger_price_trailing_enabled":true,
+  "slx_sl_trigger_price_trailing_pl_percent_activation":1000000,
+  "slx_sl_trigger_price_trailing_indent_percent":500000,
+  "slx_sl_trigger_price_trailing_step":250000,
+  "slx_sl_trailing_breakeven_enabled":false
+}
+```
+
+This illustrates 1% activation, 0.5% indent and 0.25% step. It describes units, not recommended risk parameters. SLx trigger modes and optional initial prices must satisfy the selected configuration's validation.
+
+## Disable or change protection
+
+Read the current modification publication first, construct the full intended request, preserve existing rows/slots and set the desired enable flags. A disabled protection is not a detached venue order to cancel through another API. The owner resolves the relevant cancellation and replacement work.
+
+Do not send the original opening JSON to “reset” protection after partial fills. Its rows and generation identities may be stale. API revision checks protect the mutation boundary; TradingView cannot fetch the fresh state needed for arbitrary autonomous edits.
+
+## Concurrent fills and manual changes
+
+Protections can move while a controller observes state. The current revision and exact physical order identity matter. A price signal is not proof that an earlier TP filled, an SL was replaced or an exchange cancellation completed. Reconcile the canonical position and receipt rather than infer outcomes from chart price alone.
+
+## Unsupported compositions
+
+There is no bulk MODIFY across heterogeneous positions, guaranteed atomic close-and-reverse, or command-level guaranteed flatness. A collection of independent positions can have distinct OPEN ladders, fees, fills, SLx stages and shared venue exposure. Keep those lifecycles separate.

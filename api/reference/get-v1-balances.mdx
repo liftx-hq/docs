@@ -1,0 +1,31 @@
+---
+title: "Read balances"
+description: "Returns exact fixed-point free balances, link identity and snapshot_complete."
+openapi: "/api/openapi.json GET /v1/balances"
+playground: "simple"
+---
+
+<Note>Preview contract. Production availability remains subject to activation and release qualification. Examples are synthetic; the documentation cannot submit requests.</Note>
+
+## Authorization
+
+`read`; link aggregates require an unrestricted instrument policy.
+
+## Behavior
+
+Returns exact fixed-point free balances, link identity and snapshot_complete. An absent asset in an incomplete snapshot is not a zero balance. This HTTP model preserves decimal coefficients/scales and should be used for exact sizing reconciliation.
+
+## Request example
+
+```http
+GET /v1/balances?exchange_link_id=17
+Authorization: Bearer YOUR_API_KEY_FROM_PRIVATE_STORAGE
+```
+
+All IDs and dates are illustrative. URL-encode opaque query values and supply each allowed key once. Optional filters and their types appear in the generated schema below.
+
+## Response and errors
+
+The generated response schema below is the wire contract. Preserve fixed-point strings, nullable fields and endpoint-specific envelopes. Inspect HTTP status and Content-Type before decoding failures; reused trading routes may return JSON or plain text. Authentication, entitlement and exact link/instrument restrictions apply in addition to endpoint validation. See [errors and recovery](/api/errors-and-limits).
+
+Read the [related guide](/api/accounts-and-instruments) for lifecycle, units and recovery semantics.

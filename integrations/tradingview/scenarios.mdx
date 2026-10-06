@@ -1,0 +1,103 @@
+---
+title: Strategy scenarios and boundaries
+description: Practical configurations for continuous cycles, independent markets, grids, protection changes and risk exits.
+---
+
+This guide maps common workflows to the current integration. It distinguishes supported composition from workflows requiring feedback through the API. No webhook can guarantee delivery or prove exchange execution merely because its condition fired.
+
+## Continuous entry and exit on one market
+
+Create a Guided setup with OPEN and terminate, **One position at a time**, and the market-wide grant off. Use either one coordinated ordinary OPEN/EXIT pair or one Continuous Pine alert with **This strategy’s positions**.
+
+The running source reuses its key. Each new entry creates a fresh lifecycle. The next OPEN is eligible only after Liftx establishes that earlier own work is complete. A locally emitted exit does not automatically permit another position, and rejected entries are not queued for later replay.
+
+## BTC and ETH strategies in parallel
+
+Create one setup on the desired BTC catalog instrument and another on the desired ETH instrument. Each gets its own key, source, cap, saved order request and alert. Normal strategy exits remain isolated by both namespace and exact market.
+
+If the BTC strategy's chart uses a different venue's feed, execution still targets its selected Liftx link. A BTCUSDT chart does not distinguish spot from a linear perpetual or another venue's market; the catalog selection does.
+
+## Two strategies on the same market
+
+Use separate setups, such as trend and mean reversion, even on the same link/instrument. With the market-wide grant off, each strategy can terminate only its own positions. Revoking one key does not revoke the other setup.
+
+If both strategies intentionally share the market-wide grant, either can terminate the other's matching positions when it selects `market`. This is a deliberate authority decision, not accidental namespace leakage.
+
+## Pyramiding, DCA and multiple independent positions
+
+Choose **Multiple concurrent positions**. Give every OPEN a fresh lifecycle reference. A group exit can terminate eligible positions from the setup; exact Pine exits can choose a specific retained reference.
+
+The confirmed-bar helper can create distinct entries over different bars when a group target is selected. Intrabar multi-entry strategies need their own stable per-event identities; the helper's one-event-per-bar scheme is not sufficient for several distinct same-bar entries.
+
+The cap is per position. Aggregate exposure, margin consumption and combined portfolio loss are not capped by that setting. Use a separate state-aware risk controller for those limits.
+
+## One position with an OPEN grid
+
+Build multiple OPEN rows in Liftx and import the complete request. Those rows belong to one lifecycle and share its protections. This differs from many independent positions: its cap applies to the combined normalized OPEN rows in that one position.
+
+Preserve row ordering and paired decimal arrays. Adapter batch and lot limits still apply. Terminating the lifecycle cancels pending rows and closes remaining exposure through the existing owner.
+
+## SL, SLx, TP and rearrangement
+
+Configure protections in the Liftx builder before import. Both Guided and Advanced opening requests retain the complete setup.
+
+| Requirement | Configuration and ownership |
+| --- | --- |
+| Fixed or rearranged SL | Set the builder's SL mode, trigger price/distance and rearrangement. Liftx applies fill-aware references. |
+| TP grid / staged exits | Import TP rows and canonical weights. Liftx sizes protective quantities against actual exposure. |
+| Move SLx after TP | Select the supported TP-trigger configuration. Do not also enable the mutually exclusive price-trigger mode. |
+| Price-trigger SLx | Import activation, indent/step or breakeven options. Liftx owns actual triggers and order management. |
+| Rearrangement off | Preserve the exported false setting; do not omit required companion fields from enabled protections. |
+
+See [complete fields and units](/api/position-request) and [protection examples](/api/protections-and-grids). A Pine chart's own SL/TP visualization is not the active Liftx protection state.
+
+## Dynamic long and short entries
+
+Advanced OPEN can carry a deliberate direction and full request for each fresh lifecycle. Long/short support depends on the account and registered instrument. A position's direction and margin mode cannot be changed through modification.
+
+Guided mode opens its saved configuration; it does not interpret an alert's `buy` or `sell` placeholder to change side. Separate long/short Guided setups can express independent configurations. Concurrent hedging remains subject to the selected adapter/account's actual capabilities.
+
+## Spot, linear and inverse instruments
+
+Select the appropriate catalog instrument rather than adding a `market_type` string to the webhook. The public request uses the existing exchange-neutral model, while adapters own supported order types, lot rules, contract conversion and account behavior.
+
+Spot and linear caps use base units; inverse caps use quote-face units. Neither Pine contracts nor a quote spending amount automatically maps to that cap. Preserve the current builder's quantity asset and relevant settlement/margin fields.
+
+## Exact protection modification
+
+Use Advanced mode with modify permission and an exact lifecycle. Obtain current state through an API controller, map the publication into a full request, preserve OPEN rows/slots, then change the intended protections. A later authorized full modification can replace manual protection changes; coordinate a single decision owner or use revision fencing.
+
+Pine cannot fetch current Liftx position state. A cached opening request is insufficient after fills or manual edits. OPEN-order changes require the direct API; group modification is unsupported because positions can have different rows and generations.
+
+## Market-wide risk exit
+
+Create an intentionally scoped setup with terminate permission and the explicit market grant. Advanced mode can be exit-only without an imported opening request. It still needs a selected market and positive quantity policy. Select **All positions in this market** in the Exit-only helper or ordinary EXIT.
+
+The signal captures up to 64 matching Liftx positions on that exact link/instrument, including manual and other strategies' positions. It does not cancel future opens, pause competing strategies or cover other markets. Inspect every child receipt; mixed outcomes are possible.
+
+A new exit-only setup with `strategy` targets only its own namespace, which may have no positions. It does not inherit another strategy's BTC positions merely because the symbol matches.
+
+## Reversal with confirmed flatness
+
+Terminate and reverse OPEN are separate intents. If the strategy requires the old position to be flat before opening the opposite direction, an API controller must observe completion and actual exposure first. Pine alone cannot establish that condition from the webhook response or emulator position.
+
+Do not implement an automatic “close failed, so place an opposite trade” compensation. An uncertain outcome requires inspection, not another potentially exposure-changing instruction.
+
+## Multi-timeframe, multi-symbol and watchlist signals
+
+Pine may derive conditions from supported `request.*` data. Each emitted Liftx command still uses an explicit setup for its one market. Create separate setups for separate execution markets and preserve one ordered producer per source.
+
+A watchlist or chart symbol change does not widen authority. A universal multi-market key and automatic ticker-to-venue guessing are not shipped features. A portfolio controller using the [API](/api/overview) is the appropriate place for authenticated multi-account discovery and current-state coordination.
+
+## Operational changes and outages
+
+| Event | Required response |
+| --- | --- |
+| Alert or script changed | Inspect the actual server alert snapshot; treat a new Pine producer as a new source/setup |
+| Key expires or is revoked | New authorization stops; inspect outstanding positions and manage them in Liftx |
+| Delivery ambiguous | Preserve original identity/payload; inspect receipts before deliberate new work |
+| `Needs review` receipt | Investigate canonical evidence; do not replay the whole request or issue compensating trades automatically |
+| Group has mixed outcomes | Inspect children and actual positions; group acceptance is not all-or-nothing exchange execution |
+| Browser closes | Existing server alerts and Liftx-owned execution can continue; browser state is not the execution owner |
+
+Use [troubleshooting](/integrations/tradingview/troubleshooting) for transport, activity and error details.

@@ -1,0 +1,32 @@
+---
+title: "Read an Activity receipt"
+description: "Returns one account-owned receipt and bounded group targets when present."
+openapi: "/api/openapi.json GET /integrations/commands/get"
+playground: "simple"
+---
+
+<Note>Preview contract. Production availability remains subject to activation and release qualification. Examples are synthetic; the documentation cannot submit requests.</Note>
+
+## Authorization
+
+Authenticated Liftx Settings session.
+
+## Behavior
+
+Returns one account-owned receipt and bounded group targets when present. This read grants no additional mutation authority. Zero targets and execution_observed do not certify a flat market.
+
+This is a session-owned application contract, not an ordinary API-key endpoint. Use [Settings → Integrations](https://app.liftx.io/settings/integrations). The public API base URL does not grant session access.
+
+## Request example
+
+```http
+GET /integrations/commands/get?id=11111111-1111-4111-8111-111111111111
+```
+
+All IDs and dates are illustrative. URL-encode opaque query values and supply each allowed key once. Optional filters and their types appear in the generated schema below.
+
+## Response and errors
+
+The generated response schema below is the wire contract. Preserve fixed-point strings, nullable fields and endpoint-specific envelopes. Inspect HTTP status and Content-Type before decoding failures; reused trading routes may return JSON or plain text. Authentication, entitlement and exact link/instrument restrictions apply in addition to endpoint validation. See [errors and recovery](/api/errors-and-limits).
+
+Read the [related guide](/api/commands-and-receipts) for lifecycle, units and recovery semantics.

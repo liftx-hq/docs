@@ -1,0 +1,112 @@
+---
+title: Delivery, Activity and troubleshooting
+description: Follow a signal from TradingView delivery through Liftx receipts to actual positions and orders.
+---
+
+Validation has three separate observations: TradingView emitted the intended message, Liftx admitted or rejected it, and the position owner produced the expected trading outcome. No single alert notification or HTTP success proves all three.
+
+## Check in this order
+
+1. **TradingView alert configuration:** correct running alert, condition, expiration, event family, fixed message and webhook URL.
+2. **TradingView alert log:** whether it triggered and the webhook delivery status.
+3. **Liftx Settings → Integrations → Activity:** select **Refresh latest** and find the command by its identity and time.
+4. **Group details:** select **View targets**, then **Refresh targets** if needed. Review each child and its error evidence.
+5. **Actual Liftx position/orders:** verify fills, pending orders, active protections and remaining exposure.
+
+[Activity](/integrations/activity) refreshes on demand. **Older commands** loads the next page; it is not a continuously polling execution feed. An API controller can use scoped reads and [streams](/api/streams) for ongoing observation.
+
+## What Activity labels mean
+
+| Label | Receipt state | Interpretation |
+| --- | --- | --- |
+| **Accepted** | `accepted` | Immutable intent was saved. Trading has not necessarily begun. |
+| **Submitting** | `dispatching` | Work is progressing toward or through owner handoff. |
+| **Execution observed** | `execution_observed` | The owner path returned without enough command-correlated durable evidence for a stronger assertion, or a group captured no targets. Inspect the position and group details. |
+| **Managed by Liftx** | `handed_off` | The existing position owner accepted responsibility. It does not mean filled or flat. |
+| **Rejected** | `rejected` | The command could not proceed under the recorded validation outcome. Read its error. |
+| **Expired** | `expired` | Its deadline passed before an eligible handoff. |
+| **Needs review** | `operator_required` | Outcome or continuation cannot be safely inferred; manual investigation is required. |
+| **Mixed outcomes** | `partial` | A group resolved with differing child outcomes. Inspect each target. |
+
+A displayed **Close request saved** or **Cancel request saved** with a sequence is durable terminal-request evidence. It is not proof that venue cancellation completed or exposure reached zero.
+
+Resolved receipts remain available for 30 days. Unresolved work is retained until resolution. Keep your own non-secret event/audit records if a longer history is required.
+
+## HTTP outcomes
+
+| Response | Meaning | Response by an operator/controller |
+| --- | --- | --- |
+| `202` | New intent durably accepted | Follow the receipt and position |
+| `200` | Identical previously admitted event | Use the original receipt; do not assume a second execution |
+| `400` | Invalid schema, values, scope shape or target | Correct the producer; do not blindly retry the malformed body |
+| `401` / `403` | Credential, permission, binding or ingress rejection | Review key status, selected authority and destination |
+| `402` | Pro/trial entitlement is unavailable | Restore eligible access before new external commands |
+| `409` | Identity conflict, stale ordering, busy policy or target conflict | Investigate the specific code and current state |
+| `413` / `415` | Oversized body or unsupported content/encoding | Send valid uncompressed JSON within 256 KiB |
+| `429` | Pending account admission capacity is exhausted | Resolve/observe existing work; do not flood new identities |
+| `503` | Temporarily unavailable, uncertain acceptance or execution not activated | Follow the code; preserve identity and payload for any valid retry |
+
+Provider-side errors may occur before a Liftx receipt exists. The public hooks endpoint accepts reviewed TradingView delivery sources; a direct request from an arbitrary laptop is not equivalent to a provider-delivery test. Do not work around an ingress rejection by weakening authentication.
+
+## Common error codes
+
+| Code | Check and next step |
+| --- | --- |
+| `TRADINGVIEW_NOT_ACTIVATED` | Setup is preparable, but trading ingress is disabled. Keep alerts disabled until activation. |
+| `JSON_REQUIRED` / `INVALID_JSON` | Paste only the complete JSON message; check straight quotes, commas and escaping. Valid JSON makes TradingView send the expected content type. |
+| `INVALID_ENVELOPE` | Supply exactly one `alert` or `command`, not both and not null. |
+| `INVALID_ALERT_TIME` | Ordinary messages must preserve `{{timenow}}`; no fractional seconds, timezone offset or bar-time substitute. |
+| `INVALID_DEADLINE` | Ordinary max lag must be 1–300 seconds; canonical expiry must follow issuance within five minutes. |
+| `BINDING_MISMATCH` | Copy the link, instrument, source and revision from the same generated setup. Do not mix two keys' templates. |
+| `SCOPE_DENIED` | The key lacks the action or target scope. Grant only needed permissions through authenticated setup. |
+| `MARKET_TERMINATION_DENIED` | Market-wide grant is absent or the source ordering is not eligible. Do not silently change an exact/strategy exit into a market exit. |
+| `GUIDED_REQUEST` | Guided uses the saved opening request and termination; advanced request/modify behavior needs Advanced mode. |
+| `REQUEST_REQUIRED` | Advanced OPEN or MODIFY needs the complete canonical position request. |
+| `COMMAND_CONFLICT` | The identity already belongs to different content. Inspect the original receipt; changing a payload is a new deliberate intent, not a retry. |
+| `STALE_COMMAND` | Unseen identity is outside its admission window. Do not refresh a stale event's timestamp to force an old signal through. |
+| `SIGNAL_ORDER_CONFLICT` | The lifecycle/source was fenced, already opened or received an out-of-order signal. Inspect ordering and prior receipt. |
+| `POSITION_REFERENCE_UNKNOWN` | Modify arrived before an accepted OPEN for that reference. |
+| `SOURCE_POSITION_BUSY` | Single-position policy found known active or unresolved work. Check it before another entry. |
+| `TARGET_CAPACITY` | Group selection exceeds the 64-target bound or cannot be safely captured. Use deliberate exact management after inspection. |
+| `PENDING_CAPACITY` | The account has reached its bounded pending-command capacity. Observe/resolve existing work before new admission. |
+| `ACCEPTANCE_UNCERTAIN` | The original command may be saved. Preserve its exact identity and payload; inspect or retry that unchanged intent only. |
+| `COMMAND_EXPIRED` | Deadline passed before handoff. A newly timed event is a separate trading decision. |
+| `ISSUANCE_UNCERTAIN` | Credential creation outcome is ambiguous. Inspect metadata; never automatically issue another key. |
+
+The full API error and limit reference is [errors and limits](/api/errors-and-limits). Do not infer a completed trade from an absence of transport errors.
+
+## Webhook delivery contract
+
+Use only `https://hooks.liftx.io/v1/tradingview/events`, without query parameters. Production delivery uses public IPv4 and HTTPS on port 443, with no redirect. Liftx accepts valid JSON including charset parameters, rejects compressed bodies/plain text, and bounds request admission separately from exchange execution.
+
+TradingView documents a three-second receiver timeout. Liftx's application admission budget is two seconds: it saves intent and acknowledges before asynchronous position work completes. Slow exchange execution is not held open as the webhook response. [TradingView webhook setup](https://www.tradingview.com/support/solutions/43000529348-how-to-configure-webhook-alerts/).
+
+TradingView may resend eligible 5xx failures up to three times at five-second intervals; 504 is excluded. Liftx uses temporary-unavailability responses and immutable identities to handle an ambiguous retry without requesting another trade. Delivery is still not guaranteed. See [provider resubmission policy](https://www.tradingview.com/support/solutions/43000735201-webhook-resubmission/) and [webhook error meanings](https://www.tradingview.com/support/solutions/43000776894-what-do-errors-mean-when-sending-webhooks/).
+
+## Authentication and exposed keys
+
+The restricted body key authenticates Liftx command authority over normal server-authenticated HTTPS. Reviewed source-IP restrictions add defense in depth; they are not cryptographic proof of provider identity. No customer client-certificate configuration is required.
+
+A private alert message or Pine script contains a secret. If exposed in a screenshot, public script, repository or support attachment, revoke the credential and prepare an authorized replacement. Remove the exposure where possible. Never send passwords, ordinary API keys or exchange credentials to the webhook.
+
+Revoking a key does not close positions. Inspect current orders/exposure and manage them in Liftx. Already-owned protections and termination continue under their existing owners.
+
+## Pine-specific symptoms
+
+| Symptom | Likely explanation |
+| --- | --- |
+| Script is saved but no events arrive | No server alert was created, enable remains false, future start has not arrived, condition did not cross, or feed has no realtime updates |
+| Runtime error after restart | The example refuses to restart after its required future start. Inspect Liftx and create a new source/setup. |
+| Chart input change has no effect | The server alert holds its captured configuration. Review/recreate deliberately, preserving lifecycle safety. |
+| OPEN signal displayed but no position | Local emission is not delivery or admission; check the log, receipt and rejection code |
+| EXIT emitted but exposure remains | Handoff is asynchronous; delivery, terminal execution or reconciliation may be incomplete |
+| Alert stopped after frequent triggers | TradingView applies alert-frequency limits; its [frequency guide](https://www.tradingview.com/support/solutions/43000690939-alert-was-triggered-too-often-and-stopped/) describes stopping alerts above 15 triggers in three minutes |
+| New exit-only setup finds no strategy positions | It owns a new namespace; it does not inherit another setup's positions |
+
+The supplied confirmed-bar helper emits at most one event per bar on a chart of at least one minute. Custom intrabar code must account for provider limits and design its own event identity and restart behavior.
+
+## A controlled validation sequence
+
+After activation, use a demo market with a valid small setup. First verify a harmless, deliberately zero-target termination receipt. Then validate an OPEN, inspect actual order/protection state, and terminate it. Follow both exact and group results where authorized. Validate duplicates using unchanged intent, stale messages, wrong scope, revocation, expiry and interrupted-browser operation without treating those failures as permission to issue compensating trades.
+
+Do not move to a larger or live strategy merely because the Pine compiler accepted the script. Compilation, HTTPS delivery, durable admission and actual lifecycle execution are separate checks.

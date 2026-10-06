@@ -1,0 +1,243 @@
+{
+  "$schema": "https://mintlify.com/docs.json",
+  "theme": "maple",
+  "name": "Liftx Docs",
+  "description": "Build trading integrations with the Liftx API and TradingView. Exact contracts, scoped access, JSON alerts, and Pine examples.",
+  "colors": {
+    "primary": "#6745FF",
+    "light": "#A99AFF",
+    "dark": "#5433CE"
+  },
+  "favicon": "/assets/favicon.svg",
+  "navbar": {
+    "links": [
+      {
+        "label": "Liftx",
+        "href": "https://liftx.io"
+      },
+      {
+        "label": "Support",
+        "href": "https://liftx.io/support"
+      }
+    ],
+    "primary": {
+      "type": "button",
+      "label": "Open Liftx",
+      "href": "https://app.liftx.io/settings/integrations"
+    }
+  },
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "Guides",
+        "icon": "book-open",
+        "groups": [
+          {
+            "group": "Get started",
+            "pages": [
+              "index",
+              "getting-started",
+              "availability",
+              "glossary",
+              "security",
+              "integrations/overview",
+              "integrations/activity"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "API",
+        "icon": "code",
+        "groups": [
+          {
+            "group": "API essentials",
+            "pages": [
+              "api/overview",
+              "api/authentication",
+              "api/accounts-and-instruments",
+              "api/position-state"
+            ]
+          },
+          {
+            "group": "Trading commands",
+            "pages": [
+              "api/commands-and-receipts",
+              "api/position-request",
+              "api/open-positions",
+              "api/modify-positions",
+              "api/terminate-positions",
+              "api/protections-and-grids"
+            ]
+          },
+          {
+            "group": "Controller design",
+            "pages": [
+              "api/templates-and-history",
+              "api/streams",
+              "api/errors-and-limits",
+              "api/bot-patterns"
+            ]
+          },
+          {
+            "group": "Settings administration",
+            "pages": [
+              "api/settings-contract"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "API reference",
+        "icon": "brackets-curly",
+        "groups": [
+          {
+            "group": "Discovery and account data",
+            "pages": [
+              "api/reference/get-v1-discovery",
+              "api/reference/get-v1-exchange-links",
+              "api/reference/get-v1-balances",
+              "api/reference/get-v1-symbols-list",
+              "api/reference/get-v1-symbols-trading-currencies",
+              "api/reference/get-v1-fee-rates-list",
+              "api/reference/get-v1-liquidation-context"
+            ]
+          },
+          {
+            "group": "Positions and history",
+            "pages": [
+              "api/reference/get-v1-positions-list",
+              "api/reference/get-v1-positions-get",
+              "api/reference/get-v1-positions-get-for-modification",
+              "api/reference/get-v1-positions-lookup",
+              "api/reference/get-v1-positions-pnl-history",
+              "api/reference/get-v1-dashboard-history",
+              "api/reference/get-v1-dashboard-pairs"
+            ]
+          },
+          {
+            "group": "Templates",
+            "pages": [
+              "api/reference/get-v1-templates-list",
+              "api/reference/get-v1-templates-get",
+              "api/reference/post-v1-templates-create",
+              "api/reference/put-v1-templates-update",
+              "api/reference/delete-v1-templates-delete"
+            ]
+          },
+          {
+            "group": "Commands and streams",
+            "pages": [
+              "api/reference/post-v1-commands",
+              "api/reference/get-v1-commands",
+              "api/reference/get-v1-commands-get",
+              "api/reference/get-v1-stream"
+            ]
+          },
+          {
+            "group": "TradingView webhook",
+            "pages": [
+              "api/reference/post-v1-tradingview-events"
+            ]
+          },
+          {
+            "group": "Session-only Settings",
+            "pages": [
+              "api/reference/get-integrations-credentials",
+              "api/reference/post-integrations-credentials",
+              "api/reference/get-integrations-bindings",
+              "api/reference/post-integrations-bindings",
+              "api/reference/post-integrations-credentials-revoke",
+              "api/reference/post-integrations-bindings-revoke",
+              "api/reference/post-integrations-reauth-start",
+              "api/reference/post-integrations-reauth-verify",
+              "api/reference/get-integrations-commands",
+              "api/reference/get-integrations-commands-get"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "Integrations",
+        "icon": "chart-line",
+        "groups": [
+          {
+            "group": "TradingView",
+            "pages": [
+              "integrations/tradingview/overview",
+              "integrations/tradingview/setup",
+              "integrations/tradingview/ordinary-alerts",
+              "integrations/tradingview/placeholders",
+              "integrations/tradingview/pine",
+              "integrations/tradingview/pine-continuous",
+              "integrations/tradingview/pine-one-shot",
+              "integrations/tradingview/pine-exit-only",
+              "integrations/tradingview/strategy-alerts",
+              "integrations/tradingview/command-format",
+              "integrations/tradingview/targets-and-lifecycles",
+              "integrations/tradingview/scenarios",
+              "integrations/tradingview/troubleshooting"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "MCP \u00b7 Planned",
+        "icon": "plug",
+        "groups": [
+          {
+            "group": "Availability",
+            "pages": [
+              "mcp/overview",
+              "mcp/chatgpt",
+              "mcp/claude"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "api": {
+    "playground": {
+      "display": "simple",
+      "proxy": false,
+      "credentials": false
+    },
+    "url": "full",
+    "examples": {
+      "languages": [
+        "curl",
+        "python",
+        "javascript"
+      ],
+      "defaults": "required",
+      "prefill": false,
+      "autogenerate": true
+    }
+  },
+  "contextual": {
+    "options": [
+      "copy",
+      "view"
+    ],
+    "display": "header"
+  },
+  "seo": {
+    "indexing": "navigable",
+    "metatags": {
+      "og:site_name": "Liftx Documentation"
+    }
+  },
+  "search": {
+    "prompt": "Search API, TradingView, and integration guides..."
+  },
+  "footer": {
+    "socials": {
+      "github": "https://github.com/liftx-hq/docs"
+    }
+  },
+  "banner": {
+    "content": "API and TradingView rollout is pending. [Check availability](/availability). MCP is planned.",
+    "dismissible": false
+  }
+}

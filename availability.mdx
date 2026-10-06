@@ -1,0 +1,39 @@
+---
+title: "Availability and boundaries"
+description: "Understand the documented release state and what each integration currently supports."
+---
+
+## Release state
+
+This documentation describes the API v1 and TradingView integration implementation prepared for rollout. Publication of these docs does **not** activate trading services.
+
+| Surface | Documentation status | Operational boundary |
+| --- | --- | --- |
+| API v1 | Contract and examples available | Production rollout and account eligibility must be confirmed before use. |
+| TradingView | JSON and Pine setup guides available | Keep alerts disabled while Liftx reports webhook execution unavailable. Complete end-to-end delivery and lifecycle validation before unattended operation. |
+| MCP | Planned stub | No listener, OAuth setup, or tools are available. |
+| Other third-party connectors | Not documented as active integrations | Use the API contract for a custom controller. |
+
+The intended production addresses are `https://api.liftx.io/v1` and `https://hooks.liftx.io/v1/tradingview/events`. A reachable hostname, documentation page, or saved credential is not proof that webhook trading has been enabled.
+
+## Exchange and product support
+
+Liftx resolves exchange authority from the selected linked account. Only operational adapters and catalog instruments are usable. A waitlist or marketing entry is not a trading capability. Confirm the selected link's environment and its supported instrument, order, and margin combinations.
+
+The public request structure is exchange-neutral. A strategy must still respect the selected product's tick size, quantity step, minimum size, available order types, margin rules, and leverage limits. Do not translate venue symbols or infer contract multipliers in webhook messages.
+
+## Current boundaries
+
+- One TradingView setup binds one exchange link, one canonical instrument, and one signal source. Create another setup for another market or independent producer.
+- Ordinary JSON alerts support OPEN and strategy- or market-level termination. Exact lifecycle modifications require the advanced command format and current position configuration.
+- Bulk termination is a bounded capture of eligible positions, not an account-wide stop switch or a permanent prohibition on future entries.
+- Pine has no arbitrary HTTP read access to Liftx, and webhook responses are not Pine execution feedback.
+- A TradingView strategy fill describes its broker emulator. It does not certify a Liftx fill, actual position size, or exit completion.
+- An integration credential cannot change account security, billing, or stored exchange credentials.
+- External API commands act on Liftx-owned positions. They are not a generic direct exchange-order gateway.
+
+## Contract changes
+
+Use `/v1` and preserve the field types, fixed-point units, strict decoding, and identity rules documented in the [API guides](/api/overview). Unknown fields, duplicate JSON names, incorrect case, and unsupported request combinations are rejected. Validate a client against the published [OpenAPI contract](/api/openapi.json) and review behavior changes before updating an unattended system.
+
+Public examples contain intentionally synthetic IDs and illustrative fixed timestamps where shown. Replace values from authenticated discovery and create a fresh timestamp only for a new intent. Never update timestamps on a retry of an existing command.

@@ -1,0 +1,9 @@
+{
+  "client_command_id": "demo-controller:cycle-001:terminate",
+  "issued_at": 1893456120,
+  "expires_at": 1893456180,
+  "action": "terminate",
+  "exchange_link_id": 17,
+  "instrument_id": "COPY_EXACT_CATALOG_ID",
+  "position_id": "11111111-1111-4111-8111-111111111111"
+}

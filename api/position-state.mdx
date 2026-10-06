@@ -1,0 +1,82 @@
+---
+title: "Position, order and fill state"
+description: "Interpret canonical publications, numeric status projections and exact exposure accounting."
+---
+
+A command receipt describes admission and execution ownership. A Position publication describes the observed lifecycle and its accounting. Neither a chart price nor the strategy emulator's position is a substitute for this state.
+
+## Full publication and partial event
+
+HTTP position reads return the canonical Position in a `success/message/data` envelope. Position list pages contain a `positions` array and explicit pagination/incompleteness. The WebSocket positions channel can publish a full Position, an array of Positions, a page object or a partial event; decode the frame type and payload shape first.
+
+Do not overwrite a full cached position with a partial event. Preserve exact link, instrument, revision and current generation context. An absent field in a partial event is not an instruction to clear a value.
+
+## Position identity and numeric projections
+
+| Field | Meaning |
+| --- | --- |
+| `id` | Canonical Liftx position UUID |
+| `exchange_link_id` | Exact account/environment authority |
+| `instrument_id` | Opaque catalog market |
+| `revision` | Current position revision used for guarded modification |
+| `position_side` | `1` long, `2` short |
+| `instrument_type` | `1` spot, `2` derivatives |
+| `instrument_topology` | `1` spot, `2` linear derivative, `3` inverse derivative |
+| `status` | User-facing projection: `1` pending, `2` canceled, `3` open, `4` closed |
+| `position_fsm_state` | Lifecycle state projection; do not equate it to a receipt state or infer venue finality from one integer |
+| `created_at`, `updated_at` | UTC Unix seconds |
+
+Active position pages include pending/open projections; inactive pages include canceled/closed projections. Projection status and durable fill accounting must be interpreted together. Delayed fill evidence or recovery can change what is currently known; an old closed snapshot is not a permanent guarantee against later reconciliation.
+
+## Attached order arrays
+
+- `open_orders`: opening rows for this lifecycle.
+- `close_orders`: terminal closing rows where present.
+- `stop_loss_orders`: SL and SLx-related protection rows/configuration.
+- `take_profit_orders`: TP rows/configuration.
+
+Every row uses fixed-point price/quantity pairs. Optional `row_id`, `created_at_ms`, `slot_id` and `order_id` carry row/physical-order identity. `created_at_ms` is milliseconds; it is an explicit exception to second-based timestamps.
+
+| Order field | Meaning |
+| --- | --- |
+| `projected_order_status` | `1` pending, `2` canceled, `3` executed, `4` moved |
+| `order_fsm_state` | Detailed order lifecycle projection |
+| `exchange_submitted` | Whether submission evidence is present; not a fill acknowledgement |
+| `slot_id` | Stable logical slot when available |
+| `order_id` | Exact internal Liftx physical order UUID when available, not venue order ID |
+| `price_atomic`, `price_scale` | Exact represented price |
+| `quantity_atomic`, `quantity_scale` | Canonical represented quantity |
+| `executed` | Executed price/quantity/fee tuples |
+| `executed_qty_sum_*`, `executed_fee_sum_*`, `executed_avg_fill_price_*` | Published execution aggregates when available |
+
+A moved row is not a generic successful cancel. A stable slot can have a different physical successor order. Use the current exact `order_id` for an amendment and never infer that a previous generation is safe to cancel solely from a slot name.
+
+Order rows retain protection metadata, including relative SL/TP steps, TP weights, SLx activation state, trigger, trailing peak and enabled-mode fields. Those fields describe owner-managed protection; they do not authorize a client to skip the modification lifecycle.
+
+## Exposure and economic amounts
+
+| Position field pair | Interpretation |
+| --- | --- |
+| `alloc_open_executed_atomic`, `alloc_open_executed_scale` | Canonical allocated opening execution |
+| `alloc_close_executed_atomic`, `alloc_close_executed_scale` | Canonical allocated closing execution |
+| `alloc_net_exposure_atomic`, `alloc_net_exposure_scale` | Canonical remaining allocated exposure |
+| `executed_cost_quote_atomic`, `executed_cost_quote_scale` | Executed cost in quote units |
+| `funding_fee_quote_atomic`, `funding_fee_quote_scale` | Accounted funding amount in quote units |
+| `next_funding_fee_quote_*`, optional `next_funding_rate_*`, `next_funding_time` | Published forthcoming funding context |
+| Optional `liquidation_price_atomic`, `liquidation_price_scale` | Available liquidation estimate/context |
+
+Canonical size is in base units for spot/linear and quote-face units for inverse topology. Do not apply a spot-style multiplication to inverse contracts or treat contract counts, input quote amounts and canonical exposure as interchangeable. The adapter owns venue conversion.
+
+Use published canonical aggregates for position accounting rather than summing display rows across replacement generations. The `executed` tuples and published sums are related views; adding both double-counts execution. Likewise a receipt's allocated position UUID is not itself proof of nonzero exposure.
+
+## Terminal progress
+
+Optional `terminal_request_kind` distinguishes close (`1`) and cancel (`2`) intent. The publication can include terminal phase and queue index/size. Queued intent is not exchange execution already started. A receipt can have its correlated terminal sequence, while the position publication remains the source for current orders and exposure.
+
+A robust exit observer checks the current position lifecycle, net exposure and remaining owned order work. It does not convert `202`, `handed_off`, an empty group capture or an incomplete page into a flatness assertion.
+
+## P&L history completeness
+
+Position history includes `complete`, `terminal`, `reset_required`, sample boundaries and points. Each point has its timestamp, optional decimal `value`, completeness, resolution and `gap_before` marker. A null or incomplete point is unavailable information, not zero P&L. On reset, discard the invalid baseline and rebuild the requested history.
+
+The [OpenAPI schemas](/api/openapi.json) define every publication field and its nullability. The [stream protocol](/api/streams) defines frame variants and snapshot/revision reconciliation. This guide supplies semantics; it does not replace those exact types.

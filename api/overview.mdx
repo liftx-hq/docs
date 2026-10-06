@@ -1,0 +1,62 @@
+---
+title: "API overview"
+description: "Build exchange-neutral automation on Liftx position and order management."
+---
+
+<Warning>
+Preview documentation. The API and TradingView integration are implemented for release qualification; production activation is pending. Published contracts and examples do not establish that a trading endpoint is active. The documentation playground cannot submit requests.
+</Warning>
+
+The Liftx API exposes linked accounts, instrument catalogs, balances, fees, positions, attached orders, protections, templates, history, durable commands and scoped streams. Execution uses the same position lifecycle as the Liftx terminal. A bot does not get a separate order engine.
+
+| Service | Address | Authentication |
+| --- | --- | --- |
+| API v1 | `https://api.liftx.io/v1` | Ordinary Liftx API key in `Authorization: Bearer …` |
+| TradingView webhook | `https://hooks.liftx.io/v1/tradingview/events` | Restricted TradingView key in the JSON body |
+| MCP | Planned; not active | Not available |
+
+API and integration access is included with Pro, trial and the existing paid-grace entitlement. There is no per-command usage charge or trading-volume allowance. Resource admission, exchange limits and credential restrictions still apply.
+
+## First integration
+
+1. Create a restricted key in [Settings → Integrations](https://app.liftx.io/settings/integrations). Start with an approved demo exchange link and the smallest necessary permissions.
+2. Read [discovery](/api/reference/get-v1-discovery) to obtain actions and admission limits.
+3. Read [linked accounts](/api/reference/get-v1-exchange-links), then that exact link's [instrument catalog](/api/reference/get-v1-symbols-list).
+4. Construct a [canonical position request](/api/position-request) using catalog precision, lot limits and supported account settings.
+5. Persist a command's immutable identity and payload locally before submitting it.
+6. Inspect its receipt and the actual position. A `202` receipt means durable acceptance, not a fill.
+7. Use current state and a revision for modification; use the existing termination command for cancellation or closure.
+
+```sh
+curl --fail-with-body \
+  -H "Authorization: Bearer ${LIFTX_API_KEY}" \
+  https://api.liftx.io/v1/discovery
+```
+
+The command uses a key supplied through a private runtime secret store. Never insert an actual key into a repository, browser bundle, URL or public example.
+
+## Three identities
+
+| Identity | Meaning |
+| --- | --- |
+| `exchange_link_id` | One authenticated linked exchange account and environment |
+| `instrument_id` | Exact opaque instrument identifier returned by that link's catalog |
+| `position_id` | One Liftx position lifecycle, allocated once when an API OPEN is accepted |
+
+A display pair such as BTC/USDT is insufficient execution authority. Different spot, perpetual and inverse markets can share similar display names. Adding another supported exchange does not change the public command shape.
+
+## Request conventions
+
+- Use HTTPS, UTF-8 JSON and the exact documented HTTP method.
+- JSON object field names are case-sensitive. Integration envelopes reject unknown, repeated and incorrectly cased keys, null alternatives and trailing JSON.
+- Use each allowed query parameter once; URL-encode opaque values and omit absent options.
+- Money uses decimal coefficient strings plus scales. Do not send floating-point numbers for atomic fields.
+- Times are UTC Unix seconds unless a field explicitly uses milliseconds. Ordinary TradingView `fired_at` is the documented UTC timestamp string exception.
+- Positive link identifiers fit JavaScript's safe integer range. Do not coerce other 64-bit identifiers or revisions through an imprecise floating-point conversion.
+- Bodies are bounded. See [errors and limits](/api/errors-and-limits).
+
+## What the API does not expose
+
+Account login, billing, password/MFA changes, exchange credential creation and withdrawal functionality are not API-key operations. Attached order changes belong to the position command; there is no generic arbitrary exchange-order bypass. Settings routes in the reference are documented separately as session-owned contracts.
+
+Download the complete [OpenAPI 3.1 contract](/api/openapi.json). The reference includes the exact wire schemas; the guides explain lifecycle semantics that cannot be reduced to JSON types.

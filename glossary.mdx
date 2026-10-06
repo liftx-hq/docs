@@ -1,0 +1,30 @@
+---
+title: "Integration glossary"
+description: "Understand account links, instruments, strategy sources, position references, and execution evidence."
+---
+
+| Term | Meaning in Liftx |
+| --- | --- |
+| Exchange link | One authenticated connection to an exchange account and environment. Its numeric `exchange_link_id` selects runtime authority. |
+| Instrument | One catalog product on that link, identified by an opaque `instrument_id`. A spot pair and a derivative with similar tickers are different instruments. |
+| Integration namespace | The stable boundary used to identify a credential's commands. Replacing a key inside the same policy preserves that namespace. |
+| Scope | A permitted operation such as `read` or `positions:open`. It is checked together with account, instrument, entitlement, and setup policy. |
+| Binding | An immutable TradingView setup policy: exact market, source identity, mode, position policy, quantity cap, and permissions. |
+| Source instance | A single ordered producer identified by `source_instance_id`. One coordinated ordinary OPEN/EXIT alert pair can act as that producer. Independent scripts or charts need separate setups. |
+| Binding revision | The pinned policy revision that every signal must match. It is not a position revision. |
+| Position revision | The current version of a resident position's configuration. API modification requires the current revision to reject stale updates. |
+| Client command ID | The caller's stable identity for one immutable intent. It is not a position ID or receipt ID. |
+| Receipt ID | Liftx's UUID for accepted command evidence. Use it to retrieve status without resubmitting a new intent. |
+| Client position ID | A TradingView producer's lifecycle reference, paired with its immutable start time. Pine can generate it; the strategy does not need a pre-created Liftx UUID. |
+| Position ID | Liftx's canonical UUID for a position. API modify and terminate commands target this identity. |
+| Sequence | A positive ordered TradingView signal number within the setup's source. It fences stale intent; it is not an exchange execution acknowledgement. |
+| Slot / order generation | Stable logical placement identity and its exact current order identity. Current modification snapshots expose these so amendments do not target a replaced order. |
+| Canonical quantity | The instrument's normalized execution quantity unit. Do not assume it means quote spending, margin, or contract count. |
+| OPEN request | The complete position configuration, including entry rows and enabled protection fields. It is reused by existing Liftx trading admission. |
+| Termination | A request to the existing owner to cancel pending work and close remaining exposure as appropriate. A successful handoff is not proof of completion. |
+| Strategy target | A bounded termination capture of eligible positions belonging to the same TradingView setup and exact market. |
+| Market target | A separately permitted termination capture that can include other strategies and manual Liftx positions on the same exact market. |
+| Publication / snapshot | An authoritative read projection with its own completeness and revision information. Incomplete data is not evidence of zero exposure. |
+| Operator required | A command result that cannot be safely resolved automatically from durable evidence. Reconcile before creating another intent. |
+
+Use the [command contract](/api/commands-and-receipts), [position request reference](/api/position-request), and [TradingView targeting guide](/integrations/tradingview/targets-and-lifecycles) for the exact field-level rules.

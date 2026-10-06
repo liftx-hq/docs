@@ -1,0 +1,35 @@
+---
+title: "Open a scoped state stream"
+description: "This HTTP GET upgrades to WebSocket (101)."
+openapi: "/api/openapi.json GET /v1/stream"
+playground: "simple"
+---
+
+<Note>Preview contract. Production availability remains subject to activation and release qualification. Examples are synthetic; the documentation cannot submit requests.</Note>
+
+## Authorization
+
+`read` in the upgrade Authorization header.
+
+## Behavior
+
+This HTTP GET upgrades to WebSocket (101). Send scoped JSON text controls and decode the documented versioned binary messages. Browser WebSocket clients cannot normally set the required header; do not move secrets into URLs. Mutations remain HTTP commands.
+
+## Upgrade example
+
+```http
+GET /v1/stream
+Authorization: Bearer YOUR_API_KEY_FROM_PRIVATE_STORAGE
+Connection: Upgrade
+Upgrade: websocket
+Sec-WebSocket-Version: 13
+Sec-WebSocket-Key: CLIENT_GENERATED_HANDSHAKE_NONCE
+```
+
+Use a WebSocket library to construct the handshake and verify its response. The client controls and complete channel codecs are in the [stream guide](/api/streams).
+
+## Response and errors
+
+The generated response schema below is the wire contract. Preserve fixed-point strings, nullable fields and endpoint-specific envelopes. Inspect HTTP status and Content-Type before decoding failures; reused trading routes may return JSON or plain text. Authentication, entitlement and exact link/instrument restrictions apply in addition to endpoint validation. See [errors and recovery](/api/errors-and-limits).
+
+Read the [related guide](/api/streams) for lifecycle, units and recovery semantics.

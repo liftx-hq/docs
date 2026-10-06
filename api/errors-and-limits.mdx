@@ -1,0 +1,100 @@
+---
+title: "Errors, limits and safe recovery"
+description: "Interpret admission failures without converting uncertainty into duplicate trades."
+---
+
+Inspect HTTP status and `Content-Type` before decoding a response. Integration-owned errors use:
+
+```json
+{"success":false,"error":{"code":"SCOPE_DENIED","message":"Read permission required"}}
+```
+
+Reused trading and reporting endpoints retain their existing JSON envelopes or plain-text HTTP errors. Do not assume every failure is the integration Error object or every success is a receipt.
+
+## HTTP classes
+
+| Status | Interpretation |
+| --- | --- |
+| `200` | Successful read, identical accepted command, or endpoint-specific success |
+| `201` | Newly issued credential/binding in authenticated Settings |
+| `202` | New durable command acceptance, not execution completion |
+| `204` | Successful template update/delete; no body |
+| `304` | Supplied catalog hash remains current; no new catalog body |
+| `400` | Invalid JSON, scope shape, query, reference, binding policy or owner request |
+| `401` | Invalid/expired/revoked credential or account authentication |
+| `402` | Pro/trial entitlement required |
+| `403` | Permission, link/instrument or account state denied |
+| `404` | Resource absent or not visible within authorized scope |
+| `405` | Wrong method; inspect `Allow` |
+| `409` | Conflicting immutable identity, stale revision or ordering/occupancy conflict |
+| `413` | Payload exceeds its bound |
+| `415` | Unsupported content type/encoding |
+| `422` | Endpoint-specific owner validation failure |
+| `429` | Account/owner admission or security limit; not usage billing |
+| `500` | Existing owner/storage failure; inspect endpoint result before retry |
+| `503` | Temporary service/admission unavailability, or inactive TradingView ingress |
+
+## Important integration codes
+
+| Code | Response |
+| --- | --- |
+| `INVALID_JSON`, `JSON_REQUIRED`, `ENCODING_UNSUPPORTED` | Correct format; use JSON, one object, unique exact fields and no compressed body |
+| `BODY_TOO_LARGE` | Reduce the request within its supported bound |
+| `SCOPE_DENIED` | Select an appropriately authorized key; never broaden access automatically |
+| `INVALID_COMMAND`, `INVALID_REQUEST`, `INVALID_REFERENCE`, `INVALID_TARGET` | Correct the command shape using its exact transport contract |
+| `COMMAND_CONFLICT` | The namespace/client identity already belongs to a different immutable payload; recover the original intent |
+| `STALE_COMMAND` | An unseen command is outside the issuance/deadline window; do not refresh timestamps on an ambiguous existing intent |
+| `ACCEPTANCE_UNCERTAIN` | Admission commit was attempted with an unreadable outcome; retry exactly the same identity and payload |
+| `REVISION_REQUIRED`, `INVALID_REVISION` | Supply the positive revision from the current modification publication |
+| `SCOPE_MISMATCH` | The nested position request must match the command link/instrument |
+| `INVALID_BINDING_POLICY` | Choose a supported explicit position mode and market-termination policy |
+| `SIGNAL_ORDER_CONFLICT` | TradingView OPEN is behind the source watermark; do not reissue it as a fresh OPEN automatically |
+| `SOURCE_POSITION_BUSY` | Single-position setup has active or unresolved work; inspect it before another lifecycle |
+| `TARGET_CAPACITY` | Group selection exceeds 64 targets; the group is rejected, not silently truncated |
+| `MARKET_TERMINATION_DENIED` | Missing explicit market grant or stale source sequence |
+| `PENDING_CAPACITY` | Account has exhausted unresolved-command capacity; observe existing work and back off |
+| `ADMISSION_UNAVAILABLE`, `SERVICE_UNAVAILABLE` | Temporary bounded service failure; retry reads with backoff or exact immutable command bytes |
+| `TRADINGVIEW_NOT_ACTIVATED` | Webhook execution is not operationally enabled; key creation alone does not activate it |
+| `REVOCATION_UNCERTAIN` | Inspect credential/binding metadata before any explicit retry |
+
+Owner-specific validation codes remain part of their documented endpoint responses. Do not write a client that treats an unknown error code as success.
+
+## Resource bounds
+
+| Resource | Bound |
+| --- | --- |
+| Integration command/webhook body | 256 KiB |
+| Template write body | 64 KiB |
+| New command lifetime | At most 300 seconds |
+| New command issuance age | At most five minutes; future-clock allowance 30 seconds |
+| Unresolved commands | 64 per account; group children each consume capacity |
+| TradingView group capture | At most 64 targets; atomic admission or rejection |
+| Receipt page | Up to 50 top-level commands |
+| Resolved receipt retention | 30 days; unresolved work remains until resolution |
+| Position page | Default 50, maximum 200 |
+| WebSocket control message | At most 16 KiB and 1–32 channels on one exact link |
+| Active credentials | At most 64 |
+| Credential metadata page | At most 100 rows, active first |
+| Unrevoked TradingView setups | At most 64, independently of key expiry |
+| Key link/instrument policy | 1–32 links; 0–64 unique instrument IDs for API keys; TV pins one link/instrument |
+| Credential lifetime | At most one year |
+| Fresh Settings approval | Five minutes, five proof attempts, atomically consumed |
+| Credential security issuance/reauthentication | Shared 12 requests per minute per source IP |
+
+External usage is unmetered, but concurrency and global backlog admission are bounded. The global pending threshold is an overload signal, not a guaranteed per-client allocation. There is no promise that a burst of all maximum-size requests will be accepted.
+
+## Retry decision table
+
+| Situation | Action |
+| --- | --- |
+| Read timeout or temporary read failure | Retry with bounded exponential backoff and jitter; honor `Retry-After` when present |
+| Command response lost | Reuse the exact persisted immutable command or find its receipt |
+| Same identity, different payload conflict | Recover the original saved intent; do not mutate its timestamps to bypass the conflict |
+| Revision conflict | Fresh read, reassess all rows and create a deliberate new intent |
+| `operator_required` | Reconcile actual state and seek operator resolution; do not replay wholesale |
+| Template mutation ambiguous | Read the template/list before an explicit retry |
+| Secret issuance ambiguous | Inspect metadata; never automatically issue another key |
+| Revocation ambiguous | Inspect metadata; do not assert access was revoked |
+| Stream disconnect/gap | Reconnect with backoff, rebuild a complete snapshot, then resume dependent decisions |
+
+Retries must be bounded by the intended command's deadline and by application risk policy. Backoff is a client admission strategy, not a guarantee of delivery or execution.

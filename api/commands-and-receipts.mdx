@@ -1,0 +1,86 @@
+---
+title: "Commands, receipts and retries"
+description: "Separate durable intent, execution handoff and actual position outcome."
+---
+
+Trading mutations use `POST /v1/commands`. The API accepts `open`, `modify` and `terminate`; the permission is selected by the action. Reads and template CRUD do not create trading-command receipts.
+
+## Command envelope
+
+| Field | Required for | Meaning |
+| --- | --- | --- |
+| `client_command_id` | All | Immutable intent ID within the integration namespace; 1–128 UTF-8 bytes; `liftx-group:` is reserved |
+| `issued_at` | All | UTC Unix seconds when the intent was created |
+| `expires_at` | All | Deadline for a new execution handoff; later than issuance and at most 300 seconds later |
+| `action` | All | `open`, `modify` or `terminate` |
+| `exchange_link_id` | All | Exact authorized linked account |
+| `instrument_id` | All | Exact catalog ID on that link |
+| `target` | Optional API | If supplied, `position`; group targets belong to TradingView |
+| `position_id` | Modify/terminate | Existing Liftx position UUID; omit on OPEN |
+| `expected_revision` | API modify | Positive revision from a fresh modification snapshot |
+| `request` | Open/modify | Complete canonical PositionRequest; omit on terminate |
+
+The request's link and instrument must equal the envelope's link and instrument. Ordinary API commands do not accept the TradingView source/lifecycle reference fields.
+
+Use a disciplined UTC clock. An unseen command must be issued within the five-minute admission window, with only the documented 30-second future-clock allowance, and must still be inside its own deadline. Expiry prevents new handoff; it is not an instruction to cancel an already executing position at that time.
+
+## Acceptance example
+
+```json
+{
+  "id":"22222222-2222-4222-8222-222222222222",
+  "client_command_id":"demo-controller:cycle-001:open",
+  "action":"open",
+  "state":"accepted",
+  "position_id":"11111111-1111-4111-8111-111111111111",
+  "error_code":null,
+  "created_at":1893456000,
+  "updated_at":1893456000
+}
+```
+
+These IDs and dates are synthetic. New acceptance returns `202`; an identical previously accepted intent returns `200` with its original receipt. The returned position UUID belongs to that single OPEN identity even if the first HTTP response is lost.
+
+## Idempotency is immutable intent
+
+Persist the complete command before sending it. Retrying means retransmitting the same client command ID, timestamps, deadline, target and payload. Do not refresh timestamps or alter a quantity under the same ID. A different payload for an existing identity returns a conflict.
+
+A timeout does not prove absence of acceptance. Retry the exact immutable request or inspect receipts. If its outcome becomes unresolved, reconcile rather than generate a new OPEN or replay a whole modification. An expired retry of a known identity can return the original receipt; a new expired intent cannot be admitted.
+
+Credential rotation retains the namespace. A different independently created API integration has a different namespace; reusing the same client ID on a new namespace is not a retry of the first namespace's command.
+
+## Receipt states
+
+| State | Meaning and client response |
+| --- | --- |
+| `accepted` | Durable intent waits for an execution owner. Observe the same receipt. |
+| `dispatching` | The worker durably claimed the intent. Preparation or side effects may be in progress. Never create a duplicate mutation to speed it up. |
+| `handed_off` | Command-correlated durable owner evidence exists. This is still not proof of fill or flat exposure. |
+| `execution_observed` | The owner path returned without command-correlated durable evidence sufficient for a stronger assertion. Inspect actual position state. |
+| `rejected` | Inspect `error_code` and current state before deciding on a deliberately new intent. |
+| `expired` | The execution deadline elapsed before new handoff. |
+| `operator_required` | Available durable evidence cannot safely resolve the side effects. Further same-position work is held for reconciliation. |
+| `partial` | TradingView group parent only: resolved children have different outcomes. Inspect every target. |
+
+A termination receipt can include `terminal_request_kind` (`1` close, `2` cancel) and `terminal_request_seq`. This records the durable terminal request; it does not certify completed venue cancellation or flat exposure. Receipt states do not replace position accounting.
+
+## Read and paginate receipts
+
+```sh
+curl --fail-with-body --get \
+  -H "Authorization: Bearer ${LIFTX_API_KEY}" \
+  --data-urlencode 'id=22222222-2222-4222-8222-222222222222' \
+  https://api.liftx.io/v1/commands/get
+```
+
+`GET /v1/commands` returns up to 50 top-level namespace receipts with `commands` and a nullable `next_cursor`. Pass the returned cursor unchanged to read older receipts. Group children are not repeated in the list. Receipt detail can contain up to 64 child `targets` for a TradingView group.
+
+A same-account API key with `read` and the exact authorized link/instrument can inspect a known TradingView receipt UUID. That does not give it access to the TradingView namespace list or mutation identity. The Settings **Activity** tab lists account receipts and refreshes on demand.
+
+## Retention and recovery
+
+Resolved receipts are retained for 30 days; unresolved work remains until resolution. Archive receipts needed for longer audit retention in your own system, without keys or raw secret-bearing webhook bodies.
+
+Recovery consults canonical position, lineage and terminal-request evidence. An uncertain modification is not replayed wholesale and no compensating trade is invented. A subsequent order fill can change position state after an earlier observation; check current exposure before issuing dependent work.
+
+Revocation and entitlement expiry block new handoffs. They do not interrupt protection, termination or recovery that already belongs to Liftx. Do not use credential revocation as an emergency close operation.

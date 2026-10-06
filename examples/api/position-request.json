@@ -1,0 +1,60 @@
+{
+  "action": 1,
+  "exchange_link_id": 17,
+  "instrument_id": "COPY_EXACT_CATALOG_ID",
+  "quantity_asset": "BTC",
+  "position_side": 1,
+  "open_order_type": 1,
+  "open_prices_atomic": [
+    "70000"
+  ],
+  "open_prices_scale": [
+    0
+  ],
+  "open_quantities_atomic": [
+    "1"
+  ],
+  "open_quantities_scale": [
+    4
+  ],
+  "order_grid_enabled": false,
+  "margin_mode": 1,
+  "leverage": 2,
+  "sl_enabled": true,
+  "sl_type": 1,
+  "sl_step_percent": 2000000,
+  "sl_price_atomic": "68600",
+  "sl_price_scale": 0,
+  "sl_price_rearrangement": true,
+  "sl_order_type": 2,
+  "slx_enabled": true,
+  "slx_tp_trailing_enabled": false,
+  "slx_each_tp_trailing": false,
+  "slx_sl_trigger_price_trailing_enabled": true,
+  "slx_sl_trigger_price_trailing_pl_percent_activation": 1000000,
+  "slx_sl_trigger_price_trailing_indent_percent": 500000,
+  "slx_sl_trigger_price_trailing_step": 250000,
+  "slx_sl_trailing_breakeven_enabled": false,
+  "tp_enabled": true,
+  "tp_price_rearrangement": true,
+  "tp_grid_enabled": false,
+  "tp_order_type": 1,
+  "tp_prices_atomic": [
+    "72100"
+  ],
+  "tp_prices_scale": [
+    0
+  ],
+  "tp_quantities_atomic": [
+    "0"
+  ],
+  "tp_quantities_scale": [
+    0
+  ],
+  "tp_quantity_percents": [
+    1000000
+  ],
+  "tp_pnls": [
+    3000000
+  ]
+}

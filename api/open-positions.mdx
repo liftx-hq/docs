@@ -1,0 +1,118 @@
+---
+title: "Open a position"
+description: "Create one durable position intent with protections in its opening request."
+---
+
+Use `positions:open` and `POST /v1/commands`. For a reconciled controller also grant `read` within the intended account/instrument scope.
+
+## Preflight in the client
+
+1. Resolve the intended link and its exact instrument from authenticated catalog reads.
+2. Check the catalog's state, precision, minimums, maximums and supported account/order settings.
+3. Build a complete [PositionRequest](/api/position-request). Configure SL, SLx and TP at OPEN when they should protect that lifecycle.
+4. Choose a new immutable client command ID, a current UTC issuance time and a deadline no more than five minutes later.
+5. Store the command before sending it. Omit `position_id`; Liftx allocates it once for the accepted OPEN identity.
+
+## Full OPEN command
+
+The following nonoperational example has synthetic timestamps and an intentionally invalid catalog placeholder. It requests a limit long with an initial SL, price-trigger SLx and TP. Replace configuration only after selecting a real approved demo market and checking its limits.
+```json
+{
+  "client_command_id": "demo-controller:cycle-001:open",
+  "issued_at": 1893456000,
+  "expires_at": 1893456060,
+  "action": "open",
+  "exchange_link_id": 17,
+  "instrument_id": "COPY_EXACT_CATALOG_ID",
+  "request": {
+    "action": 1,
+    "exchange_link_id": 17,
+    "instrument_id": "COPY_EXACT_CATALOG_ID",
+    "quantity_asset": "BTC",
+    "position_side": 1,
+    "open_order_type": 1,
+    "open_prices_atomic": [
+      "70000"
+    ],
+    "open_prices_scale": [
+      0
+    ],
+    "open_quantities_atomic": [
+      "1"
+    ],
+    "open_quantities_scale": [
+      4
+    ],
+    "order_grid_enabled": false,
+    "margin_mode": 1,
+    "leverage": 2,
+    "sl_enabled": true,
+    "sl_type": 1,
+    "sl_step_percent": 2000000,
+    "sl_price_atomic": "68600",
+    "sl_price_scale": 0,
+    "sl_price_rearrangement": true,
+    "sl_order_type": 2,
+    "slx_enabled": true,
+    "slx_tp_trailing_enabled": false,
+    "slx_each_tp_trailing": false,
+    "slx_sl_trigger_price_trailing_enabled": true,
+    "slx_sl_trigger_price_trailing_pl_percent_activation": 1000000,
+    "slx_sl_trigger_price_trailing_indent_percent": 500000,
+    "slx_sl_trigger_price_trailing_step": 250000,
+    "slx_sl_trailing_breakeven_enabled": false,
+    "tp_enabled": true,
+    "tp_price_rearrangement": true,
+    "tp_grid_enabled": false,
+    "tp_order_type": 1,
+    "tp_prices_atomic": [
+      "72100"
+    ],
+    "tp_prices_scale": [
+      0
+    ],
+    "tp_quantities_atomic": [
+      "0"
+    ],
+    "tp_quantities_scale": [
+      0
+    ],
+    "tp_quantity_percents": [
+      1000000
+    ],
+    "tp_pnls": [
+      3000000
+    ]
+  }
+}
+```
+
+Save a private reviewed command file and submit it once:
+
+```sh
+curl --fail-with-body \
+  -H "Authorization: Bearer ${LIFTX_API_KEY}" \
+  -H 'Content-Type: application/json' \
+  --data-binary @open-command.json \
+  https://api.liftx.io/v1/commands
+```
+
+Do not run the downloadable [schema example](/examples/api/open-command.json) as a live trade. Its purpose is to show the complete nesting and number formats.
+
+## Observe the lifecycle
+
+A new acceptance returns a receipt with one `position_id`. Store both identifiers. Poll the receipt for admission progress and read the exact position for order state, fills and `alloc_net_exposure_*`. `handed_off` does not mean a limit order filled. `execution_observed` does not prove protection or closure.
+
+If a response is lost, resend the exact saved command. A changed client ID creates a different intent and can open another position. A new timestamp under the old ID conflicts with the old immutable payload.
+
+## Market orders and grids
+
+A supported market OPEN uses `open_order_type:2` and the same required arrays. Use an exported valid draft; do not assume an arbitrary zero price works for sizing or validation. Market execution has no fill-price guarantee.
+
+An OPEN grid sets `order_grid_enabled:true` with corresponding row count, price and quantity arrays. Rows belong to the same Liftx lifecycle. Multiple independently opened positions are different lifecycles even when they share a market or venue exposure slot.
+
+## Spot, short and derivatives
+
+Use the catalog to select product type. Spot uses eligible settlement configuration; derivatives use supported margin mode and leverage. A short is `position_side:2` where the account and instrument permit it. Do not implement a universal “sell means short” translation: a sell could be a close, a new short or an unsupported spot operation.
+
+Leverage preflight is a venue operation and cannot be modeled as an atomic database transaction with local command admission. If effects become uncertain, the receipt preserves uncertainty for reconciliation instead of claiming a side-effect-free failure.

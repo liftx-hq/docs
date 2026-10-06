@@ -1,0 +1,19 @@
+---
+title: "Integrations"
+description: "Choose a scoped connection for chart alerts, automated controllers, and future AI clients."
+---
+
+Configure integrations from [Liftx Settings → Integrations](https://app.liftx.io/settings/integrations). The screen separates credentials, TradingView setup, command Activity, and planned MCP support.
+
+| Tab | Purpose | Start here |
+| --- | --- | --- |
+| API | Issue scoped bot credentials, inspect metadata, replace or revoke keys | [API authentication](/api/authentication) |
+| TradingView | Bind a signal source to one account and instrument; copy JSON or Pine examples | [TradingView setup](/integrations/tradingview/setup) |
+| Activity | Inspect accepted commands and their execution evidence | [Activity guide](/integrations/activity) |
+| MCP | Explain planned AI connectivity | [MCP availability](/mcp/overview) |
+
+API and TradingView access are included with Pro and the trial. These are unmetered features, with bounded security and overload protection and the exchange's own trading limits.
+
+For TradingView, start with the generated ordinary JSON messages if chart conditions are enough. Use Pine when the strategy needs explicit lifecycle references, custom sequencing, repeated cycles, or advanced payload generation. Use an API controller whenever a decision needs to read Liftx's current position state.
+
+Third-party clients must follow the same [security](/security), [availability](/availability), and [command](/api/commands-and-receipts) contracts. No third-party platform's strategy state supersedes Liftx's execution evidence.

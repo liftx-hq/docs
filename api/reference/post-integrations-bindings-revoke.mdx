@@ -1,0 +1,36 @@
+---
+title: "Disconnect a TradingView setup"
+description: "Revoke the integration namespace and its access through all associated credentials."
+openapi: "/api/openapi.json POST /integrations/bindings/revoke"
+playground: "simple"
+---
+
+<Note>Preview contract. Production availability remains subject to activation and release qualification. Examples are synthetic; the documentation cannot submit requests.</Note>
+
+## Authorization
+
+Authenticated Liftx Settings session; available after entitlement expiry.
+
+## Behavior
+
+Revoke the integration namespace and its access through all associated credentials. This is not a command to close existing positions. Inspect metadata after an uncertain revocation result.
+
+This is a session-owned application contract, not an ordinary API-key endpoint. Use [Settings → Integrations](https://app.liftx.io/settings/integrations). The public API base URL does not grant session access.
+
+## JSON body example
+
+The following shows the request shape, not live credentials or executable market defaults. Replace timestamps only when creating a new reviewed intent; never mutate them on a command retry.
+
+```json
+{
+  "integration_id": "88888888-8888-4888-8888-888888888888"
+}
+```
+
+## Response and errors
+
+The generated response schema below is the wire contract. Preserve fixed-point strings, nullable fields and endpoint-specific envelopes. Inspect HTTP status and Content-Type before decoding failures; reused trading routes may return JSON or plain text. Authentication, entitlement and exact link/instrument restrictions apply in addition to endpoint validation. See [errors and recovery](/api/errors-and-limits).
+
+Do not automatically repeat a mutation after transport ambiguity. Trading commands reuse the exact immutable identity; credential issuance and template writes require their documented metadata/read reconciliation.
+
+Read the [related guide](/api/settings-contract) for lifecycle, units and recovery semantics.

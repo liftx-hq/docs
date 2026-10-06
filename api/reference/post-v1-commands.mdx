@@ -1,0 +1,99 @@
+---
+title: "Submit a trading command"
+description: "A new intent returns 202 with a durable receipt; an identical retry returns 200 with the original receipt."
+openapi: "/api/openapi.json POST /v1/commands"
+playground: "simple"
+---
+
+<Note>Preview contract. Production availability remains subject to activation and release qualification. Examples are synthetic; the documentation cannot submit requests.</Note>
+
+## Authorization
+
+`positions:open`, `positions:modify` or `positions:terminate`, selected by the action.
+
+## Behavior
+
+A new intent returns 202 with a durable receipt; an identical retry returns 200 with the original receipt. OPEN allocates one position UUID; MODIFY requires a fresh expected_revision; TERMINATE omits request. Reusing an identity with different intent conflicts. Acceptance does not certify a fill or flatness.
+
+## JSON body example
+
+The following shows the request shape, not live credentials or executable market defaults. Replace timestamps only when creating a new reviewed intent; never mutate them on a command retry.
+
+```json
+{
+  "client_command_id": "demo-controller:cycle-001:open",
+  "issued_at": 1893456000,
+  "expires_at": 1893456060,
+  "action": "open",
+  "exchange_link_id": 17,
+  "instrument_id": "COPY_EXACT_CATALOG_ID",
+  "request": {
+    "action": 1,
+    "exchange_link_id": 17,
+    "instrument_id": "COPY_EXACT_CATALOG_ID",
+    "quantity_asset": "BTC",
+    "position_side": 1,
+    "open_order_type": 1,
+    "open_prices_atomic": [
+      "70000"
+    ],
+    "open_prices_scale": [
+      0
+    ],
+    "open_quantities_atomic": [
+      "1"
+    ],
+    "open_quantities_scale": [
+      4
+    ],
+    "order_grid_enabled": false,
+    "margin_mode": 1,
+    "leverage": 2,
+    "sl_enabled": true,
+    "sl_type": 1,
+    "sl_step_percent": 2000000,
+    "sl_price_atomic": "68600",
+    "sl_price_scale": 0,
+    "sl_price_rearrangement": true,
+    "sl_order_type": 2,
+    "slx_enabled": true,
+    "slx_tp_trailing_enabled": false,
+    "slx_each_tp_trailing": false,
+    "slx_sl_trigger_price_trailing_enabled": true,
+    "slx_sl_trigger_price_trailing_pl_percent_activation": 1000000,
+    "slx_sl_trigger_price_trailing_indent_percent": 500000,
+    "slx_sl_trigger_price_trailing_step": 250000,
+    "slx_sl_trailing_breakeven_enabled": false,
+    "tp_enabled": true,
+    "tp_price_rearrangement": true,
+    "tp_grid_enabled": false,
+    "tp_order_type": 1,
+    "tp_prices_atomic": [
+      "72100"
+    ],
+    "tp_prices_scale": [
+      0
+    ],
+    "tp_quantities_atomic": [
+      "0"
+    ],
+    "tp_quantities_scale": [
+      0
+    ],
+    "tp_quantity_percents": [
+      1000000
+    ],
+    "tp_pnls": [
+      3000000
+    ]
+  }
+}
+```
+
+## Response and errors
+
+The generated response schema below is the wire contract. Preserve fixed-point strings, nullable fields and endpoint-specific envelopes. Inspect HTTP status and Content-Type before decoding failures; reused trading routes may return JSON or plain text. Authentication, entitlement and exact link/instrument restrictions apply in addition to endpoint validation. See [errors and recovery](/api/errors-and-limits).
+
+Do not automatically repeat a mutation after transport ambiguity. Trading commands reuse the exact immutable identity; credential issuance and template writes require their documented metadata/read reconciliation.
+
+Read the [related guide](/api/commands-and-receipts) for lifecycle, units and recovery semantics.

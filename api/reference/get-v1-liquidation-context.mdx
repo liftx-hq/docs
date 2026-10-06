@@ -1,0 +1,31 @@
+---
+title: "Read liquidation context"
+description: "The current endpoint requires margin_mode=2 (isolated)."
+openapi: "/api/openapi.json GET /v1/liquidation/context"
+playground: "simple"
+---
+
+<Note>Preview contract. Production availability remains subject to activation and release qualification. Examples are synthetic; the documentation cannot submit requests.</Note>
+
+## Authorization
+
+`read` for the exact link/instrument.
+
+## Behavior
+
+The current endpoint requires margin_mode=2 (isolated). Returns account/instrument-specific context, not a guaranteed liquidation price or execution instruction. Do not reuse it across markets, links or margin modes.
+
+## Request example
+
+```http
+GET /v1/liquidation/context?exchange_link_id=17&instrument_id=COPY_EXACT_CATALOG_ID&margin_mode=2
+Authorization: Bearer YOUR_API_KEY_FROM_PRIVATE_STORAGE
+```
+
+All IDs and dates are illustrative. URL-encode opaque query values and supply each allowed key once. Optional filters and their types appear in the generated schema below.
+
+## Response and errors
+
+The generated response schema below is the wire contract. Preserve fixed-point strings, nullable fields and endpoint-specific envelopes. Inspect HTTP status and Content-Type before decoding failures; reused trading routes may return JSON or plain text. Authentication, entitlement and exact link/instrument restrictions apply in addition to endpoint validation. See [errors and recovery](/api/errors-and-limits).
+
+Read the [related guide](/api/accounts-and-instruments) for lifecycle, units and recovery semantics.

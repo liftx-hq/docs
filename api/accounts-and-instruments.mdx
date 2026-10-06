@@ -1,0 +1,126 @@
+---
+title: "Accounts, instruments and balances"
+description: "Resolve an exact execution market and understand precision, units and snapshots."
+---
+
+All examples use fictitious link `17` and `COPY_EXACT_CATALOG_ID`. Replace them only with authenticated catalog data from the intended account. These examples are not executable trading defaults.
+
+## Discover the contract
+
+```sh
+curl --fail-with-body -H "Authorization: Bearer ${LIFTX_API_KEY}" \
+  https://api.liftx.io/v1/discovery
+```
+
+An illustrative discovery response is:
+
+```json
+{
+  "version": "v1",
+  "command_actions": ["open", "modify", "terminate"],
+  "scopes": ["read", "positions:open", "positions:modify", "positions:terminate", "templates:write"],
+  "limits": {
+    "request_bytes": 262144,
+    "pending_per_user": 64,
+    "group_targets": 64,
+    "command_lifetime_seconds": 300,
+    "receipt_retention_days": 30
+  },
+  "mcp_available": false
+}
+```
+
+## Select a linked account
+
+```sh
+curl --fail-with-body -H "Authorization: Bearer ${LIFTX_API_KEY}" \
+  https://api.liftx.io/v1/exchange-links
+```
+
+```json
+{"exchange_links":[{"id":17,"exchange_id":1,"environment":"demo"}]}
+```
+
+The numeric `exchange_id` is registry metadata, not a selector to override routing. `exchange_link_id` selects the immutable linked account and environment. Preserve the exact link for every following read and command. Do not switch automatically to another link if the intended one is unavailable.
+
+## Read the catalog
+
+```sh
+curl --fail-with-body --get \
+  -H "Authorization: Bearer ${LIFTX_API_KEY}" \
+  --data-urlencode 'exchange_link_id=17' \
+  --data-urlencode 'instrument_type=2' \
+  https://api.liftx.io/v1/symbols/list
+```
+
+`instrument_type` is `1` for spot and `2` for derivatives. The response's `data.all` contains symbols, `data.hash` identifies that catalog snapshot, and `data.expiration` is its cache expiry. `data.selected` can accompany an exact `instrument_id` selection. Reuse the returned hash on subsequent equivalent catalog reads; a matching hash returns `304` without a new body.
+
+| Catalog field | Use |
+| --- | --- |
+| `instrument_id` | Exact adapter-owned execution identifier; retain case and bytes |
+| `base`, `quote` | Input quantity-asset choices and display pair |
+| `instrument_type`, `instrument_topology` | Product category and normalized spot/linear/inverse quantity semantics |
+| `tick_size_atomic`, `tick_size_scale` | Exact price increment |
+| `lot_size_atomic`, `lot_size_scale` | Exact quantity increment |
+| `min_size_atomic`, `min_size_scale` | Minimum supported size |
+| `contract_value_atomic`, `contract_value_scale` | Adapter-normalized contract metadata; not permission to invent contract conversion |
+| `max_limit_size_*`, `max_market_size_*`, amount limits | Present venue/catalog bounds; do not invent absent limits |
+| `leverage` | Catalog leverage constraint, still subject to account eligibility |
+| `fee_schedule_id` | Match the appropriate fee schedule |
+| `state` | Instrument availability from its registered catalog |
+
+Topology values are `1` spot, `2` linear derivative and `3` inverse derivative. Canonical quantities are base units for spot/linear instruments and quote-face units for inverse instruments. The exchange adapter owns venue contract conversion.
+
+## Decimal interpretation
+
+```json
+{"price_atomic":"7012345","price_scale":2,"quantity_atomic":"25","quantity_scale":5}
+```
+
+This means price `70,123.45` and quantity `0.00025` in the field's documented unit. Parse coefficients as arbitrary-precision integers/decimal strings. Scale controls decimal placement; it is not a lot or tick-size guarantee. Validate against the selected catalog's increments and limits.
+
+## Spot settlement currency
+
+```sh
+curl --fail-with-body --get \
+  -H "Authorization: Bearer ${LIFTX_API_KEY}" \
+  --data-urlencode 'exchange_link_id=17' \
+  --data-urlencode 'instrument_id=COPY_EXACT_CATALOG_ID' \
+  https://api.liftx.io/v1/symbols/trading-currencies
+```
+
+Use the returned eligible settlement choice for the spot request's `trading_currency`. `quantity_asset` describes the unit entered for quantities; it is a different field. Preserve eligible canonical values when modifying an existing spot position.
+
+## Balance snapshots
+
+```sh
+curl --fail-with-body --get \
+  -H "Authorization: Bearer ${LIFTX_API_KEY}" \
+  --data-urlencode 'exchange_link_id=17' \
+  https://api.liftx.io/v1/balances
+```
+
+```json
+{
+  "exchange_link_id":17,
+  "updates":[{"asset":"USDT","free_atomic":"100000","free_scale":2}],
+  "snapshot_complete":true
+}
+```
+
+Only a complete snapshot can establish absence of an asset from that snapshot. An incomplete response is not a zero balance. Balances are an exact-link aggregate and require an unrestricted instrument policy plus `read`. Balance observations do not reserve funds against concurrent trading.
+
+## Fees and liquidation context
+
+Fee schedules are link-wide; this endpoint requires a key without an instrument restriction. Read `/v1/fee-rates/list?exchange_link_id=17`; use `data.fee_rates` and its expiry instead of assuming a fee from a public venue tier. Keep decimal fields exact. Fees, minimums, available balances and supported order roles remain account/catalog-specific.
+
+`/v1/liquidation/context` requires the link, instrument and `margin_mode=2` for isolated-margin context. This is a read model, not a guaranteed liquidation-price promise. Do not use a value from another instrument, margin mode or stale account state.
+
+## Position reads
+
+- `/positions/list` pages active or inactive positions for one link. Default offset is 0 and limit is 50; maximum limit is 200.
+- `/positions/get` reads one exact UUID/link/instrument tuple.
+- `/positions/lookup?id=…` resolves an authorized position UUID without trusting caller-supplied venue inference.
+- `/positions/get-for-modification` reads the current active **Position publication**, including its revision and order identities. It is not a prebuilt `PositionRequest`.
+
+Respect `has_more` and any `incomplete`/error indication. A temporarily incomplete page is not evidence that a position disappeared. Use a new complete snapshot after reconnect or a state gap before making exposure-dependent decisions.

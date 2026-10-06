@@ -1,0 +1,68 @@
+{
+  "client_command_id": "demo-controller:cycle-001:modify-001",
+  "issued_at": 1893456060,
+  "expires_at": 1893456120,
+  "action": "modify",
+  "exchange_link_id": 17,
+  "instrument_id": "COPY_EXACT_CATALOG_ID",
+  "position_id": "11111111-1111-4111-8111-111111111111",
+  "expected_revision": 7,
+  "request": {
+    "action": 1,
+    "exchange_link_id": 17,
+    "instrument_id": "COPY_EXACT_CATALOG_ID",
+    "quantity_asset": "BTC",
+    "position_side": 1,
+    "open_order_type": 1,
+    "open_prices_atomic": [
+      "70000"
+    ],
+    "open_prices_scale": [
+      0
+    ],
+    "open_quantities_atomic": [
+      "1"
+    ],
+    "open_quantities_scale": [
+      4
+    ],
+    "order_grid_enabled": false,
+    "margin_mode": 1,
+    "sl_enabled": true,
+    "sl_type": 1,
+    "sl_step_percent": 2000000,
+    "sl_price_atomic": "69000",
+    "sl_price_scale": 0,
+    "sl_price_rearrangement": false,
+    "sl_order_type": 2,
+    "slx_enabled": false,
+    "tp_enabled": true,
+    "tp_price_rearrangement": true,
+    "tp_grid_enabled": false,
+    "tp_order_type": 1,
+    "tp_prices_atomic": [
+      "72100"
+    ],
+    "tp_prices_scale": [
+      0
+    ],
+    "tp_quantities_atomic": [
+      "0"
+    ],
+    "tp_quantities_scale": [
+      0
+    ],
+    "tp_quantity_percents": [
+      1000000
+    ],
+    "tp_pnls": [
+      3000000
+    ],
+    "open_slot_ids": [
+      "SYNTHETIC_CURRENT_OPEN_SLOT"
+    ],
+    "tp_slot_ids": [
+      "SYNTHETIC_CURRENT_TP_SLOT"
+    ]
+  }
+}

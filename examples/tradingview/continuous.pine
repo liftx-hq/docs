@@ -1,0 +1,102 @@
+//@version=6
+indicator("Liftx continuous signals", overlay = true)
+
+// PRIVATE: this script contains a restricted credential. Never publish/share it.
+// Fixed target: link 17, instrument COPY_EXACT_CATALOG_ID.
+// The chart supplies signal data; it cannot change this fixed trading target.
+// One key is one ordered producer: use a separate setup/key for another alert
+// or independent strategy. The same running alert can reuse its key for cycles.
+// Never mix this Pine alert with an ordinary OPEN/EXIT alert pair on this key.
+// Use an approved demo link. Prepare while disabled; enable only after Liftx
+// webhook activation. Set future times in the chart's timezone, then create
+// ONE alert: this indicator / Any alert() function call / Liftx webhook URL.
+// Changing chart inputs does not update the server's frozen alert copy.
+// Never restart/recreate an alert with this setup. Use a new Liftx setup instead.
+
+const int liftxCredentialExpiresAt = 1000
+string liftxOpenRequest = ""
+
+// Termination selection does not change the setup's immutable opening policy.
+// "One strategy position" uses the exact retained lifecycle reference.
+// "This strategy’s positions" includes earlier unresolved cycles from this key.
+// "All positions in this market" includes manual and other strategies' Liftx
+// positions on the fixed link/instrument and requires the explicit setup grant.
+string liftxTerminateSelection = input.string("This strategy’s positions", "On a termination signal", options = ["One strategy position", "This strategy’s positions"])
+string liftxTerminateTarget = liftxTerminateSelection == "One strategy position" ? "position" : liftxTerminateSelection == "This strategy’s positions" ? "strategy" : ""
+if liftxTerminateTarget == ""
+    runtime.error("Invalid termination target. Do not widen scope; use an authorized selection.")
+
+// Every intent uses this one envelope; group targets omit position references.
+liftxMessage(string action, string positionRef, int positionStarted, int sequence, int issued, string requestJSON, string target = "position") =>
+    string commandID = "11111111-1111-4111-8111-111111111111:" + str.tostring(sequence) + ":" + action
+    string message = "{\"token\":\"REPLACE_WITH_RESTRICTED_TRADINGVIEW_KEY\",\"command\":{\"client_command_id\":" + '"' + commandID + '"'
+    message += ',"issued_at":' + str.tostring(issued) + ',"expires_at":' + str.tostring(issued + 60)
+    message += ',"action":"' + action + '"' + ",\"exchange_link_id\":17,\"instrument_id\":\"COPY_EXACT_CATALOG_ID\",\"source_instance_id\":\"11111111-1111-4111-8111-111111111111\",\"binding_revision\":1"
+    message += ',"target":"' + target + '"'
+    message += target == "position" ? ',"client_position_id":"' + positionRef + '","position_started_at":' + str.tostring(positionStarted) : ""
+    message += ',"sequence":' + str.tostring(sequence)
+    message += (requestJSON == "" ? "" : ',"request":' + requestJSON) + '}}'
+    message
+
+// Confirmed-bar signal example, not a recommended trading strategy.
+// Use standard time-based candles of at least one minute. No historical orders.
+// Group termination runs even without a local OPEN signal, including zero targets.
+// Termination wins if custom entry and exit conditions coincide on one bar.
+// Opening policy: one position at a time; Liftx rejects known unresolved own work.
+// Group exits can address earlier unresolved cycles. With exact-position exits,
+// a lost exit followed by a rejected entry can leave an older reference unmanaged
+// by this script: inspect Liftx and manage it there; never widen scope silently.
+// Emitting termination does not establish readiness for another position.
+const bool liftxMultiplePositions = false
+
+bool liftxEnabled = input.bool(false, "Enable continuous signals", tooltip = "Emits confirmed-bar intents only. No execution feedback or automatic delivery retry.")
+int liftxStartAt = input.time(0, "Start time (chart timezone)")
+float liftxOpenAbove = input.float(0.0, "OPEN when close crosses above", minval = 0.0)
+float liftxTerminateBelow = input.float(0.0, "TERMINATE when close crosses below", minval = 0.0)
+
+// Replace only these signal conditions for your own strategy. They are chart
+// prices, not saved order/protection prices or Liftx execution feedback.
+bool liftxOpenSignal = ta.crossover(close, liftxOpenAbove)
+bool liftxTerminateSignal = ta.crossunder(close, liftxTerminateBelow)
+
+varip bool liftxArmed = false
+varip int liftxLastBar = 0
+varip bool liftxOpenEmitted = false
+varip string liftxPositionRef = ""
+varip int liftxPositionStarted = 0
+
+if barstate.isrealtime and liftxEnabled
+    if not liftxArmed
+        if not chart.is_standard or not (timeframe.isminutes or timeframe.isdwm)
+            runtime.error("Use a standard time-based chart of at least one minute.")
+        if liftxStartAt <= timenow or liftxStartAt >= liftxCredentialExpiresAt
+            runtime.error("Create this alert before a future Start time, before credential expiry. After interruption, inspect Liftx and create a new setup; do not restart this alert.")
+        if liftxTerminateBelow <= 0 or liftxOpenAbove <= liftxTerminateBelow
+            runtime.error("Choose positive threshold prices, with OPEN above TERMINATE.")
+        liftxArmed := true
+    if timenow >= liftxCredentialExpiresAt
+        runtime.error("Credential expired. Signals have stopped; inspect Liftx and manage remaining orders or exposure there.")
+    if barstate.isconfirmed and time_close >= liftxStartAt and time_close > liftxLastBar
+        liftxLastBar := time_close
+        if timenow < time_close or timenow >= time_close + 60000
+            runtime.error("The confirmed bar is outside the 60-second delivery window. Stop this alert and inspect Liftx before creating a new setup.")
+        int issued = int(time_close / 1000)
+        if liftxTerminateSignal
+            if liftxTerminateTarget != "position" or liftxOpenEmitted
+                liftxOpenEmitted := false
+                alert(liftxMessage("terminate", liftxPositionRef, liftxPositionStarted, time_close, issued, "", liftxTerminateTarget), alert.freq_once_per_bar_close)
+        else if liftxOpenSignal and (not liftxOpenEmitted or (liftxMultiplePositions and liftxTerminateTarget != "position"))
+            liftxPositionRef := "11111111-1111-4111-8111-111111111111:" + str.tostring(time_close)
+            liftxPositionStarted := issued
+            liftxOpenEmitted := true
+            alert(liftxMessage("open", liftxPositionRef, liftxPositionStarted, time_close, issued, liftxOpenRequest), alert.freq_once_per_bar_close)
+
+// Same-bar event identity and timestamps are deterministic. Delivery retries
+// must preserve the original full JSON. No state or exposure recovery on restart.
+plot(liftxOpenEmitted ? 1 : 0, "OPEN emitted without subsequent TERMINATE (not exposure)", display = display.data_window)
+
+// Missing updates, credential expiry, stopped alerts, or delivery failure can
+// prevent termination. Signal state never means accepted, filled, canceled or flat.
+// The chart's local state is independent of the server alert and its delivery.
+// After an interruption, stop the alert and inspect Activity AND the actual
+// positions in Liftx. Manage remaining orders and exposure there.

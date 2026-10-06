@@ -1,0 +1,31 @@
+---
+title: "List command receipts"
+description: "Returns at most 50 top-level receipts and nullable next_cursor."
+openapi: "/api/openapi.json GET /v1/commands"
+playground: "simple"
+---
+
+<Note>Preview contract. Production availability remains subject to activation and release qualification. Examples are synthetic; the documentation cannot submit requests.</Note>
+
+## Authorization
+
+Any valid API key for its own integration namespace.
+
+## Behavior
+
+Returns at most 50 top-level receipts and nullable next_cursor. Pass the returned cursor unchanged for older commands. Group children are represented by their parent summary; request detail for child outcomes. This is namespace history, not all account Activity.
+
+## Request example
+
+```http
+GET /v1/commands
+Authorization: Bearer YOUR_API_KEY_FROM_PRIVATE_STORAGE
+```
+
+All IDs and dates are illustrative. URL-encode opaque query values and supply each allowed key once. Optional filters and their types appear in the generated schema below.
+
+## Response and errors
+
+The generated response schema below is the wire contract. Preserve fixed-point strings, nullable fields and endpoint-specific envelopes. Inspect HTTP status and Content-Type before decoding failures; reused trading routes may return JSON or plain text. Authentication, entitlement and exact link/instrument restrictions apply in addition to endpoint validation. See [errors and recovery](/api/errors-and-limits).
+
+Read the [related guide](/api/commands-and-receipts) for lifecycle, units and recovery semantics.

@@ -1,0 +1,94 @@
+---
+title: Pine Script integration
+description: Set up private Pine v6 alerts, select a helper, and customize signal logic without losing lifecycle identity.
+---
+
+Pine is the advanced option for computing conditions and complete JSON dynamically. The supplied examples are indicators that emit Liftx intents through `alert()`. They are not broker-emulator strategies, and their local plots do not represent exchange exposure.
+
+## Choose a complete example
+
+| Example | Behavior | Required permissions |
+| --- | --- | --- |
+| [Continuous](/integrations/tradingview/pine-continuous) | Repeated confirmed-bar threshold entries and exits; fresh reference per entry | OPEN and terminate |
+| [One-shot](/integrations/tradingview/pine-one-shot) | At most one scheduled OPEN and one later termination | OPEN and terminate |
+| [Exit-only](/integrations/tradingview/pine-exit-only) | Confirmed-bar termination signals; never opens | Terminate |
+
+The same running continuous alert can reuse one key for successive cycles. Multiple-position policy plus a group exit can allow concurrent independent entries. A fresh key is not required for every position.
+
+The public examples contain an invalid token, a synthetic target and an intentionally expired credential timestamp. **Use the complete script generated privately by Liftx for your real setup.** The public code is an inspectable example, not a preconfigured trading connection.
+
+## Liftx generation controls
+
+After [creating the setup](/integrations/tradingview/setup), select **Pine (advanced)** in the one-time panel. **Pine example** selects the code template. **On a termination signal** chooses an authorized selector:
+
+- **One strategy position:** exact locally retained lifecycle reference.
+- **This strategy’s positions:** eligible positions belonging to this setup on its fixed market.
+- **All positions in this market:** the explicitly granted market target, including manual and other strategies' matching positions.
+
+The selector configures the script's input. It does not change opening policy, quantity cap or granted authority. Exit-only exposes only group selectors. Examples needing OPEN are unavailable without OPEN permission; Advanced OPEN also needs an imported request. All complete examples require terminate permission.
+
+Select **Copy complete setup** before leaving Liftx. Store the private bundle temporarily, then copy the script and URL separately. Hiding Liftx clears the one-time secret.
+
+## TradingView setup, step by step
+
+1. Open [TradingView Supercharts](https://www.tradingview.com/chart/) and select a chart with realtime updates. Confirm its data is appropriate for the intended signal; execution remains pinned to the Liftx setup.
+2. Open **Pine Editor**, create a new indicator and replace its contents with the complete generated Pine v6 script.
+3. Save it privately. The code contains the restricted key; never publish it, share its source or include it in a screenshot.
+4. Add the indicator to the chart and open its **Settings → Inputs**.
+5. Leave its enable checkbox off while execution is unavailable. Once activation is available, set the future times and conditions described below, then enable it before creating the server alert.
+6. Create **one** alert with the condition matching the indicator title and **Any alert() function call**.
+7. In **Notifications**, enable **Webhook URL** and paste `https://hooks.liftx.io/v1/tradingview/events`.
+8. Set alert expiration within the key lifetime. For One-shot, it must also be after TERMINATE time.
+9. Create the alert before its future start/open time. Verify the alert's saved configuration and running status.
+10. Observe the first deliberate demo event in the TradingView log, Liftx Activity and actual positions/orders.
+
+Pine supplies the complete message. Do not paste an ordinary-alert template into this alert, and do not select strategy order-fill events for these indicator examples. TradingView creates the running alert from the chart dialog; saving the script alone does not create it. The saved alert captures a snapshot, so later chart/input edits do not update that running copy. See [TradingView alerts](https://www.tradingview.com/pine-script-docs/concepts/alerts/).
+
+## Input reference
+
+| Input | Examples | Meaning |
+| --- | --- | --- |
+| **On a termination signal** | All | Selects one authorized target; does not widen the setup grant |
+| **Enable continuous signals** | Continuous | Initially false; permits realtime signal processing once properly configured |
+| **Enable exit-only signals** | Exit-only | Initially false; permits realtime group exits |
+| **Start time (chart timezone)** | Continuous, Exit-only | Must be future when first armed and before key expiry; create the alert before this time |
+| **OPEN when close crosses above** | Continuous | Positive chart-price threshold, higher than the terminate threshold; not the configured order price |
+| **TERMINATE when close crosses below** | Continuous, Exit-only | Positive chart-price threshold for an exit signal |
+| **Enable one-shot demo** | One-shot | Initially false; permits one OPEN and one later termination |
+| **OPEN time (chart timezone)** | One-shot | Future scheduled intent time |
+| **TERMINATE time (chart timezone)** | One-shot | At least 60 seconds after OPEN and before key expiry |
+
+Continuous and Exit-only require standard time-based candles of at least one minute. Their timestamp and one-event-per-confirmed-bar logic are designed around that constraint. One-shot is driven by incoming realtime updates, not a wall-clock scheduler.
+
+## Customize conditions, preserve the protocol
+
+In the continuous example, these are the demonstration conditions:
+
+```pine
+bool liftxOpenSignal = ta.crossover(close, liftxOpenAbove)
+bool liftxTerminateSignal = ta.crossunder(close, liftxTerminateBelow)
+```
+
+Replace condition expressions with your strategy logic while preserving the surrounding realtime, confirmed-bar, source, sequence, deadline and lifecycle handling. The example gives termination priority if custom entry and exit conditions are both true on one bar.
+
+Signal conditions can use a different feed or timeframe, subject to Pine's data and repainting rules. Do not replace the pinned execution instrument with chart text. For intrabar strategies, multiple events on one bar or portfolio coordination, design and validate a separate event-identity model instead of removing the confirmed-bar checks and assuming the existing helper is still sufficient.
+
+## Configure OPEN and protections
+
+Guided mode keeps `liftxOpenRequest` empty: the saved setup supplies the full request. Advanced mode embeds the complete imported request as JSON text. That request can include OPEN grids, SL, SLx, TP and rearrangement using the [canonical fields](/api/position-request).
+
+If writing dynamic price/quantity code, explicitly produce coefficient strings and scales using the instrument's precision. Maintain all required paired arrays and conditional fields. Do not insert floating-point JSON numbers or raw chart decimal text into atomic strings. Keep the nested scope identical to the outer command and key.
+
+Liftx owns protection execution after handoff. Pine should not try to mirror each exchange fill or independently implement SLx execution by assuming its local signal state matches the exchange.
+
+## Modify requires current state
+
+The reusable `liftxMessage` function accepts `modify` and a complete request. That does not make a cached request safe. A controller must read current canonical position data, map it to the current request with exact slot identities, and preserve OPEN rows. Pine cannot retrieve that state or consume a webhook receipt. Use [API modification](/api/modify-positions) for changes requiring those observations; the supplied scripts intentionally do not schedule modification.
+
+## Restart and expiry behavior
+
+`varip` tracks local signal state across realtime updates, not a durable Liftx execution ledger. The examples fail closed when restarted after their required future start. They do not recover prior references or rearm themselves.
+
+After an interruption, stop the old alert, inspect Activity and real positions, and manage outstanding exposure. Create a new setup/source for a new producer. Do not share one key between a Pine alert, an ordinary OPEN/EXIT pair and another independent strategy.
+
+Key expiry stops new signals in the helpers. Missing data, stopped alerts or failed webhook delivery can also prevent an exit. Existing Liftx protections continue, but an emitted exit or expired key never proves the position is flat.

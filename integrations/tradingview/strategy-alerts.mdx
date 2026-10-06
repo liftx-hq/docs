@@ -1,0 +1,70 @@
+---
+title: Existing strategies and order-fill alerts
+description: Integrate a Pine strategy deliberately, with complete messages and no ambiguous buy/sell mapping.
+---
+
+An existing Pine strategy can emit Liftx intents either through `alert()` or through its broker-emulator order-fill alerts. Select one event family for each trading intent. A strategy backtest, simulated fill or `strategy.position_size` does not confirm an exchange-side Liftx position.
+
+## Preferred approach: explicit signal commands
+
+Reuse the generated canonical `liftxMessage` envelope and lifecycle handling in your signal logic. Send an explicit `open`, `modify` or `terminate` intent at the decision point. The outer action has Liftx meaning; it is not inferred from emulator direction.
+
+For an alert driven by `alert()`, choose the strategy's **alert() function calls only** event option. A strategy must contain the corresponding calls. Keep its calculation frequency and realtime behavior consistent with your chosen event identities. Do not also enable order-fill commands for the same entry or exit.
+
+The complete [continuous indicator example](/integrations/tradingview/pine-continuous) demonstrates the canonical message and bounded lifecycle state. A strategy integration must deliberately adapt those semantics to its own order lifecycle instead of copying only the `alert()` line.
+
+## Alternative: order-fill messages
+
+TradingView permits a dynamic `alert_message` on order-generating strategy calls. To use it:
+
+1. Build a complete Liftx `token` plus `command` envelope for each relevant event.
+2. Set that full JSON as the order call's `alert_message`.
+3. Create the TradingView strategy alert for **order fills only**.
+4. Set the entire **Message** field to:
+
+```text
+{{strategy.order.alert_message}}
+```
+
+5. Configure **Notifications → Webhook URL** with the Liftx hooks URL.
+6. Validate every order path, including exits, cancellations, replacements and orders left pending for several bars.
+
+The following is an integration fragment, not a standalone strategy. The surrounding strategy must allocate the lifecycle and event identities and construct valid complete envelopes:
+
+```pine
+// entryMessage and exitMessage are complete canonical Liftx JSON envelopes.
+// entryOrderID is the emulator entry ID, not the Liftx lifecycle identity.
+strategy.entry(entryOrderID, strategy.long, alert_message = entryMessage)
+strategy.close(entryOrderID, alert_message = exitMessage)
+```
+
+TradingView evaluates message variables at emulator execution; orders can remain pending before that happens. Do not freeze an issuance timestamp at placement and assume a later fill has a fresh deadline. Do not let mutable variables overwrite another pending order's lifecycle. Each emitted event must preserve its intended identity, ordering and target while producing valid trigger-time issuance. See the provider's [order-fill alert documentation](https://www.tradingview.com/pine-script-docs/concepts/alerts/#order-fill-events).
+
+Canceling a pending broker-emulator order is not a fill event. Calling `strategy.cancel()` does not by itself send a Liftx cancellation or cancel any pending Liftx order. Emit a deliberate Liftx termination intent, or use a supported current-state API modification when the intended change is narrower.
+
+Every order capable of producing an enabled alert must supply the correct message. Missing `alert_message` can yield an empty message. Placeholders inside the generated envelope do not provide recursive evaluation; build dynamic fields in Pine.
+
+## Why generic strategy JSON is insufficient
+
+| Emulator information | Ambiguity for Liftx |
+| --- | --- |
+| `buy` | Could open long, close short, reduce a hedge or reverse |
+| `sell` | Could open short, close long, reduce a hedge or reverse |
+| Order contracts | Emulator sizing can differ from canonical base quantity, quote face value or venue contracts |
+| Order ID | Can be reused for later cycles or replacement orders |
+| Position becomes flat | Describes the emulator, not actual Liftx orders/exposure |
+| Strategy reversal | May combine exit and entry in the emulator; Liftx termination and opposite OPEN remain separate intents |
+
+Consequently, a template containing only `action: "{{strategy.order.action}}"`, `instrument: "{{ticker}}"` and `amount: "{{strategy.order.contracts}}"` is not a Liftx command. It lacks an authenticated canonical market, intent identity, deadline, lifecycle and full opening/protection configuration.
+
+## Partial exits, pyramiding and reversal
+
+For multiple independently managed entries, use the multiple-position policy and distinct references. Preserve the reference for each exact exit, or deliberately select a strategy group. A single termination closes its selected lifecycle; it is not an arbitrary partial-quantity exit command.
+
+Use Liftx TP configuration for staged exits and current-state API modification for supported adjustments. Broker-emulator partial exits must not be translated blindly into whole-position termination.
+
+If a reversal must wait for confirmed flat exposure, coordinate through the API and actual position state. Sending terminate then OPEN from Pine does not establish execution ordering at the exchange or make the pair atomic.
+
+## Release a custom strategy deliberately
+
+Document its event family, identity scheme, fixed market, sizing units, maximum concurrency, restart behavior and treatment of rejected/uncertain commands. Validate its concrete realtime paths on a supported demo account after activation. The shipped examples cover bounded signal patterns, not every possible Pine execution model.
