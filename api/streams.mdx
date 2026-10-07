@@ -93,7 +93,7 @@ For an update frame, the payload is:
 An empty batch contains four zero bytes. A separate response frame (`message_type:3`) with the single payload byte `0x01` marks readiness for the empty complete snapshot path. Completion metadata also arrives on channel 6. The connection's exact link supplies scope; the balance row itself has no link field.
 
 <Warning>
-The existing balance stream codec is a compact presentation format. It truncates precision beyond 12 decimal places toward zero and is bounded by signed int64. Its current encoder can emit zero when conversion is unrepresentable. Therefore a zero stream value alone cannot establish an exact available balance. Use the fixed-point decimal HTTP `/v1/balances` snapshot, including `snapshot_complete`, for sizing and reconciliation. This codec limitation remains a release-qualification concern.
+The existing balance stream codec is a compact presentation format. It truncates precision beyond 12 decimal places toward zero and is bounded by signed int64. Its current encoder can emit zero when conversion is unrepresentable. Therefore a zero stream value alone cannot establish an exact available balance. Use the fixed-point decimal HTTP `/v1/balances` snapshot, including `snapshot_complete`, for sizing and reconciliation.
 </Warning>
 
 ## Positions: channel 2, version 1

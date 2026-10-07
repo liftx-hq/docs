@@ -3,10 +3,6 @@ title: Create and manage a TradingView setup
 description: Every permission, opening policy, quantity cap and one-time secret control in Liftx Settings.
 ---
 
-<Warning>
-Setup preparation does not activate webhook execution. If Liftx labels the setup **Prepared** or shows execution unavailable, save the private configuration and keep TradingView alerts disabled.
-</Warning>
-
 ## Before opening the form
 
 1. Sign in to [Liftx Settings → Integrations](https://app.liftx.io/settings/integrations) with Pro or an active trial.
@@ -14,7 +10,7 @@ Setup preparation does not activate webhook execution. If Liftx labels the setup
 3. Prepare a valid **new** order draft without submitting it. Select direction, quantities, OPEN rows, SL, SLx, TP, grids, rearrangement, leverage and applicable account options in the normal order builder.
 4. Finish any position-modification session. The integration imports a new-order setup, not an in-progress edit of an existing position.
 5. Enable TradingView two-factor authentication in [account settings](https://www.tradingview.com/settings/#account-settings). TradingView requires 2FA for webhooks; follow its [2FA guide](https://www.tradingview.com/support/solutions/43000572460-how-to-configure-2fa/).
-6. Return to Liftx **Settings → Integrations → TradingView → Connect TradingView**.
+6. Return to **Settings → Integrations**, select **TradingView** in the dropdown, then choose **Connect** to open the [New TradingView connection screen](https://app.liftx.io/settings/integrations/tradingview/new-connection). Back returns to the TradingView list.
 
 Advanced setups without OPEN permission can omit the imported draft, but still need a loaded link/instrument with known quantity units and a positive cap. Guided mode always needs an imported opening request.
 
@@ -96,7 +92,7 @@ The cap covers the sum of OPEN rows **per position**. It is not an account budge
 5. Use **Copy complete setup** before switching away. Store the bundle temporarily in a private editor, then copy its URL and each message/script separately to TradingView.
 6. Select **I saved it — hide the secret** when finished.
 
-Liftx displays the random secret once and stores only its digest. Hiding the app, navigation, lock, logout or account change clears the displayed secret and generated private content. A secret cannot be recovered from the key list. Do not publish a populated Pine script or commit the private bundle.
+Liftx displays the random secret once and stores only its digest. Hiding the app, navigation, lock, logout or account change clears the displayed secret and generated private content. A secret cannot be recovered from the key list. Save the complete setup before using Back; returning to the list clears it. Do not publish a populated Pine script or commit the private bundle.
 
 The one-time panel also offers **Copy secret**, **Copy webhook URL**, individual message/script copy buttons, and **Copy complete setup**. Copy secret copies the credential alone; it is not a complete alert message. Copy complete setup preserves all currently selected authorized content in a labeled private bundle. The same disposal rules apply to every displayed form of the secret.
 
@@ -106,14 +102,17 @@ If creation returns an ambiguous network error, refresh metadata first. Do not r
 
 | Control or label | Meaning |
 | --- | --- |
-| **Prepared** | Credential exists but webhook execution is unavailable. Keep alerts disabled. |
-| **Active** | Credential is within its lifetime and activation is available; this does not prove delivery or execution. |
+| **Active** | Credential is within its lifetime. Review its granted permissions; command receipts and positions show delivery and execution outcomes. |
 | **Expired** | New requests fail authorization. Existing position management continues. |
 | **No available key** | Setup metadata remains, but no usable credential is listed. |
 | **Refresh** | Reloads settings metadata. |
-| **Create replacement key** | Retains the integration namespace, market, scopes and policy. The old key remains active until revoked. |
-| **Revoke key** | Stops new requests using that credential. Other keys for the same integration are separate. |
-| **Disconnect integration** | Stops signals through all credentials for that setup. |
+| **Create replacement key** | Retains the integration namespace, market, scopes and policy. The old key remains active until removed. Both keys appear in the same integration item. |
+| **Keys → Remove key** | Shown when the integration has multiple keys. Stops new requests using only the selected key, leaving its replacement active. |
+| **Disconnect** | Stops signals through every key for the setup and removes its item from Settings in one step. No separate key-revocation step is needed. |
+
+After moving your sender to a replacement key, open **Keys** and remove the old
+key. Use **Disconnect** to end the whole integration. The same controls apply to
+API integrations; MCP connections use **Disconnect** and reconnect through OAuth.
 
 Replacement does not transfer a running Pine alert's local sequence or retained position references. Do not restart a Pine producer under a rotated token and assume its state survived. Inspect existing positions and create a fresh setup/source for a new Pine alert.
 

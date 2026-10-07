@@ -1,11 +1,11 @@
 ---
-title: "Disconnect a TradingView setup"
+title: "Disconnect an integration"
 description: "Revoke the integration namespace and its access through all associated credentials."
 openapi: "/api/openapi.json POST /integrations/bindings/revoke"
 playground: "simple"
 ---
 
-<Note>Preview contract. Production availability remains subject to activation and release qualification. Examples are synthetic; the documentation cannot submit requests.</Note>
+<Note>Examples are synthetic; the documentation cannot submit requests.</Note>
 
 ## Authorization
 
@@ -13,7 +13,9 @@ Authenticated Liftx Settings session; available after entitlement expiry.
 
 ## Behavior
 
-Revoke the integration namespace and its access through all associated credentials. This is not a command to close existing positions. Inspect metadata after an uncertain revocation result.
+Disconnect an API, TradingView or MCP integration by its `integration_id`. All associated credentials lose access through that namespace, and its item disappears from Settings after confirmation. Existing positions, their protections and retained command evidence remain intact; disconnection does not submit a close command. Inspect metadata after an uncertain revocation result.
+
+Use this endpoint for the **Disconnect** action. To remove only an old replacement key while keeping the integration active, use [credential revocation](/api/reference/post-integrations-credentials-revoke).
 
 This is a session-owned application contract, not an ordinary API-key endpoint. Use [Settings → Integrations](https://app.liftx.io/settings/integrations). The public API base URL does not grant session access.
 

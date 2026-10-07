@@ -3,17 +3,17 @@ title: "API keys and permissions"
 description: "Create, restrict, rotate and revoke a Liftx API key."
 ---
 
-Create API keys in [Liftx Settings → Integrations](https://app.liftx.io/settings/integrations), on the **API** tab. TradingView uses its own tab and a different restricted key type. An ordinary API key does not authenticate the webhook.
+Open [Liftx Settings → Integrations](https://app.liftx.io/settings/integrations) and select **API** in the integration dropdown. TradingView has its own selection and restricted key type. An ordinary API key does not authenticate the webhook.
 
 ## Create a key
 
-1. Open **API**, choose **Create API key**, and fill the **New API key** form.
+1. Select **API**, choose **Create API key**, and fill the separate [New API key screen](https://app.liftx.io/settings/integrations/api/new-key). Its Back button returns to the API list.
 2. Enter a descriptive **Name**, such as `Portfolio monitor — demo` or `Strategy controller — production`.
 3. Set **Expires in days**. Choose only the lifetime needed; the maximum is one year.
 4. Select the required permissions from the table below.
 5. Select **Exchange links**. Verify both the linked account and its `demo` or `live` environment. A key can include 1–32 authorized links.
 6. Optionally enter exact **Canonical instrument IDs**, one per line. Copy them from the selected link's catalog; do not enter chart aliases. Up to 64 unique IDs are allowed. An empty list permits instruments on the selected links.
-7. Submit the form and complete fresh password or linked Apple authentication. If account MFA is enabled, complete that verification too.
+7. Select **Confirm and create** at the bottom and complete fresh password or linked Apple authentication. If account MFA is enabled, complete that verification too.
 8. Save the one-time secret in a private secret manager. Dismiss the secret after saving it.
 
 Fresh approval is bound to the exact requested permissions and expires after five minutes. It is consumed once. Changing a policy requires approval for that policy; it is not enough to possess an already issued key.
@@ -56,7 +56,9 @@ The UI clears the displayed secret when hidden, on navigation, lock, logout or a
 
 A replacement credential retains the existing integration namespace and its exact policy. This preserves command deduplication and TradingView lifecycle ownership. Changing permissions or scope is a new approved policy, not an unreviewed extension of the old key.
 
-After updating the intended client and confirming its use, revoke the old credential. Revoking a key blocks new authorized handoffs; it does not remove existing positions or interrupt protection, termination or recovery already owned by Liftx. Stopping a bot is not the same operation as closing its positions.
+Replacement keys are grouped in the same integration item. After updating the intended client and confirming its use, open **Keys** and choose **Remove key** for the old credential. This revokes only that key and leaves its replacement active. The Keys disclosure appears only when multiple keys exist.
+
+Choose **Disconnect** to end the entire API integration and disable every associated key in one step. The item disappears after confirmed disconnection. TradingView and MCP use the same Disconnect action. Neither action removes existing positions or interrupts protection, termination or recovery already owned by Liftx. Stopping a bot is not the same operation as closing its positions.
 
 A confirmed revocation response is `200` with `revoked:true`. `REVOCATION_UNCERTAIN` means an attempted database update could not be confirmed. Inspect current metadata before an explicit retry; never treat a timeout as successful revocation.
 

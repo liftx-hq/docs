@@ -1,11 +1,11 @@
 ---
-title: "List account Activity receipts"
+title: "List account event receipts"
 description: "Returns an account-owned receipt page, unlike the API namespace list."
 openapi: "/api/openapi.json GET /integrations/commands"
 playground: "simple"
 ---
 
-<Note>Preview contract. Production availability remains subject to activation and release qualification. Examples are synthetic; the documentation cannot submit requests.</Note>
+<Note>Examples are synthetic; the documentation cannot submit requests.</Note>
 
 ## Authorization
 
@@ -13,7 +13,7 @@ Authenticated Liftx Settings session.
 
 ## Behavior
 
-Returns an account-owned receipt page, unlike the API namespace list. Up to 50 top-level receipts with nullable next_cursor; Activity refresh is user-driven. Receipt semantics are unchanged.
+Returns an account-owned receipt page, unlike the API namespace list. Up to 50 top-level receipts with nullable next_cursor; Events refresh is user-driven. Receipt semantics are unchanged.
 
 This is a session-owned application contract, not an ordinary API-key endpoint. Use [Settings → Integrations](https://app.liftx.io/settings/integrations). The public API base URL does not grant session access.
 

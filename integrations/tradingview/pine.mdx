@@ -35,12 +35,12 @@ Select **Copy complete setup** before leaving Liftx. Store the private bundle te
 2. Open **Pine Editor**, create a new indicator and replace its contents with the complete generated Pine v6 script.
 3. Save it privately. The code contains the restricted key; never publish it, share its source or include it in a screenshot.
 4. Add the indicator to the chart and open its **Settings → Inputs**.
-5. Leave its enable checkbox off while execution is unavailable. Once activation is available, set the future times and conditions described below, then enable it before creating the server alert.
+5. Configure the inputs while the enable checkbox is off. Set the future times and conditions described below, then enable it before creating the server alert.
 6. Create **one** alert with the condition matching the indicator title and **Any alert() function call**.
 7. In **Notifications**, enable **Webhook URL** and paste `https://hooks.liftx.io/v1/tradingview/events`.
 8. Set alert expiration within the key lifetime. For One-shot, it must also be after TERMINATE time.
 9. Create the alert before its future start/open time. Verify the alert's saved configuration and running status.
-10. Observe the first deliberate demo event in the TradingView log, Liftx Activity and actual positions/orders.
+10. Observe the first deliberate demo event in the TradingView log, Liftx Events and actual positions/orders.
 
 Pine supplies the complete message. Do not paste an ordinary-alert template into this alert, and do not select strategy order-fill events for these indicator examples. TradingView creates the running alert from the chart dialog; saving the script alone does not create it. The saved alert captures a snapshot, so later chart/input edits do not update that running copy. See [TradingView alerts](https://www.tradingview.com/pine-script-docs/concepts/alerts/).
 
@@ -89,6 +89,6 @@ The reusable `liftxMessage` function accepts `modify` and a complete request. Th
 
 `varip` tracks local signal state across realtime updates, not a durable Liftx execution ledger. The examples fail closed when restarted after their required future start. They do not recover prior references or rearm themselves.
 
-After an interruption, stop the old alert, inspect Activity and real positions, and manage outstanding exposure. Create a new setup/source for a new producer. Do not share one key between a Pine alert, an ordinary OPEN/EXIT pair and another independent strategy.
+After an interruption, stop the old alert, inspect Events and real positions, and manage outstanding exposure. Create a new setup/source for a new producer. Do not share one key between a Pine alert, an ordinary OPEN/EXIT pair and another independent strategy.
 
 Key expiry stops new signals in the helpers. Missing data, stopped alerts or failed webhook delivery can also prevent an exit. Existing Liftx protections continue, but an emitted exit or expired key never proves the position is flat.

@@ -2,7 +2,7 @@
   "$schema": "https://mintlify.com/docs.json",
   "theme": "maple",
   "name": "Liftx Docs",
-  "description": "Build trading integrations with the Liftx API and TradingView. Exact contracts, scoped access, JSON alerts, and Pine examples.",
+  "description": "Build trading integrations with the Liftx API, TradingView and MCP. Exact contracts, scoped access, JSON alerts, Pine examples and AI client guides.",
   "colors": {
     "primary": "#6745FF",
     "light": "#A99AFF",
@@ -41,7 +41,7 @@
               "glossary",
               "security",
               "integrations/overview",
-              "integrations/activity"
+              "integrations/events"
             ]
           }
         ]
@@ -185,7 +185,7 @@
         ]
       },
       {
-        "tab": "MCP · In development",
+        "tab": "MCP",
         "icon": "plug",
         "groups": [
           {
@@ -239,9 +239,5 @@
     "socials": {
       "github": "https://github.com/liftx-hq/docs"
     }
-  },
-  "banner": {
-    "content": "API and TradingView rollout is pending. [Check availability](/availability). MCP is implemented locally; production activation is pending.",
-    "dismissible": false
   }
 }

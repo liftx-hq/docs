@@ -13,13 +13,13 @@ description: "Select API or TradingView access and validate the complete command
 | Modify the current configuration after fills or manual changes | API controller | Read the current position publication, revision, and order identities, then construct the complete intended request. |
 | Terminate all positions owned by one TradingView strategy | TradingView strategy target | Captures eligible positions from that setup on its exact market. |
 | Terminate manual positions and other strategies on one market | TradingView market target with explicit grant | Broader authority requires a separate setup permission. |
-| Trade through ChatGPT or Claude | [MCP](/mcp/overview), after activation | Locally implemented; production activation and real client qualification remain pending. |
+| Trade through ChatGPT or Claude | [MCP](/mcp/overview) | Scoped OAuth access to account data and explicitly authorized trading commands. |
 
 An API key and a TradingView key are different credential kinds. Naming an API key “TradingView” does not turn it into a webhook credential. Create each through its own tab in [Settings → Integrations](https://app.liftx.io/settings/integrations).
 
 ## Prepare the account
 
-1. Confirm that API or webhook execution is available in the environment you intend to use. See [availability](/availability).
+1. Choose an access method and review its [supported capabilities](/availability).
 2. Sign in to Liftx, link the intended exchange account, and confirm whether it is **demo** or **live**.
 3. Confirm Pro or trial access. Existing paid-renewal grace follows Liftx subscription policy; it is not a separate integration extension.
 4. Select a catalog instrument supported by that link. A display ticker such as `BTCUSDT` is not sufficient to identify an account, product, settlement asset, or environment.
@@ -44,7 +44,7 @@ Read the full [quantity and position contract](/api/position-request) before usi
     Use a demo account and a deliberately small, valid amount chosen against its catalog rules. Preserve the complete command body and its identity. For TradingView, copy the generated setup immediately into a private location before leaving the page.
   </Step>
   <Step title="Submit one controlled command">
-    Follow the [API guide](/api/overview) or [TradingView setup](/integrations/tradingview/setup). Check the HTTP response or TradingView webhook status. Then inspect Liftx Activity and the actual position.
+    Follow the [API guide](/api/overview) or [TradingView setup](/integrations/tradingview/setup). Check the HTTP response or TradingView webhook status. Then inspect Liftx Events and the actual position.
   </Step>
   <Step title="Exercise the lifecycle">
     Verify OPEN, protection behavior, an explicit current-state modification where supported, and termination. Termination can cancel pending orders and close remaining exposure. Verify the final position; do not infer flatness from an accepted exit signal.

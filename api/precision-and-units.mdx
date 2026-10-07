@@ -3,7 +3,7 @@ title: "Prices, quantities and exact decimals"
 description: "Copy a valid order request or encode decimal strings without floating-point rounding."
 ---
 
-Most users can avoid writing `_atomic` and `_scale` fields. Prepare an order in Liftx, then open **Settings → Integrations → API → Copy current order JSON**. This uses the same validated order builder as the terminal. It copies a `PositionRequest`, including the selected account, exact catalog instrument, quantity unit and applicable protection settings; it does not submit an order or create a key. Wrap it in an [OPEN command](/api/open-positions) with fresh command identity and timestamps.
+Most users can avoid writing `_atomic` and `_scale` fields. Prepare an order in Liftx, then open **Settings → Integrations → API → Create API key**, then select **Current order JSON → Copy** on the [New API key screen](https://app.liftx.io/settings/integrations/api/new-key). This uses the same validated order builder as the terminal. It copies a `PositionRequest`, including the selected account, exact catalog instrument, quantity unit and applicable protection settings; it does not submit an order or create a key. Wrap it in an [OPEN command](/api/open-positions) with fresh command identity and timestamps.
 
 For TradingView, **Use current order setup** imports the draft into a setup. Guided mode saves that request in Liftx and generates an alert without a nested `request`. Advanced mode includes the complete request in generated JSON/Pine. See [TradingView setup](/integrations/tradingview/setup). Existing positions require a [fresh modification workflow](/api/modify-positions), not a reused creation draft.
 

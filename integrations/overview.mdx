@@ -3,17 +3,19 @@ title: "Integrations"
 description: "Choose a scoped connection for chart alerts, automated controllers, and AI clients."
 ---
 
-Configure integrations from [Liftx Settings → Integrations](https://app.liftx.io/settings/integrations). The screen separates credentials, TradingView setup, command Activity, and MCP connections. MCP is implemented locally and remains disabled pending qualification and production activation.
+Configure integrations from [Liftx Settings → Integrations](https://app.liftx.io/settings/integrations). Use the integration dropdown for API, TradingView or MCP. The header’s Events button opens the [Events screen](https://app.liftx.io/settings/integrations/events).
 
-| Tab | Purpose | Start here |
+| Section | Purpose | Start here |
 | --- | --- | --- |
-| API | Issue scoped bot credentials, inspect metadata, replace or revoke keys | [API authentication](/api/authentication) |
+| API | Create scoped bot credentials, inspect metadata, replace keys or disconnect integrations | [API authentication](/api/authentication) |
 | TradingView | Bind a signal source to one account and instrument; copy JSON or Pine examples | [TradingView setup](/integrations/tradingview/setup) |
-| Activity | Inspect accepted commands and their execution evidence | [Activity guide](/integrations/activity) |
-| MCP | Configure ChatGPT/Claude OAuth consent and inspect or revoke connected clients after activation | [MCP availability and tools](/mcp/overview) |
+| Events | Inspect accepted commands and their execution evidence | [Events guide](/integrations/events) |
+| MCP | Configure ChatGPT/Claude OAuth consent and inspect or disconnect connected clients | [MCP setup and tools](/mcp/overview) |
 
-API and TradingView access are included with Pro and the trial. These are unmetered features, with bounded security and overload protection and the exchange's own trading limits.
+Choose **Create API key** on API or **Connect** on TradingView/MCP to open a dedicated setup screen. Use Back to return to that integration list. The header’s **Refresh** icon on Events reloads commands; each integration list has its own **Refresh** icon for connection metadata.
+
+API, TradingView and MCP access are included with Pro and the trial. These are unmetered features, with bounded security and overload protection and the exchange's own trading limits.
 
 For TradingView, start with the generated ordinary JSON messages if chart conditions are enough. Use Pine when the strategy needs explicit lifecycle references, custom sequencing, repeated cycles, or advanced payload generation. Use an API controller whenever a decision needs to read Liftx's current position state.
 
-Third-party clients must follow the same [security](/security), [availability](/availability), and [command](/api/commands-and-receipts) contracts. No third-party platform's strategy state supersedes Liftx's execution evidence.
+Third-party clients must follow the same [security](/security), [capability](/availability), and [command](/api/commands-and-receipts) contracts. No third-party platform's strategy state supersedes Liftx's execution evidence.

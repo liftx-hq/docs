@@ -3,11 +3,7 @@ title: "Build with Liftx"
 description: "API contracts, TradingView automation, and practical guides for account-scoped trading integrations."
 ---
 
-Liftx connects trading automation to the same position, order, and protection lifecycle used by the Liftx terminal. Use the API for a controller that reads live state, or TradingView webhooks for signals from charts, indicators, and Pine scripts.
-
-<Info>
-API v1 and TradingView are documented for integration preparation. Production activation and complete live TradingView validation are pending. Check [availability](/availability) before creating an active trading workflow. MCP is implemented locally and awaits production activation and client qualification.
-</Info>
+Liftx connects trading automation to the same position, order, and protection lifecycle used by the Liftx terminal. Use the API for a controller that reads live state, TradingView webhooks for chart signals, or MCP for ChatGPT and Claude workflows.
 
 <CardGroup cols={2}>
   <Card title="API" icon="code" href="/api/overview">
@@ -19,8 +15,8 @@ API v1 and TradingView are documented for integration preparation. Production ac
   <Card title="First integration" icon="rocket" href="/getting-started">
     Choose an access method, understand units, and follow a controlled demo validation sequence.
   </Card>
-  <Card title="MCP · In development" icon="plug" href="/mcp/overview">
-    Review OAuth, tools and client setup before production activation and qualification.
+  <Card title="MCP" icon="plug" href="/mcp/overview">
+    Connect ChatGPT or Claude to scoped account data and trading tools through OAuth.
   </Card>
 </CardGroup>
 
@@ -49,7 +45,7 @@ TradingView sends signals in one direction. Pine cannot query Liftx positions th
 
 ## Access and examples
 
-API and TradingView access are included with Pro and the trial, without usage metering. Bounded concurrency, queue capacity, security controls, and exchange limits still apply. Account and instrument permissions remain independent from subscription access.
+API, TradingView and MCP access are included with Pro and the trial, without usage metering. Bounded concurrency, queue capacity, security controls, and exchange limits still apply. Account and instrument permissions remain independent from subscription access.
 
 Every credential, account identifier, position UUID, price, and quantity in these docs is illustrative. Obtain the exact catalog identity and account scope from Liftx, choose your own validated size and price, and begin with an authorized demo account. No example is an investment recommendation or a complete production strategy.
 

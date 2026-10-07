@@ -5,7 +5,7 @@ openapi: "/api/openapi.json POST /integrations/mcp/approve"
 playground: "simple"
 ---
 
-<Note>MCP is implemented locally and is not production active. These synthetic examples do not announce availability or submit requests.</Note>
+<Note>Examples are synthetic; the documentation cannot submit requests.</Note>
 
 ## Authorization
 
@@ -54,6 +54,6 @@ Success is `201` with `credential` metadata of kind `mcp` and a sensitive `redir
 
 An identical committed retry is `409 OAUTH_APPROVAL_CONSUMED`; it cannot recover the code. After an ambiguous response inspect connection metadata and deliberately restart OAuth rather than replaying approval. The operation shares the 12-requests/minute/IP issuance limiter.
 
-MCP activation is required. When disabled, `503` uses `{error:"temporarily_unavailable",error_description,iss}`; other validation/admission failures retain the documented integration error envelope. Check status and content type. Unknown/duplicate JSON fields and compressed bodies are rejected; request size is limited to 256 KiB.
+An MCP service refusal uses `503` with `{error:"temporarily_unavailable",error_description,iss}`; other validation/admission failures retain the documented integration error envelope. Check status and content type. Unknown/duplicate JSON fields and compressed bodies are rejected; request size is limited to 256 KiB.
 
 See [Settings contract](/api/settings-contract) and [MCP authorization](/mcp/overview).

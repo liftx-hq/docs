@@ -3,7 +3,7 @@
   "info": {
     "title": "Liftx integrations",
     "version": "1.0.0",
-    "description": "Preview contract for the Liftx API, TradingView webhook and session-owned integration settings. Production availability is pending activation and release qualification. External access requires Pro or trial entitlement and is unmetered within bounded resource limits. Receipt acceptance does not confirm execution completion. MCP is not active."
+    "description": "The Liftx API, TradingView webhook and session-owned integration settings. External access requires Pro or trial entitlement and is unmetered within bounded resource limits. Receipt acceptance does not confirm execution completion. MCP uses personal OAuth access and the same trading permissions and command receipts."
   },
   "servers": [
     {
@@ -74,7 +74,7 @@
                     },
                     "mcp_available": {
                       "type": "boolean",
-                      "description": "Whether MCP is enabled in this deployment. This flag does not grant OAuth consent or attest exchange readiness."
+                      "description": "Whether an MCP connection can be authorized. This flag does not grant OAuth consent or replace linked-account checks."
                     }
                   },
                   "required": [
@@ -88,8 +88,8 @@
                 },
                 "examples": {
                   "synthetic": {
-                    "summary": "Synthetic discovery with MCP inactive; availability is deployment-specific",
-                    "description": "Synthetic documentation data, not an account snapshot, executable market configuration or production-availability assertion. IDs, quantities, prices, times and values are illustrative.",
+                    "summary": "Example discovery response",
+                    "description": "Synthetic documentation data, not an account snapshot or executable market configuration. IDs, quantities, prices, times and values are illustrative.",
                     "value": {
                       "version": "v1",
                       "command_actions": [
@@ -111,7 +111,7 @@
                         "command_lifetime_seconds": 300,
                         "receipt_retention_days": 30
                       },
-                      "mcp_available": false
+                      "mcp_available": true
                     }
                   }
                 }
@@ -193,7 +193,7 @@
                 "examples": {
                   "synthetic": {
                     "summary": "Synthetic success response",
-                    "description": "Synthetic documentation data, not an account snapshot, executable market configuration or production-availability assertion. IDs, quantities, prices, times and values are illustrative.",
+                    "description": "Synthetic documentation data, not an account snapshot or executable market configuration. IDs, quantities, prices, times and values are illustrative.",
                     "value": {
                       "exchange_links": [
                         {
@@ -550,7 +550,7 @@
                 "examples": {
                   "page": {
                     "summary": "Synthetic top-level receipt page",
-                    "description": "Synthetic documentation data, not an account snapshot, executable market configuration or production-availability assertion. IDs, quantities, prices, times and values are illustrative.",
+                    "description": "Synthetic documentation data, not an account snapshot or executable market configuration. IDs, quantities, prices, times and values are illustrative.",
                     "value": {
                       "commands": [
                         {
@@ -592,7 +592,7 @@
                   },
                   "empty": {
                     "summary": "Synthetic empty receipt history",
-                    "description": "Synthetic documentation data, not an account snapshot, executable market configuration or production-availability assertion. IDs, quantities, prices, times and values are illustrative.",
+                    "description": "Synthetic documentation data, not an account snapshot or executable market configuration. IDs, quantities, prices, times and values are illustrative.",
                     "value": {
                       "commands": [],
                       "next_cursor": null
@@ -652,7 +652,7 @@
                 "examples": {
                   "open_handed_off": {
                     "summary": "Synthetic OPEN owner evidence; not fill completion",
-                    "description": "Synthetic documentation data, not an account snapshot, executable market configuration or production-availability assertion. IDs, quantities, prices, times and values are illustrative.",
+                    "description": "Synthetic documentation data, not an account snapshot or executable market configuration. IDs, quantities, prices, times and values are illustrative.",
                     "value": {
                       "id": "11111111-1111-4111-8111-111111111111",
                       "client_command_id": "demo-controller:cycle-001:open",
@@ -666,7 +666,7 @@
                   },
                   "modify_observed": {
                     "summary": "Synthetic MODIFY return; inspect current state",
-                    "description": "Synthetic documentation data, not an account snapshot, executable market configuration or production-availability assertion. IDs, quantities, prices, times and values are illustrative.",
+                    "description": "Synthetic documentation data, not an account snapshot or executable market configuration. IDs, quantities, prices, times and values are illustrative.",
                     "value": {
                       "id": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
                       "client_command_id": "demo-controller:cycle-001:modify",
@@ -680,7 +680,7 @@
                   },
                   "termination_handed_off": {
                     "summary": "Synthetic durable close request; not proof of flatness",
-                    "description": "Synthetic documentation data, not an account snapshot, executable market configuration or production-availability assertion. IDs, quantities, prices, times and values are illustrative.",
+                    "description": "Synthetic documentation data, not an account snapshot or executable market configuration. IDs, quantities, prices, times and values are illustrative.",
                     "value": {
                       "id": "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
                       "client_command_id": "demo-controller:cycle-001:terminate",
@@ -696,7 +696,7 @@
                   },
                   "uncertain_modification": {
                     "summary": "Synthetic unresolved modification; operator reconciliation required",
-                    "description": "Synthetic documentation data, not an account snapshot, executable market configuration or production-availability assertion. IDs, quantities, prices, times and values are illustrative.",
+                    "description": "Synthetic documentation data, not an account snapshot or executable market configuration. IDs, quantities, prices, times and values are illustrative.",
                     "value": {
                       "id": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
                       "client_command_id": "demo-controller:cycle-001:modify",
@@ -710,7 +710,7 @@
                   },
                   "partial_group": {
                     "summary": "Synthetic two-target group with different resolved outcomes",
-                    "description": "Synthetic documentation data, not an account snapshot, executable market configuration or production-availability assertion. IDs, quantities, prices, times and values are illustrative.",
+                    "description": "Synthetic documentation data, not an account snapshot or executable market configuration. IDs, quantities, prices, times and values are illustrative.",
                     "value": {
                       "id": "99999999-9999-4999-8999-999999999999",
                       "client_command_id": "signal-a:exit-001",
@@ -763,7 +763,7 @@
                   },
                   "empty_group": {
                     "summary": "Synthetic zero-target capture; does not prove flatness",
-                    "description": "Synthetic documentation data, not an account snapshot, executable market configuration or production-availability assertion. IDs, quantities, prices, times and values are illustrative.",
+                    "description": "Synthetic documentation data, not an account snapshot or executable market configuration. IDs, quantities, prices, times and values are illustrative.",
                     "value": {
                       "id": "99999999-9999-4999-8999-999999999999",
                       "client_command_id": "signal-a:exit-001",
@@ -842,7 +842,7 @@
                 "examples": {
                   "page": {
                     "summary": "Synthetic complete active page",
-                    "description": "Synthetic documentation data, not an account snapshot, executable market configuration or production-availability assertion. IDs, quantities, prices, times and values are illustrative.",
+                    "description": "Synthetic documentation data, not an account snapshot or executable market configuration. IDs, quantities, prices, times and values are illustrative.",
                     "value": {
                       "status": "active",
                       "exchange_link_id": 17,
@@ -915,7 +915,7 @@
                   },
                   "empty": {
                     "summary": "Synthetic complete empty active page",
-                    "description": "Synthetic documentation data, not an account snapshot, executable market configuration or production-availability assertion. IDs, quantities, prices, times and values are illustrative.",
+                    "description": "Synthetic documentation data, not an account snapshot or executable market configuration. IDs, quantities, prices, times and values are illustrative.",
                     "value": {
                       "status": "active",
                       "exchange_link_id": 17,
@@ -1014,7 +1014,7 @@
                 "examples": {
                   "complete": {
                     "summary": "Synthetic complete balance snapshot",
-                    "description": "Synthetic documentation data, not an account snapshot, executable market configuration or production-availability assertion. IDs, quantities, prices, times and values are illustrative.",
+                    "description": "Synthetic documentation data, not an account snapshot or executable market configuration. IDs, quantities, prices, times and values are illustrative.",
                     "value": {
                       "exchange_link_id": 17,
                       "updates": [
@@ -1034,7 +1034,7 @@
                   },
                   "incomplete": {
                     "summary": "Synthetic incomplete snapshot; not evidence of zero balances",
-                    "description": "Synthetic documentation data, not an account snapshot, executable market configuration or production-availability assertion. IDs, quantities, prices, times and values are illustrative.",
+                    "description": "Synthetic documentation data, not an account snapshot or executable market configuration. IDs, quantities, prices, times and values are illustrative.",
                     "value": {
                       "exchange_link_id": 17,
                       "updates": [],
@@ -1112,7 +1112,7 @@
                 "examples": {
                   "synthetic": {
                     "summary": "Synthetic pending unprotected position; independent illustration",
-                    "description": "Synthetic documentation data, not an account snapshot, executable market configuration or production-availability assertion. IDs, quantities, prices, times and values are illustrative.",
+                    "description": "Synthetic documentation data, not an account snapshot or executable market configuration. IDs, quantities, prices, times and values are illustrative.",
                     "value": {
                       "success": true,
                       "data": {
@@ -1265,7 +1265,7 @@
                 "examples": {
                   "synthetic": {
                     "summary": "Synthetic pending unprotected position; independent illustration",
-                    "description": "Synthetic documentation data, not an account snapshot, executable market configuration or production-availability assertion. IDs, quantities, prices, times and values are illustrative.",
+                    "description": "Synthetic documentation data, not an account snapshot or executable market configuration. IDs, quantities, prices, times and values are illustrative.",
                     "value": {
                       "success": true,
                       "data": {
@@ -1418,7 +1418,7 @@
                 "examples": {
                   "synthetic": {
                     "summary": "Synthetic pending unprotected position; independent illustration",
-                    "description": "Synthetic documentation data, not an account snapshot, executable market configuration or production-availability assertion. IDs, quantities, prices, times and values are illustrative.",
+                    "description": "Synthetic documentation data, not an account snapshot or executable market configuration. IDs, quantities, prices, times and values are illustrative.",
                     "value": {
                       "success": true,
                       "data": {
@@ -1538,7 +1538,7 @@
                 "examples": {
                   "synthetic": {
                     "summary": "Synthetic position history; not current execution confirmation",
-                    "description": "Synthetic documentation data, not an account snapshot, executable market configuration or production-availability assertion. IDs, quantities, prices, times and values are illustrative.",
+                    "description": "Synthetic documentation data, not an account snapshot or executable market configuration. IDs, quantities, prices, times and values are illustrative.",
                     "value": {
                       "position_id": "11111111-1111-4111-8111-111111111111",
                       "quote": "USDT",
@@ -1630,7 +1630,7 @@
                 "examples": {
                   "synthetic": {
                     "summary": "Synthetic complete zero-P&L sample",
-                    "description": "Synthetic documentation data, not an account snapshot, executable market configuration or production-availability assertion. IDs, quantities, prices, times and values are illustrative.",
+                    "description": "Synthetic documentation data, not an account snapshot or executable market configuration. IDs, quantities, prices, times and values are illustrative.",
                     "value": {
                       "revision": "1893456000000000000",
                       "scope": {
@@ -1765,7 +1765,7 @@
                 "examples": {
                   "synthetic": {
                     "summary": "Synthetic reporting pair; pair ID is not an execution instrument",
-                    "description": "Synthetic documentation data, not an account snapshot, executable market configuration or production-availability assertion. IDs, quantities, prices, times and values are illustrative.",
+                    "description": "Synthetic documentation data, not an account snapshot or executable market configuration. IDs, quantities, prices, times and values are illustrative.",
                     "value": {
                       "scope": {
                         "exchange_link_id": 17,
@@ -1921,7 +1921,7 @@
                 "examples": {
                   "synthetic": {
                     "summary": "Synthetic catalog; illustrated limits are not venue defaults",
-                    "description": "Synthetic documentation data, not an account snapshot, executable market configuration or production-availability assertion. IDs, quantities, prices, times and values are illustrative.",
+                    "description": "Synthetic documentation data, not an account snapshot or executable market configuration. IDs, quantities, prices, times and values are illustrative.",
                     "value": {
                       "success": true,
                       "data": {
@@ -2069,7 +2069,7 @@
                 "examples": {
                   "synthetic": {
                     "summary": "Synthetic eligible settlement currency",
-                    "description": "Synthetic documentation data, not an account snapshot, executable market configuration or production-availability assertion. IDs, quantities, prices, times and values are illustrative.",
+                    "description": "Synthetic documentation data, not an account snapshot or executable market configuration. IDs, quantities, prices, times and values are illustrative.",
                     "value": {
                       "success": true,
                       "data": {
@@ -2176,7 +2176,7 @@
                 "examples": {
                   "synthetic": {
                     "summary": "Synthetic fee rates; not an actual account fee tier",
-                    "description": "Synthetic documentation data, not an account snapshot, executable market configuration or production-availability assertion. IDs, quantities, prices, times and values are illustrative.",
+                    "description": "Synthetic documentation data, not an account snapshot or executable market configuration. IDs, quantities, prices, times and values are illustrative.",
                     "value": {
                       "success": true,
                       "data": {
@@ -2264,7 +2264,7 @@
                 "examples": {
                   "synthetic": {
                     "summary": "Synthetic isolated-margin tier; not risk or liquidation advice",
-                    "description": "Synthetic documentation data, not an account snapshot, executable market configuration or production-availability assertion. IDs, quantities, prices, times and values are illustrative.",
+                    "description": "Synthetic documentation data, not an account snapshot or executable market configuration. IDs, quantities, prices, times and values are illustrative.",
                     "value": {
                       "success": true,
                       "data": {
@@ -2352,7 +2352,7 @@
                 "examples": {
                   "synthetic": {
                     "summary": "Synthetic success response",
-                    "description": "Synthetic documentation data, not an account snapshot, executable market configuration or production-availability assertion. IDs, quantities, prices, times and values are illustrative.",
+                    "description": "Synthetic documentation data, not an account snapshot or executable market configuration. IDs, quantities, prices, times and values are illustrative.",
                     "value": {
                       "templates": [
                         {
@@ -2469,7 +2469,7 @@
                 "examples": {
                   "synthetic": {
                     "summary": "Synthetic success response",
-                    "description": "Synthetic documentation data, not an account snapshot, executable market configuration or production-availability assertion. IDs, quantities, prices, times and values are illustrative.",
+                    "description": "Synthetic documentation data, not an account snapshot or executable market configuration. IDs, quantities, prices, times and values are illustrative.",
                     "value": {
                       "id": "44444444-4444-4444-8444-444444444444",
                       "user_id": 1,
@@ -2567,7 +2567,7 @@
                 "examples": {
                   "synthetic": {
                     "summary": "Synthetic success response",
-                    "description": "Synthetic documentation data, not an account snapshot, executable market configuration or production-availability assertion. IDs, quantities, prices, times and values are illustrative.",
+                    "description": "Synthetic documentation data, not an account snapshot or executable market configuration. IDs, quantities, prices, times and values are illustrative.",
                     "value": {
                       "id": "44444444-4444-4444-8444-444444444444",
                       "user_id": 1,
@@ -2778,7 +2778,7 @@
                 "examples": {
                   "open": {
                     "summary": "Synthetic guided alert receipt; new acceptance",
-                    "description": "Synthetic documentation data, not an account snapshot, executable market configuration or production-availability assertion. IDs, quantities, prices, times and values are illustrative.",
+                    "description": "Synthetic documentation data, not an account snapshot or executable market configuration. IDs, quantities, prices, times and values are illustrative.",
                     "value": {
                       "id": "11111111-1111-4111-8111-111111111111",
                       "client_command_id": "alert:55555555-5555-4555-8555-555555555555:1893456000:open",
@@ -2792,7 +2792,7 @@
                   },
                   "empty_exit": {
                     "summary": "Synthetic strategy EXIT captures no target; not flatness proof",
-                    "description": "Synthetic documentation data, not an account snapshot, executable market configuration or production-availability assertion. IDs, quantities, prices, times and values are illustrative.",
+                    "description": "Synthetic documentation data, not an account snapshot or executable market configuration. IDs, quantities, prices, times and values are illustrative.",
                     "value": {
                       "id": "99999999-9999-4999-8999-999999999999",
                       "client_command_id": "signal-a:exit-001",
@@ -2846,7 +2846,7 @@
                 "examples": {
                   "open": {
                     "summary": "Synthetic guided alert receipt; identical retry",
-                    "description": "Synthetic documentation data, not an account snapshot, executable market configuration or production-availability assertion. IDs, quantities, prices, times and values are illustrative.",
+                    "description": "Synthetic documentation data, not an account snapshot or executable market configuration. IDs, quantities, prices, times and values are illustrative.",
                     "value": {
                       "id": "11111111-1111-4111-8111-111111111111",
                       "client_command_id": "alert:55555555-5555-4555-8555-555555555555:1893456000:open",
@@ -2860,7 +2860,7 @@
                   },
                   "empty_exit": {
                     "summary": "Synthetic strategy EXIT captures no target; not flatness proof",
-                    "description": "Synthetic documentation data, not an account snapshot, executable market configuration or production-availability assertion. IDs, quantities, prices, times and values are illustrative.",
+                    "description": "Synthetic documentation data, not an account snapshot or executable market configuration. IDs, quantities, prices, times and values are illustrative.",
                     "value": {
                       "id": "99999999-9999-4999-8999-999999999999",
                       "client_command_id": "signal-a:exit-001",
@@ -3144,7 +3144,7 @@
             "url": "https://hooks.liftx.io"
           }
         ],
-        "description": "Restricted TradingView body capability required. Use HTTPS on the hooks host with valid JSON; no client certificate configuration is required. The service remains unavailable until activation and delivery qualification. Durable admission has a two-second application deadline; temporary unavailability returns 503.",
+        "description": "Restricted TradingView body capability required. Use HTTPS on the hooks host with valid JSON; no client certificate configuration is required. Durable admission has a two-second application deadline; temporary unavailability returns 503.",
         "x-liftx-authentication": {
           "type": "body-capability",
           "property": "token",
@@ -3181,7 +3181,7 @@
                     },
                     "mcp_available": {
                       "type": "boolean",
-                      "description": "Whether MCP is enabled in this deployment. Credential metadata remains inspectable when MCP is inactive."
+                      "description": "Whether an MCP connection can be authorized. Credential inspection and revocation remain available independently."
                     }
                   },
                   "required": [
@@ -3193,8 +3193,8 @@
                 },
                 "examples": {
                   "synthetic": {
-                    "summary": "Synthetic credential metadata with integrations inactive; not activation evidence",
-                    "description": "Synthetic documentation data, not an account snapshot, executable market configuration or production-availability assertion. IDs, quantities, prices, times and values are illustrative.",
+                    "summary": "Example credential metadata and connection capabilities",
+                    "description": "Synthetic documentation data, not an account snapshot or executable market configuration. IDs, quantities, prices, times and values are illustrative.",
                     "value": {
                       "credentials": [
                         {
@@ -3220,8 +3220,8 @@
                           "revoked_at": null
                         }
                       ],
-                      "tradingview_available": false,
-                      "mcp_available": false
+                      "tradingview_available": true,
+                      "mcp_available": true
                     }
                   }
                 }
@@ -3266,7 +3266,7 @@
                 "examples": {
                   "synthetic": {
                     "summary": "Synthetic first issuance; placeholder is not a valid key",
-                    "description": "Synthetic documentation data, not an account snapshot, executable market configuration or production-availability assertion. IDs, quantities, prices, times and values are illustrative.",
+                    "description": "Synthetic documentation data, not an account snapshot or executable market configuration. IDs, quantities, prices, times and values are illustrative.",
                     "value": {
                       "credential": {
                         "id": "77777777-7777-4777-8777-777777777777",
@@ -3322,7 +3322,7 @@
                 "examples": {
                   "synthetic": {
                     "summary": "Synthetic committed duplicate; secret is not recoverable",
-                    "description": "Synthetic documentation data, not an account snapshot, executable market configuration or production-availability assertion. IDs, quantities, prices, times and values are illustrative.",
+                    "description": "Synthetic documentation data, not an account snapshot or executable market configuration. IDs, quantities, prices, times and values are illustrative.",
                     "value": {
                       "credential": {
                         "id": "77777777-7777-4777-8777-777777777777",
@@ -3422,7 +3422,7 @@
                 "examples": {
                   "synthetic": {
                     "summary": "Synthetic success response",
-                    "description": "Synthetic documentation data, not an account snapshot, executable market configuration or production-availability assertion. IDs, quantities, prices, times and values are illustrative.",
+                    "description": "Synthetic documentation data, not an account snapshot or executable market configuration. IDs, quantities, prices, times and values are illustrative.",
                     "value": {
                       "bindings": [
                         {
@@ -3540,8 +3540,8 @@
                 },
                 "examples": {
                   "synthetic": {
-                    "summary": "Synthetic setup issuance; does not activate webhook execution",
-                    "description": "Synthetic documentation data, not an account snapshot, executable market configuration or production-availability assertion. IDs, quantities, prices, times and values are illustrative.",
+                    "summary": "Example TradingView setup and one-time credential",
+                    "description": "Synthetic documentation data, not an account snapshot or executable market configuration. IDs, quantities, prices, times and values are illustrative.",
                     "value": {
                       "credential": {
                         "id": "77777777-7777-4777-8777-777777777777",
@@ -3667,7 +3667,7 @@
                 "examples": {
                   "synthetic": {
                     "summary": "Synthetic committed duplicate; secret omitted",
-                    "description": "Synthetic documentation data, not an account snapshot, executable market configuration or production-availability assertion. IDs, quantities, prices, times and values are illustrative.",
+                    "description": "Synthetic documentation data, not an account snapshot or executable market configuration. IDs, quantities, prices, times and values are illustrative.",
                     "value": {
                       "credential": {
                         "id": "77777777-7777-4777-8777-777777777777",
@@ -3808,8 +3808,8 @@
     "/integrations/credentials/revoke": {
       "post": {
         "operationId": "post_integrations_credentials_revoke",
-        "summary": "Revoke credentials",
-        "description": "Session-owned Settings contract. Ordinary API keys and TradingView capabilities cannot authenticate this route. Use the Liftx Settings application; this is not a third-party bot endpoint. A confirmed result is 200 with revoked:true. A database update with an unreadable outcome returns 503 REVOCATION_UNCERTAIN: inspect credential metadata before an explicit retry. The requesting user's matching streams are closed and authority reconciliation is signaled even for this uncertain outcome. No automatic mutation retry.",
+        "summary": "Revoke one integration credential",
+        "description": "Session-owned Settings contract. Revoke one account-owned credential by id; other credentials in its integration namespace remain authorized. Used by Keys → Remove key for credential rotation. Use /integrations/bindings/revoke to disconnect the entire API, TradingView or MCP integration. Available after entitlement expiry. A confirmed response is 200 with revoked:true; inspect metadata after REVOCATION_UNCERTAIN before an explicit retry.",
         "security": [
           {
             "SessionBearer": []
@@ -3835,7 +3835,7 @@
                 "examples": {
                   "synthetic": {
                     "summary": "Confirmed revocation response shape",
-                    "description": "Synthetic documentation data, not an account snapshot, executable market configuration or production-availability assertion. IDs, quantities, prices, times and values are illustrative.",
+                    "description": "Synthetic documentation data, not an account snapshot or executable market configuration. IDs, quantities, prices, times and values are illustrative.",
                     "value": {
                       "revoked": true
                     }
@@ -3886,8 +3886,8 @@
     "/integrations/bindings/revoke": {
       "post": {
         "operationId": "post_integrations_bindings_revoke",
-        "summary": "Revoke bindings",
-        "description": "Session-owned Settings contract. Ordinary API keys and TradingView capabilities cannot authenticate this route. Use the Liftx Settings application; this is not a third-party bot endpoint. A confirmed result is 200 with revoked:true. A database update with an unreadable outcome returns 503 REVOCATION_UNCERTAIN: inspect binding and credential metadata before an explicit retry. The requesting user's matching streams are closed and authority reconciliation is signaled even for this uncertain outcome. No automatic mutation retry.",
+        "summary": "Disconnect an integration",
+        "description": "Session-owned Settings contract. Disconnect an API, TradingView or MCP integration namespace by integration_id, blocking access through every associated credential. Existing positions, protections and retained command evidence remain intact. Available after entitlement expiry. Inspect metadata after REVOCATION_UNCERTAIN before an explicit retry.",
         "security": [
           {
             "SessionBearer": []
@@ -3913,7 +3913,7 @@
                 "examples": {
                   "synthetic": {
                     "summary": "Confirmed revocation response shape",
-                    "description": "Synthetic documentation data, not an account snapshot, executable market configuration or production-availability assertion. IDs, quantities, prices, times and values are illustrative.",
+                    "description": "Synthetic documentation data, not an account snapshot or executable market configuration. IDs, quantities, prices, times and values are illustrative.",
                     "value": {
                       "revoked": true
                     }
@@ -3981,7 +3981,7 @@
                 "examples": {
                   "synthetic": {
                     "summary": "Synthetic password plus MFA challenge",
-                    "description": "Synthetic documentation data, not an account snapshot, executable market configuration or production-availability assertion. IDs, quantities, prices, times and values are illustrative.",
+                    "description": "Synthetic documentation data, not an account snapshot or executable market configuration. IDs, quantities, prices, times and values are illustrative.",
                     "value": {
                       "operation_id": "66666666-6666-4666-8666-666666666666",
                       "methods": [
@@ -4118,7 +4118,7 @@
               "examples": {
                 "mcp_read_consent": {
                   "summary": "Synthetic read-only MCP approval start",
-                  "description": "Synthetic documentation data, not an account snapshot, valid credential or production-availability assertion. Fixed times, IDs and callback state are illustrative; use the OAuth client request in the real Settings flow.",
+                  "description": "Synthetic documentation data, not an account snapshot or valid credential. Fixed times, IDs and callback state are illustrative; use the OAuth client request in the real Settings flow.",
                   "value": {
                     "operation_id": "66666666-6666-4666-8666-666666666666",
                     "purpose": "mcp",
@@ -4151,7 +4151,7 @@
             }
           }
         },
-        "description": "Session-owned Settings contract. Ordinary API keys and TradingView capabilities cannot authenticate this route. Use the Liftx Settings application; this is not a third-party bot endpoint. Shares credential-security admission of 12 requests per minute per source IP across these issuance/reauthentication POST operations; separate from the five-attempt approval budget. Metadata and revocation are exempt. No trading usage quota. Purpose mcp binds the exact MCPConsentRequest later submitted to /integrations/mcp/approve and requires MCP activation.",
+        "description": "Session-owned Settings contract. Ordinary API keys and TradingView capabilities cannot authenticate this route. Use the Liftx Settings application; this is not a third-party bot endpoint. Shares credential-security admission of 12 requests per minute per source IP across these issuance/reauthentication POST operations; separate from the five-attempt approval budget. Metadata and revocation are exempt. No trading usage quota. Purpose mcp binds the exact MCPConsentRequest later submitted to /integrations/mcp/approve.",
         "x-liftx-security-rate-limit": {
           "requests": 12,
           "window_seconds": 60,
@@ -4180,7 +4180,7 @@
                 "examples": {
                   "synthetic": {
                     "summary": "Synthetic purpose-bound approval",
-                    "description": "Synthetic documentation data, not an account snapshot, executable market configuration or production-availability assertion. IDs, quantities, prices, times and values are illustrative.",
+                    "description": "Synthetic documentation data, not an account snapshot or executable market configuration. IDs, quantities, prices, times and values are illustrative.",
                     "value": {
                       "operation_id": "66666666-6666-4666-8666-666666666666",
                       "approved": true,
@@ -4264,7 +4264,7 @@
                 "examples": {
                   "page": {
                     "summary": "Synthetic top-level receipt page",
-                    "description": "Synthetic documentation data, not an account snapshot, executable market configuration or production-availability assertion. IDs, quantities, prices, times and values are illustrative.",
+                    "description": "Synthetic documentation data, not an account snapshot or executable market configuration. IDs, quantities, prices, times and values are illustrative.",
                     "value": {
                       "commands": [
                         {
@@ -4306,7 +4306,7 @@
                   },
                   "empty": {
                     "summary": "Synthetic empty receipt history",
-                    "description": "Synthetic documentation data, not an account snapshot, executable market configuration or production-availability assertion. IDs, quantities, prices, times and values are illustrative.",
+                    "description": "Synthetic documentation data, not an account snapshot or executable market configuration. IDs, quantities, prices, times and values are illustrative.",
                     "value": {
                       "commands": [],
                       "next_cursor": null
@@ -4367,7 +4367,7 @@
                 "examples": {
                   "open_handed_off": {
                     "summary": "Synthetic OPEN owner evidence; not fill completion",
-                    "description": "Synthetic documentation data, not an account snapshot, executable market configuration or production-availability assertion. IDs, quantities, prices, times and values are illustrative.",
+                    "description": "Synthetic documentation data, not an account snapshot or executable market configuration. IDs, quantities, prices, times and values are illustrative.",
                     "value": {
                       "id": "11111111-1111-4111-8111-111111111111",
                       "client_command_id": "demo-controller:cycle-001:open",
@@ -4381,7 +4381,7 @@
                   },
                   "modify_observed": {
                     "summary": "Synthetic MODIFY return; inspect current state",
-                    "description": "Synthetic documentation data, not an account snapshot, executable market configuration or production-availability assertion. IDs, quantities, prices, times and values are illustrative.",
+                    "description": "Synthetic documentation data, not an account snapshot or executable market configuration. IDs, quantities, prices, times and values are illustrative.",
                     "value": {
                       "id": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
                       "client_command_id": "demo-controller:cycle-001:modify",
@@ -4395,7 +4395,7 @@
                   },
                   "termination_handed_off": {
                     "summary": "Synthetic durable close request; not proof of flatness",
-                    "description": "Synthetic documentation data, not an account snapshot, executable market configuration or production-availability assertion. IDs, quantities, prices, times and values are illustrative.",
+                    "description": "Synthetic documentation data, not an account snapshot or executable market configuration. IDs, quantities, prices, times and values are illustrative.",
                     "value": {
                       "id": "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
                       "client_command_id": "demo-controller:cycle-001:terminate",
@@ -4411,7 +4411,7 @@
                   },
                   "uncertain_modification": {
                     "summary": "Synthetic unresolved modification; operator reconciliation required",
-                    "description": "Synthetic documentation data, not an account snapshot, executable market configuration or production-availability assertion. IDs, quantities, prices, times and values are illustrative.",
+                    "description": "Synthetic documentation data, not an account snapshot or executable market configuration. IDs, quantities, prices, times and values are illustrative.",
                     "value": {
                       "id": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
                       "client_command_id": "demo-controller:cycle-001:modify",
@@ -4425,7 +4425,7 @@
                   },
                   "partial_group": {
                     "summary": "Synthetic two-target group with different resolved outcomes",
-                    "description": "Synthetic documentation data, not an account snapshot, executable market configuration or production-availability assertion. IDs, quantities, prices, times and values are illustrative.",
+                    "description": "Synthetic documentation data, not an account snapshot or executable market configuration. IDs, quantities, prices, times and values are illustrative.",
                     "value": {
                       "id": "99999999-9999-4999-8999-999999999999",
                       "client_command_id": "signal-a:exit-001",
@@ -4478,7 +4478,7 @@
                   },
                   "empty_group": {
                     "summary": "Synthetic zero-target capture; does not prove flatness",
-                    "description": "Synthetic documentation data, not an account snapshot, executable market configuration or production-availability assertion. IDs, quantities, prices, times and values are illustrative.",
+                    "description": "Synthetic documentation data, not an account snapshot or executable market configuration. IDs, quantities, prices, times and values are illustrative.",
                     "value": {
                       "id": "99999999-9999-4999-8999-999999999999",
                       "client_command_id": "signal-a:exit-001",
@@ -4548,7 +4548,7 @@
           }
         ],
         "x-liftx-required-scope": "",
-        "description": "Session-owned Liftx Settings contract. Ordinary API keys, TradingView capabilities and MCP access tokens cannot authenticate this route. Use the authenticated Settings application; the public API hostname does not grant session access. Validates the exact public-client callback, resource, state, scope and PKCE challenge and returns normalized authorization metadata. Creates no credential or code and consumes no fresh approval. Client name derives from the reviewed callback policy; the local-client label is not verified provider identity. MCP activation is required. JSON is strict, uncompressed and limited to 256 KiB.",
+        "description": "Session-owned Liftx Settings contract. Ordinary API keys, TradingView capabilities and MCP access tokens cannot authenticate this route. Use the authenticated Settings application; the public API hostname does not grant session access. Validates the exact public-client callback, resource, state, scope and PKCE challenge and returns normalized authorization metadata. Creates no credential or code and consumes no fresh approval. Client name derives from the reviewed callback policy; the local-client label is not verified provider identity. JSON is strict, uncompressed and limited to 256 KiB.",
         "requestBody": {
           "required": true,
           "content": {
@@ -4568,7 +4568,7 @@
               "examples": {
                 "synthetic": {
                   "summary": "Synthetic local-client authorization preview",
-                  "description": "Synthetic documentation data, not an account snapshot, valid credential or production-availability assertion. Fixed times, IDs and callback state are illustrative; use the OAuth client request in the real Settings flow.",
+                  "description": "Synthetic documentation data, not an account snapshot or valid credential. Fixed times, IDs and callback state are illustrative; use the OAuth client request in the real Settings flow.",
                   "value": {
                     "authorization": {
                       "client_id": "lx_mcp_client_WyJodHRwOi8vMTI3LjAuMC4xOjU0MzIxL2NhbGxiYWNrIl0",
@@ -4597,7 +4597,7 @@
                 "examples": {
                   "synthetic": {
                     "summary": "Synthetic normalized preview; no grant issued",
-                    "description": "Synthetic documentation data, not an account snapshot, valid credential or production-availability assertion. Fixed times, IDs and callback state are illustrative; use the OAuth client request in the real Settings flow.",
+                    "description": "Synthetic documentation data, not an account snapshot or valid credential. Fixed times, IDs and callback state are illustrative; use the OAuth client request in the real Settings flow.",
                     "value": {
                       "client_name": "Local MCP client",
                       "authorization": {
@@ -4621,7 +4621,7 @@
             }
           },
           "503": {
-            "description": "MCP disabled returns the OAuth-shaped availability error; temporary internal admission failure retains the integration error shape",
+            "description": "An MCP service refusal uses the OAuth error shape; other admission failures use the integration error shape",
             "content": {
               "application/json": {
                 "schema": {
@@ -4691,7 +4691,7 @@
               "examples": {
                 "synthetic": {
                   "summary": "Synthetic exact read-only consent",
-                  "description": "Synthetic documentation data, not an account snapshot, valid credential or production-availability assertion. Fixed times, IDs and callback state are illustrative; use the OAuth client request in the real Settings flow.",
+                  "description": "Synthetic documentation data, not an account snapshot or valid credential. Fixed times, IDs and callback state are illustrative; use the OAuth client request in the real Settings flow.",
                   "value": {
                     "operation_id": "66666666-6666-4666-8666-666666666666",
                     "request": {
@@ -4734,7 +4734,7 @@
                 "examples": {
                   "synthetic": {
                     "summary": "Synthetic callback placeholder; not a valid authorization code",
-                    "description": "Synthetic documentation data, not an account snapshot, valid credential or production-availability assertion. Fixed times, IDs and callback state are illustrative; use the OAuth client request in the real Settings flow.",
+                    "description": "Synthetic documentation data, not an account snapshot or valid credential. Fixed times, IDs and callback state are illustrative; use the OAuth client request in the real Settings flow.",
                     "value": {
                       "credential": {
                         "id": "77777777-7777-4777-8777-777777777777",
@@ -4776,7 +4776,7 @@
             "description": "Credential security admission limit reached; existing security middleware response. Wait before an explicit retry, and never automatically replay secret issuance."
           },
           "503": {
-            "description": "MCP disabled returns the OAuth-shaped availability error; internal admission failure retains the integration error shape",
+            "description": "An MCP service refusal uses the OAuth error shape; other admission failures use the integration error shape",
             "content": {
               "application/json": {
                 "schema": {
@@ -6895,7 +6895,7 @@
             "type": "string",
             "minLength": 1,
             "maxLength": 128,
-            "description": "Required. Immutable intent identity within one integration namespace, 1\u2013128 UTF-8 bytes. Reuse unchanged for a retry; never for a new intent. Unique immutable namespace event identity; liftx-group: prefix is reserved."
+            "description": "Required. Immutable intent identity within one integration namespace, 1–128 UTF-8 bytes. Reuse unchanged for a retry; never for a new intent. Unique immutable namespace event identity; liftx-group: prefix is reserved."
           },
           "issued_at": {
             "type": "integer",
@@ -7020,7 +7020,7 @@
             "type": "string",
             "minLength": 1,
             "maxLength": 128,
-            "description": "Required. Immutable intent identity within one integration namespace, 1\u2013128 UTF-8 bytes. Reuse unchanged for a retry; never for a new intent. Unique immutable namespace event identity; liftx-group: prefix is reserved."
+            "description": "Required. Immutable intent identity within one integration namespace, 1–128 UTF-8 bytes. Reuse unchanged for a retry; never for a new intent. Unique immutable namespace event identity; liftx-group: prefix is reserved."
           },
           "issued_at": {
             "type": "integer",
@@ -8377,7 +8377,7 @@
             "type": "string",
             "format": "uri",
             "maxLength": 512,
-            "description": "Required. Exact callback registered in client_id. Supported callbacks: https://claude.ai/api/mcp/auth_callback; https://chatgpt.com/connector_platform_oauth_redirect; https://chatgpt.com/connector/oauth/{identifier} with 1\u2013128 ASCII letters/digits, hyphens or underscores; or http://localhost:{port}/callback / http://127.0.0.1:{port}/callback with port 1024\u201365535. No userinfo, query, fragment or escaped path."
+            "description": "Required. Exact callback registered in client_id. Supported callbacks: https://claude.ai/api/mcp/auth_callback; https://chatgpt.com/connector_platform_oauth_redirect; https://chatgpt.com/connector/oauth/{identifier} with 1–128 ASCII letters/digits, hyphens or underscores; or http://localhost:{port}/callback / http://127.0.0.1:{port}/callback with port 1024–65535. No userinfo, query, fragment or escaped path."
           },
           "response_type": {
             "type": "string",
@@ -8407,7 +8407,7 @@
             "not": {
               "pattern": "[\\u0000\\r\\n]"
             },
-            "description": "Required. Client-owned opaque state, 1\u20131024 UTF-8 bytes; NUL/CR/LF are rejected. Returned unchanged to the exact callback."
+            "description": "Required. Client-owned opaque state, 1–1024 UTF-8 bytes; NUL/CR/LF are rejected. Returned unchanged to the exact callback."
           },
           "scope": {
             "type": "string",

@@ -3,10 +3,6 @@ title: TradingView integration
 description: Send chart alerts or Pine signals to Liftx while retaining Liftx position and protection management.
 ---
 
-<Warning>
-TradingView execution is in preview and awaits production activation. A **Prepared** setup can generate private messages and scripts, but does not enable trading. Keep alerts disabled while Liftx reports execution unavailable. See [availability](/availability).
-</Warning>
-
 TradingView sends an HTTPS POST to Liftx when an alert fires. The message describes an intent: open a position, modify an identified position, or terminate selected positions. Liftx authenticates the restricted key, checks its fixed market and permissions, records the command, then hands execution to its existing trading owners. SL, SLx and TP remain managed by Liftx.
 
 ```text
@@ -19,7 +15,7 @@ Authentication → immutable command receipt → Liftx position lifecycle
 Exchange orders, protection management and reconciliation
 ```
 
-An alert can reach Liftx without an open Liftx browser. Pine does not receive execution feedback, and the TradingView broker emulator is not a view of the linked exchange account. Use Activity and actual positions to verify outcomes.
+An alert can reach Liftx without an open Liftx browser. Pine does not receive execution feedback, and the TradingView broker emulator is not a view of the linked exchange account. Use Events and actual positions to verify outcomes.
 
 ## Choose an authoring method
 

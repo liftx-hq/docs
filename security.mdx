@@ -25,7 +25,7 @@ TradingView stores alert messages and a server-side snapshot of Pine scripts. An
 
 A replacement credential retains its integration namespace and policy. Rotation does not turn one strategy into another or authorize a different market. Recreate a setup through fresh authorization when its policy must change.
 
-Revoking a key blocks new authorized handoffs. Disconnecting a TradingView setup revokes the setup's authority. Inspect metadata after the action; an uncertain revocation response is not proof of success. Access to authenticated metadata inspection and revocation remains available after subscription expiry.
+**Disconnect** ends an API, TradingView or MCP integration and blocks new authorized handoffs through all of its credentials. Replacement keys share one integration item; **Keys → Remove key** revokes only the selected key so its replacement can continue working. Inspect metadata after an uncertain response; it is not proof of success. Access to authenticated metadata inspection and removal remains available after subscription expiry. Retained command evidence and already-owned position protection remain intact.
 
 Revocation and expiry do not abandon protection, termination, or recovery work already owned by Liftx's trading lifecycle. Inspect and manage remaining positions independently.
 

@@ -54,7 +54,7 @@ Reused trading and reporting endpoints retain their existing JSON envelopes or p
 | `MARKET_TERMINATION_DENIED` | Missing explicit market grant or stale source sequence |
 | `PENDING_CAPACITY` | Account has exhausted unresolved-command capacity; observe existing work and back off |
 | `ADMISSION_UNAVAILABLE`, `SERVICE_UNAVAILABLE` | Temporary bounded service failure; retry reads with backoff or exact immutable command bytes |
-| `TRADINGVIEW_NOT_ACTIVATED` | Webhook execution is not operationally enabled; key creation alone does not activate it |
+| `TRADINGVIEW_NOT_ACTIVATED` | Request refused before admission. Contact Liftx support; creating a different key does not resolve this response |
 | `REVOCATION_UNCERTAIN` | Inspect credential/binding metadata before any explicit retry |
 
 Owner-specific validation codes remain part of their documented endpoint responses. Do not write a client that treats an unknown error code as success.
@@ -64,6 +64,7 @@ Owner-specific validation codes remain part of their documented endpoint respons
 | Resource | Bound |
 | --- | --- |
 | Integration command/webhook body | 256 KiB |
+| Finite integration HTTP request | Ten-second context, body-read and response-write deadline; command body admission is narrower and WebSockets retain separate connection deadlines |
 | Template write body | 64 KiB |
 | New command lifetime | At most 300 seconds |
 | New command issuance age | At most five minutes; future-clock allowance 30 seconds |

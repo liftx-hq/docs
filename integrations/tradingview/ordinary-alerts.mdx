@@ -112,7 +112,7 @@ Use this pair as one coordinated source. Do not clone it across charts, share it
 
 ## Validate the complete path
 
-After activation, use an explicitly selected demo link and a small valid imported order. Confirm the alert is created and enabled, then observe a deliberate trigger. Check TradingView's alert log and webhook status, Liftx **Activity → Refresh latest**, and the actual position/orders. Trigger the paired exit and repeat those checks. A `202` means accepted, not filled or flat.
+Use an explicitly selected demo link and a small valid imported order. Confirm the alert is created and enabled, then observe a deliberate trigger. Check TradingView's alert log and webhook status, Liftx **Events → Refresh**, and the actual position/orders. Trigger the paired exit and repeat those checks. A `202` means accepted, not filled or flat.
 
 If the ordinary pair stops or loses delivery, inspect outstanding positions before creating a replacement setup. A fresh exit-only setup using `strategy` has no ownership of the old setup's positions. Manage them directly in Liftx or use an intentionally authorized market target.
 

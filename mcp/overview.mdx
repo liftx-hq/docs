@@ -1,11 +1,7 @@
 ---
-title: "MCP · In development"
+title: "MCP"
 description: "Scoped OAuth access to Liftx reads, trading commands and durable receipts."
 ---
-
-<Info>
-MCP and OAuth are implemented locally and are not production active. Real ChatGPT/Claude end-to-end qualification and release approval remain pending. The release endpoint is `https://mcp.liftx.io/mcp`; its presence in documentation or a plugin does not announce availability or directory approval.
-</Info>
 
 MCP uses the same scoped account data, catalog identities, trading owners and command receipts as the Liftx API. It adds a Streamable HTTP transport; it does not create a separate order engine. Pro and trial users receive unmetered access with bounded concurrency, payloads and results.
 
@@ -15,15 +11,31 @@ Use the complete connection URL `https://mcp.liftx.io/mcp`. The domain root, `ht
 
 ## Authorize the connection
 
+From [Integrations](https://app.liftx.io/settings/integrations), select **MCP → Connect** to open the [connection setup](https://app.liftx.io/settings/integrations/mcp/new-connection). Choose ChatGPT or Claude for its instructions and client link. The connector starts OAuth; opening the setup screen alone creates no grant.
+
 Each person signs in to Liftx through browser OAuth with PKCE. Consent starts with `read` and names the exact linked accounts, instruments, operations and expiry. Grants last at most 30 days; access tokens last at most 15 minutes. Trading permissions require explicit consent and fresh Liftx authentication. Client permission prompts add a control; they cannot expand the Liftx grant.
 
 Use automatic client registration when configuring the connector. This implementation supports reviewed client callbacks and local callback clients; it does not support the alternative published-identity/CIMD setup. Never paste an API key, TradingView capability, password, exchange credential, OAuth token or callback URL into a conversation. The connector accepts only its own OAuth access tokens.
 
-A tool that needs an ungranted permission returns an OAuth insufficient-scope challenge. Any scope expansion requires fresh Liftx consent; the server never silently upgrades access. Actual client handling remains a release-qualification item.
+A tool that needs an ungranted permission returns an OAuth insufficient-scope challenge. Any scope expansion requires fresh Liftx consent; the server never silently upgrades access.
+
+Confirmed account locks and other policy refusals return `400 invalid_grant` at
+the OAuth token endpoint. Authority or storage failures return
+`503 temporarily_unavailable`; these are different from denied authorization.
 
 ## Tools
 
 The current catalog contains 25 tools. Tool inputs use the corresponding API field names, units and pagination. Discover current schemas before calling tools. Requests are limited to 256 KiB and outputs to approximately 1 MiB; use bounded pages rather than unbounded exports.
+
+Each request body must contain exactly one complete JSON-RPC object, followed
+only by JSON whitespace. Batches, a second JSON value and trailing junk are
+rejected before tool execution.
+
+The request context, body reads and response delivery share a ten-second
+deadline; MCP body admission retains its narrower two-second deadline. Stalled
+clients cannot keep an admission slot until the wider server I/O timeouts.
+A delivery timeout does not establish whether a trading command was accepted;
+inspect its original receipt and preserve its immutable identity.
 
 | Tools | Purpose |
 | --- | --- |
@@ -80,7 +92,11 @@ becomes `{"status":304,"not_modified":true}`.
 
 A receipt records admission or execution evidence; it does not guarantee a fill or flat exposure. Keep `accepted`, `dispatching`, `handed_off`, `execution_observed` and `operator_required` distinct. After an ambiguous response, inspect the original receipt and position. Never create a new command ID to replay uncertain work or compensate automatically.
 
-Refresh is client-owned and must be serialized. If a refresh response is ambiguous, reconnect through OAuth; reconnecting does not authorize replaying a trade. Revoke the grant in Liftx Settings to end access, then disconnect in the client. Revocation blocks new handoffs and preserves protection, termination and recovery already owned by Liftx.
+Refresh is client-owned and must be serialized. If a refresh response is ambiguous, reconnect through OAuth; reconnecting does not authorize replaying a trade. Select **MCP** in [Liftx Integrations](https://app.liftx.io/settings/integrations), then choose **Disconnect** on the connection to end access, then disconnect in the client. Revocation blocks new handoffs and preserves protection, termination and recovery already owned by Liftx.
+
+Reuse of an old authenticated refresh token revokes its grant even while an
+account lock or subscription lapse prevents new tokens. A refusal of the current
+token under those policies does not, by itself, indicate replay or revoke it.
 
 `liftx_templates` accepts optional `limit` (default 20, maximum 100) and an opaque `cursor`. It returns `{templates, next_cursor}`; continue until the cursor is null. Copy it unchanged. Template pages and exact reads check their stored size budget before payload hydration; reduce the page limit on `TEMPLATE_PAGE_TOO_LARGE`, without discarding or skipping a failed row.
 

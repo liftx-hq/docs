@@ -150,7 +150,7 @@ curl --fail-with-body --get \
   https://api.liftx.io/v1/commands/get
 ```
 
-[GET /v1/commands](/api/reference/get-v1-commands) returns up to 50 top-level namespace receipts in `commands` and nullable `next_cursor`; pass the cursor unchanged for older rows. No extra `read` scope is needed for your namespace receipts. The Settings **Activity** tab supplies account-level on-demand history.
+[GET /v1/commands](/api/reference/get-v1-commands) returns up to 50 top-level namespace receipts in `commands` and nullable `next_cursor`; pass the cursor unchanged for older rows. No extra `read` scope is needed for your namespace receipts. The **Events** screen, opened from the Integrations header, supplies account-level on-demand history.
 
 A same-account API key with `read` and matching link/instrument scope may read a known TradingView receipt UUID through [GET /v1/commands/get](/api/reference/get-v1-commands-get). It does not acquire that TradingView namespace's list or mutation authority.
 

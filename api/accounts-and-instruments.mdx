@@ -10,7 +10,7 @@ Examples use fictitious link `17`. `COPY_EXACT_CATALOG_ID` means the returned `i
 1. Select the intended linked account and its environment in the terminal.
 2. Open the symbol picker and search by familiar pair text such as `BTCUSDT`. Select the spot or derivative market and inspect the exact instrument ID and topology shown for the row.
 3. Configure the order's quantity asset, OPEN rows and protections in the order builder.
-4. Open **Settings → Integrations → API → Copy current order JSON**. The copied request contains the exact `exchange_link_id`, `instrument_id`, quantity unit and decimal fields. It creates no key and sends no trade.
+4. Open **Settings → Integrations → API → Create API key**, then select **Current order JSON → Copy** on the [New API key screen](https://app.liftx.io/settings/integrations/api/new-key). The copied request contains the exact `exchange_link_id`, `instrument_id`, quantity unit and decimal fields. It creates no key and sends no trade.
 5. For TradingView, use **Use current order setup** instead; generated messages already pin the instrument. No manual placeholder replacement is needed for generated messages.
 
 A bot can perform the same selection from the catalog below. Resolve it during setup and retain that exact ID. `BTCUSDT + futures` is not a unique execution key: multiple derivative products can share a base/quote pair. Do not select the first matching pair or reconstruct an ID from a ticker string. If multiple catalog rows match, require an explicit choice.
@@ -22,7 +22,7 @@ curl --fail-with-body -H "Authorization: Bearer ${LIFTX_API_KEY}" \
   https://api.liftx.io/v1/discovery
 ```
 
-An illustrative discovery response with MCP inactive is shown below. `mcp_available` is a deployment-specific boolean; read it at runtime rather than assuming it is always false. It does not grant OAuth consent or attest exchange readiness.
+An illustrative discovery response is shown below. Read `mcp_available` at runtime when offering an MCP connection. This capability flag does not grant OAuth consent or replace linked-account checks.
 
 ```json
 {
@@ -36,7 +36,7 @@ An illustrative discovery response with MCP inactive is shown below. `mcp_availa
     "command_lifetime_seconds": 300,
     "receipt_retention_days": 30
   },
-  "mcp_available": false
+  "mcp_available": true
 }
 ```
 

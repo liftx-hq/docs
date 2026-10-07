@@ -7,8 +7,8 @@ indicator("Liftx continuous signals", overlay = true)
 // One key is one ordered producer: use a separate setup/key for another alert
 // or independent strategy. The same running alert can reuse its key for cycles.
 // Never mix this Pine alert with an ordinary OPEN/EXIT alert pair on this key.
-// Use an approved demo link. Prepare while disabled; enable only after Liftx
-// webhook activation. Set future times in the chart's timezone, then create
+// Use a demo link for initial validation. Configure the inputs while disabled.
+// Set future times in the chart's timezone, enable the indicator, then create
 // ONE alert: this indicator / Any alert() function call / Liftx webhook URL.
 // Changing chart inputs does not update the server's frozen alert copy.
 // Never restart/recreate an alert with this setup. Use a new Liftx setup instead.
@@ -98,5 +98,5 @@ plot(liftxOpenEmitted ? 1 : 0, "OPEN emitted without subsequent TERMINATE (not e
 // Missing updates, credential expiry, stopped alerts, or delivery failure can
 // prevent termination. Signal state never means accepted, filled, canceled or flat.
 // The chart's local state is independent of the server alert and its delivery.
-// After an interruption, stop the alert and inspect Activity AND the actual
+// After an interruption, stop the alert and inspect Events AND the actual
 // positions in Liftx. Manage remaining orders and exposure there.

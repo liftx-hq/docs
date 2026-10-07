@@ -55,7 +55,7 @@ Group admission saves the original intent and its selected targets together. Eac
 - An identical retry refers to the same captured set, not a newly expanded list.
 - Zero matching targets is a valid accepted result and can still advance the source's ordering fence.
 - Positions opened after capture are outside the group. The command is not a permanent market pause.
-- Child outcomes can differ; inspect **View targets** in Activity. Group admission is not atomic exchange execution.
+- Child outcomes can differ; inspect **View targets** in Events. Group admission is not atomic exchange execution.
 
 A strategy group selects eligible own references earlier than its sequence. A market group must be newer than its own source's watermark; independent strategies have independent sequence spaces, so their sequence numbers are not compared as one global clock.
 

@@ -1,25 +1,30 @@
 ---
-title: "Read integration Activity"
+title: "Integration Events"
 description: "Inspect command evidence, group outcomes, and positions without confusing an accepted signal with execution."
 ---
 
-Open [Settings → Integrations](https://app.liftx.io/settings/integrations), then **Activity**. The screen loads the latest account commands on entry. Subsequent updates are manual; it is not a continuously refreshing trading monitor.
+Open [Settings → Integrations](https://app.liftx.io/settings/integrations), then select **Events** in the header to open the [Events screen](https://app.liftx.io/settings/integrations/events). Use Back to return to Integrations. The screen loads the latest account commands on entry. Scroll toward the end to load older events. Use the **Refresh** icon at the right of the header to reload the latest events; the screen does not poll for updates.
+
+Acceptance confirms that Liftx received the command, not a fill or closure.
 
 ## Controls
 
 | Control | What it does |
 | --- | --- |
-| **Refresh latest** | Loads the newest receipt page and closes any expanded group detail. |
-| **Older commands** | Loads the next cursor page when available. It replaces the visible page rather than appending an unlimited history. |
+| **Refresh** icon | Loads the newest receipt page, returns to the top and closes any expanded group detail. |
+| Scroll toward the end | Loads the next cursor page when available. Only nearby cards are mounted, and at most 500 receipts remain in memory. |
+| Return to the retained top | After older pages have displaced newer receipts, reloads the newest page. |
 | **View targets** | Loads the frozen child receipts for a group termination. |
 | **Refresh targets** | Reloads that group's current evidence. |
 | **Hide targets** | Closes the expanded detail. |
+
+A page error stops automatic loading. Use **Refresh** to retry from the latest events. Only one group can be expanded at a time. Its details are discarded when closed, when the list is refreshed, or when its parent leaves the retained history window.
 
 Each command card shows the action, the client command ID, last update time, and the available position ID and error code. A saved close/cancel request also shows its terminal sequence. Use the position ID to inspect the actual position and its orders in Liftx; the receipt card is not a position-balance display.
 
 ## Status labels
 
-| Activity label | API state | Read it as |
+| Event label | API state | Read it as |
 | --- | --- | --- |
 | **Accepted** | `accepted` | Durable intent exists and awaits handoff. |
 | **Submitting** | `dispatching` | A worker owns the handoff; work may already have side effects. |
@@ -29,6 +34,8 @@ Each command card shows the action, the client command ID, last update time, and
 | **Expired** | `expired` | The execution deadline elapsed before handoff. |
 | **Needs review** | `operator_required` | The outcome cannot be safely resolved automatically. Reconcile the exact position. |
 | **Mixed outcomes** | `partial` | A group resolved with differing child outcomes. Inspect each target. |
+
+Statuses use Liftx’s branded colors: green for handoff or observed execution, orange for expired commands or mixed outcomes, and red for rejection, outcomes needing review or errors. Pending admission and submission remain neutral. Color does not add execution evidence or prove a fill or closure.
 
 A **Close request saved** or **Cancel request saved** line proves the corresponding owner request and sequence were recorded. It does not mean that all orders are cancelled, exposure is flat, or the position's lifecycle has completed.
 
@@ -43,11 +50,11 @@ Group admission captures its membership once. Reading or refreshing it does not 
 ## Investigate a TradingView signal
 
 1. Confirm that the intended TradingView alert is enabled and triggered. Inspect its alert log and **Webhook status**.
-2. Open Liftx Activity and select **Refresh latest**. Correlate the setup/source and command identity from the generated message; ordinary alerts derive identity from source, UTC trigger second, and action.
+2. Open Liftx Events and select the **Refresh** icon. Correlate the setup/source and command identity from the generated message; ordinary alerts derive identity from source, UTC trigger second, and action.
 3. Read the receipt state and any error code. Inspect every target for a group.
 4. Inspect the actual Liftx position, orders, and remaining exposure.
 5. If the outcome is uncertain or delivery failed, manage remaining exposure deliberately. Do not create a new command identity merely to force a retry.
 
 No row can mean that admission never succeeded; it is not a complete diagnosis of a network failure. Conversely, a missing response does not prove there was no accepted command. Use the [TradingView troubleshooting guide](/integrations/tradingview/troubleshooting) and [receipt contract](/api/commands-and-receipts).
 
-Resolved receipts are retained for 30 days. Unresolved work remains until resolution. Export records needed for a longer audit history through the scoped API; Activity is not a permanent archive.
+Resolved receipts are retained for 30 days. Unresolved work remains until resolution. Export records needed for a longer audit history through the scoped API; the Events screen is not a permanent archive.

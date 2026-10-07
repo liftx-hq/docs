@@ -5,7 +5,7 @@ openapi: "/api/openapi.json POST /integrations/mcp/preview"
 playground: "simple"
 ---
 
-<Note>MCP is implemented locally and is not production active. These synthetic examples do not announce availability or submit requests.</Note>
+<Note>Examples are synthetic; the documentation cannot submit requests.</Note>
 
 ## Authorization
 
@@ -38,6 +38,6 @@ This is a synthetic local-client shape. The actual client owns registration, cal
 
 Success is `200` with normalized metadata. An omitted/empty authorization `scope` defaults to `read`; duplicate or unknown scope names are rejected. The allowed scopes are the OAuth client’s request, not permissions already granted to it. Preview is outside the issuance limiter and retains bounded request/concurrency admission.
 
-MCP activation is required. When disabled, `503` uses `{error:"temporarily_unavailable",error_description,iss}`; other validation/admission failures retain the documented integration error envelope. Check status and content type. Unknown/duplicate JSON fields and compressed bodies are rejected; request size is limited to 256 KiB.
+An MCP service refusal uses `503` with `{error:"temporarily_unavailable",error_description,iss}`; other validation/admission failures retain the documented integration error envelope. Check status and content type. Unknown/duplicate JSON fields and compressed bodies are rejected; request size is limited to 256 KiB.
 
 See [Settings contract](/api/settings-contract) and [MCP authorization](/mcp/overview).

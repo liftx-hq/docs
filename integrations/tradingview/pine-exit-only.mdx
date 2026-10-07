@@ -4,7 +4,7 @@ description: Confirmed-bar group termination without any opening payload or infe
 ---
 
 <Warning>
-Public sample only: dummy key, synthetic link/instrument and an intentionally expired credential timestamp. It starts disabled and cannot connect as published. Obtain the fully populated private script from Liftx, and keep it disabled while production execution is unavailable. Never publish the real generated copy.
+Public sample only: dummy key, synthetic link/instrument and an intentionally expired credential timestamp. It starts disabled and cannot connect as published. Obtain the fully populated private script from Liftx and review its inputs before enabling it. Never publish the real generated copy.
 </Warning>
 
 The Exit-only example never opens positions. It emits a strategy or explicitly authorized market termination when the confirmed close crosses below a configured threshold.
@@ -16,7 +16,7 @@ The Exit-only example never opens positions. It emits a strategy or explicitly a
 3. Decide which positions the new setup can actually manage. A fresh namespace has no own positions; **This strategy’s positions** may therefore match none. To select manual or other strategy positions, explicitly grant market termination and choose **All positions in this market**.
 4. Generate **Exit-only · confirmed-bar termination signals**.
 5. Use standard time-based candles of at least one minute. Set a future **Start time** and a positive **TERMINATE when close crosses below** threshold.
-6. After activation, enable it and create **Any alert() function call** before Start time, using the Liftx webhook URL.
+6. Enable it and create **Any alert() function call** before Start time, using the Liftx webhook URL.
 
 The example does not infer an exact position from chart state. Every group freezes the captured membership, up to 64 targets. It is not a permanent market pause and does not cover positions opened after capture. Review child receipts and remaining exposure.
 
@@ -34,8 +34,8 @@ indicator("Liftx exit-only signals", overlay = true)
 // One key is one ordered producer: use a separate setup/key for another alert
 // or independent strategy. The same running alert can reuse its key for cycles.
 // Never mix this Pine alert with an ordinary OPEN/EXIT alert pair on this key.
-// Use an approved demo link. Prepare while disabled; enable only after Liftx
-// webhook activation. Set future times in the chart's timezone, then create
+// Use a demo link for initial validation. Configure the inputs while disabled.
+// Set future times in the chart's timezone, enable the indicator, then create
 // ONE alert: this indicator / Any alert() function call / Liftx webhook URL.
 // Changing chart inputs does not update the server's frozen alert copy.
 // Never restart/recreate an alert with this setup. Use a new Liftx setup instead.
@@ -107,7 +107,7 @@ plot(liftxArmed ? 1 : 0, "Local signals armed (not execution)", display = displa
 // Missing updates, credential expiry, stopped alerts, or delivery failure can
 // prevent termination. Signal state never means accepted, filled, canceled or flat.
 // The chart's local state is independent of the server alert and its delivery.
-// After an interruption, stop the alert and inspect Activity AND the actual
+// After an interruption, stop the alert and inspect Events AND the actual
 // positions in Liftx. Manage remaining orders and exposure there.
 ```
 
@@ -117,4 +117,4 @@ The generated private copy replaces the dummy `token`, link, catalog ID, source 
 
 Retain one ordered producer per setup, preserve event identities on delivery retries and never reuse a lifecycle reference for a new position. [Pine setup](/integrations/tradingview/pine), [canonical command fields](/integrations/tradingview/command-format) and [target semantics](/integrations/tradingview/targets-and-lifecycles) explain the contract.
 
-After any interruption, inspect Activity and actual positions, manage remaining orders/exposure and create a fresh source for a new alert. The example has no execution feedback, automatic delivery retry, automatic rearm or restart recovery.
+After any interruption, inspect Events and actual positions, manage remaining orders/exposure and create a fresh source for a new alert. The example has no execution feedback, automatic delivery retry, automatic rearm or restart recovery.

@@ -5,7 +5,7 @@ openapi: "/api/openapi.json GET /v1/discovery"
 playground: "simple"
 ---
 
-<Note>Preview contract. Production availability remains subject to activation and release qualification. Examples are synthetic; the documentation cannot submit requests.</Note>
+<Note>Examples are synthetic; the documentation cannot submit requests.</Note>
 
 ## Authorization
 
@@ -13,7 +13,7 @@ Any valid ordinary API key; no additional scope.
 
 ## Behavior
 
-Returns version, canonical action names, scopes, advertised request/pending/group bounds and MCP availability. Discovery does not attest exchange readiness or production activation. `mcp_available` is a deployment-specific boolean. It does not grant OAuth consent. Use the returned values for feature detection.
+Returns version, canonical action names, scopes, advertised request/pending/group bounds and MCP availability. Use `mcp_available` for feature detection when offering a connection. Discovery does not grant OAuth consent or replace linked-account checks.
 
 ## Request example
 

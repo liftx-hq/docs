@@ -16,12 +16,12 @@ Use [Settings → Integrations](https://app.liftx.io/settings/integrations) for 
 | `POST /integrations/credentials/revoke` | Revoke one credential UUID |
 | `GET /integrations/bindings` | Unrevoked TradingView setup metadata |
 | `POST /integrations/bindings` | Create an approved exact TradingView binding and credential |
-| `POST /integrations/bindings/revoke` | Disconnect an integration namespace |
+| `POST /integrations/bindings/revoke` | Disconnect an API, TradingView or MCP integration namespace and all its credentials |
 | `POST /integrations/reauth/start` | Start five-minute purpose/payload-bound fresh authentication |
 | `POST /integrations/reauth/verify` | Verify password or bound Apple proof and MFA when required |
 | `POST /integrations/mcp/preview` | Validate/normalize the OAuth request; no grant or code |
 | `POST /integrations/mcp/approve` | Consume exact fresh MCP consent and return a one-time callback |
-| `GET /integrations/commands` | Account-level Activity receipt page |
+| `GET /integrations/commands` | Account-level Events receipt page |
 | `GET /integrations/commands/get` | Exact account-owned receipt and group detail |
 
 ## Fresh approval flow
@@ -82,7 +82,7 @@ Both credential and binding issuance wrap the proposed `request` with the requir
 
 MCP approval is separate from ordinary key issuance. Never send `kind:"mcp"` to
 `POST /integrations/credentials`. Use the OAuth request supplied by the client
-and the authenticated Settings flow. MCP must be activated for these routes.
+and the authenticated Settings flow.
 
 1. [Preview the authorization](/api/reference/post-integrations-mcp-preview)
    using `authorization`. The server validates the registered callback, exact
@@ -114,7 +114,7 @@ metadata and explicitly restart OAuth instead of automatically replaying approva
 The approval route shares the 12-requests/minute/IP credential-security limiter;
 preview retains bounded request/concurrency admission without consuming that quota.
 
-When MCP is disabled, preview/approve return OAuth-shaped `503` data with
+An MCP service refusal from preview/approve returns OAuth-shaped `503` data with
 `error`, `error_description` and `iss`; `error` is `temporarily_unavailable`.
 Reauthentication with purpose `mcp` uses the normal integration error
 `MCP_NOT_ACTIVATED`. Other validation/admission failures retain the documented
@@ -122,10 +122,17 @@ integration error shape. See [MCP setup and permissions](/mcp/overview).
 
 ## Metadata, retention and revocation
 
-Metadata `kind` is `api`, `tradingview` or `mcp`. MCP credentials come from the [OAuth consent flow](/mcp/overview), not ordinary key issuance. Both availability booleans reflect this deployment’s activation gates; they do not attest exchange readiness or grant permission.
+Metadata `kind` is `api`, `tradingview` or `mcp`. MCP credentials come from the [OAuth consent flow](/mcp/overview), not ordinary key issuance. Read the availability booleans when offering a connection. They do not grant permission or replace linked-account checks.
 
 Active metadata is listed first, followed by recent history, up to 100 rows. Inactive credentials become eligible for cleanup 30 days after their own expiry or revocation, provided retained command evidence no longer references them. Unrevoked keyless TradingView setups remain visible for disconnection. A credential's expiry does not itself remove its setup or free the unrevoked-binding capacity.
 
-Export metadata you need beyond its retention window without exporting secrets. The Settings Activity list retains the command receipt semantics described in [commands and receipts](/api/commands-and-receipts).
+Export metadata you need beyond its retention window without exporting secrets. The Settings Events list retains the command receipt semantics described in [commands and receipts](/api/commands-and-receipts).
 
 Confirmed revocation is `200 {"revoked":true}`. If the result is `REVOCATION_UNCERTAIN`, refresh metadata before an explicit retry. New handoff authorization changes do not interrupt trading-owned protection or recovery.
+
+Settings groups credentials by `integration_id` and presents one **Disconnect**
+action per integration. It uses the namespace endpoint above for every kind and
+removes the item after a confirmed response. Individual **Remove key** controls
+appear under **Keys** only when multiple replacement keys exist; these use the
+exact credential endpoint and leave the other keys active. No additional delete
+request or automatic mutation retry is required.

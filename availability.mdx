@@ -1,20 +1,20 @@
 ---
-title: "Availability and boundaries"
-description: "Understand the documented release state and what each integration currently supports."
+title: "Integration capabilities"
+description: "Access methods, account requirements and supported integration boundaries."
 ---
 
-## Release state
+## Access methods
 
-This documentation describes the API v1 and TradingView integration implementation prepared for rollout. Publication of these docs does **not** activate trading services.
+API, TradingView and MCP access are included with Pro and trial. Credentials and OAuth grants restrict operations, linked accounts and instruments independently of subscription access.
 
-| Surface | Documentation status | Operational boundary |
+| Integration | Address | Access method |
 | --- | --- | --- |
-| API v1 | Contract and examples available | Production rollout and account eligibility must be confirmed before use. |
-| TradingView | JSON and Pine setup guides available | Keep alerts disabled while Liftx reports webhook execution unavailable. Complete end-to-end delivery and lifecycle validation before unattended operation. |
-| MCP | Locally implemented; guides and tool contract available | Production activation and real ChatGPT/Claude end-to-end qualification remain pending. No directory approval is claimed. |
-| Other third-party connectors | Not documented as active integrations | Use the API contract for a custom controller. |
+| API v1 | `https://api.liftx.io/v1` | Scoped API key for data, commands and streams |
+| TradingView | `https://hooks.liftx.io/v1/tradingview/events` | Restricted TradingView key in generated JSON or Pine alerts |
+| MCP | `https://mcp.liftx.io/mcp` | Personal OAuth connection for ChatGPT or Claude |
+| Custom clients | The API or MCP endpoint above | The same documented permissions, command identities and receipt semantics |
 
-The intended production addresses are `https://api.liftx.io/v1` and `https://hooks.liftx.io/v1/tradingview/events`. A reachable hostname, documentation page, or saved credential is not proof that webhook trading has been enabled.
+Begin with a demo account and validate the intended workflow before unattended trading. Inspect actual positions and receipts to confirm outcomes.
 
 ## Exchange and product support
 

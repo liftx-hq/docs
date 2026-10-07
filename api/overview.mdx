@@ -3,17 +3,13 @@ title: "API overview"
 description: "Build exchange-neutral automation on Liftx position and order management."
 ---
 
-<Warning>
-Preview documentation. The API and TradingView integration are implemented for release qualification; production activation is pending. Published contracts and examples do not establish that a trading endpoint is active. The documentation playground cannot submit requests.
-</Warning>
-
 The Liftx API exposes linked accounts, instrument catalogs, balances, fees, positions, attached orders, protections, templates, history, durable commands and scoped streams. Execution uses the same position lifecycle as the Liftx terminal. A bot does not get a separate order engine.
 
 | Service | Address | Authentication |
 | --- | --- | --- |
 | API v1 | `https://api.liftx.io/v1` | Ordinary Liftx API key in `Authorization: Bearer …` |
 | TradingView webhook | `https://hooks.liftx.io/v1/tradingview/events` | Restricted TradingView key in the JSON body |
-| MCP | `https://mcp.liftx.io/mcp` — locally implemented, not production active | Personal OAuth with PKCE; [qualification and setup](/mcp/overview) |
+| MCP | `https://mcp.liftx.io/mcp` | Personal OAuth with PKCE; [setup and permissions](/mcp/overview) |
 
 API and integration access is included with Pro, trial and the existing paid-grace entitlement. There is no per-command usage charge or trading-volume allowance. Resource admission, exchange limits and credential restrictions still apply.
 

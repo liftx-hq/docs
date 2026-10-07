@@ -1,5 +1,5 @@
 ---
-title: Delivery, Activity and troubleshooting
+title: Delivery, Events and troubleshooting
 description: Follow a signal from TradingView delivery through Liftx receipts to actual positions and orders.
 ---
 
@@ -9,13 +9,13 @@ Validation has three separate observations: TradingView emitted the intended mes
 
 1. **TradingView alert configuration:** correct running alert, condition, expiration, event family, fixed message and webhook URL.
 2. **TradingView alert log:** whether it triggered and the webhook delivery status.
-3. **Liftx Settings → Integrations → Activity:** select **Refresh latest** and find the command by its identity and time.
+3. **Liftx Settings → Integrations → Events:** select the **Refresh** icon and find the command by its identity and time.
 4. **Group details:** select **View targets**, then **Refresh targets** if needed. Review each child and its error evidence.
 5. **Actual Liftx position/orders:** verify fills, pending orders, active protections and remaining exposure.
 
-[Activity](/integrations/activity) refreshes on demand. **Older commands** loads the next page; it is not a continuously polling execution feed. An API controller can use scoped reads and [streams](/api/streams) for ongoing observation.
+[Events](/integrations/events) refreshes through the header’s **Refresh** icon. Scroll toward the end to load older events within a bounded history window; the screen does not poll for execution updates. An API controller can use scoped reads and [streams](/api/streams) for ongoing observation.
 
-## What Activity labels mean
+## What the Events labels mean
 
 | Label | Receipt state | Interpretation |
 | --- | --- | --- |
@@ -44,7 +44,7 @@ Resolved receipts remain available for 30 days. Unresolved work is retained unti
 | `409` | Identity conflict, stale ordering, busy policy or target conflict | Investigate the specific code and current state |
 | `413` / `415` | Oversized body or unsupported content/encoding | Send valid uncompressed JSON within 256 KiB |
 | `429` | Pending account admission capacity is exhausted | Resolve/observe existing work; do not flood new identities |
-| `503` | Temporarily unavailable, uncertain acceptance or execution not activated | Follow the code; preserve identity and payload for any valid retry |
+| `503` | Temporary admission failure or uncertain acceptance | Follow the code; preserve identity and payload for any valid retry |
 
 Provider-side errors may occur before a Liftx receipt exists. The public hooks endpoint accepts reviewed TradingView delivery sources; a direct request from an arbitrary laptop is not equivalent to a provider-delivery test. Do not work around an ingress rejection by weakening authentication.
 
@@ -52,7 +52,7 @@ Provider-side errors may occur before a Liftx receipt exists. The public hooks e
 
 | Code | Check and next step |
 | --- | --- |
-| `TRADINGVIEW_NOT_ACTIVATED` | Setup is preparable, but trading ingress is disabled. Keep alerts disabled until activation. |
+| `TRADINGVIEW_NOT_ACTIVATED` | Request refused before admission. Contact Liftx support; creating a different key does not resolve this response. |
 | `JSON_REQUIRED` / `INVALID_JSON` | Paste only the complete JSON message; check straight quotes, commas and escaping. Valid JSON makes TradingView send the expected content type. |
 | `INVALID_ENVELOPE` | Supply exactly one `alert` or `command`, not both and not null. |
 | `INVALID_ALERT_TIME` | Ordinary messages must preserve `{{timenow}}`; no fractional seconds, timezone offset or bar-time substitute. |
@@ -107,6 +107,6 @@ The supplied confirmed-bar helper emits at most one event per bar on a chart of 
 
 ## A controlled validation sequence
 
-After activation, use a demo market with a valid small setup. First verify a harmless, deliberately zero-target termination receipt. Then validate an OPEN, inspect actual order/protection state, and terminate it. Follow both exact and group results where authorized. Validate duplicates using unchanged intent, stale messages, wrong scope, revocation, expiry and interrupted-browser operation without treating those failures as permission to issue compensating trades.
+Use a demo market with a valid small setup. First verify a harmless, deliberately zero-target termination receipt. Then validate an OPEN, inspect actual order/protection state, and terminate it. Follow both exact and group results where authorized. Validate duplicates using unchanged intent, stale messages, wrong scope, revocation, expiry and interrupted-browser operation without treating those failures as permission to issue compensating trades.
 
 Do not move to a larger or live strategy merely because the Pine compiler accepted the script. Compilation, HTTPS delivery, durable admission and actual lifecycle execution are separate checks.
