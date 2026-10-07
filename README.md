@@ -1,6 +1,6 @@
 # Liftx documentation
 
-Official documentation for the Liftx API, TradingView integration, and planned MCP access.
+Official documentation for the Liftx API, TradingView integration, and locally implemented MCP access awaiting qualification and production activation.
 
 - API guides and endpoint reference: [`api/`](api/)
 - TradingView setup, JSON alerts, and Pine examples: [`integrations/tradingview/`](integrations/tradingview/)

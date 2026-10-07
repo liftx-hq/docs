@@ -13,7 +13,7 @@ Any valid ordinary API key; no additional scope.
 
 ## Behavior
 
-Returns version, canonical action names, scopes, advertised request/pending/group bounds and MCP availability. Discovery does not attest exchange readiness or production activation. Use the exact values for feature detection.
+Returns version, canonical action names, scopes, advertised request/pending/group bounds and MCP availability. Discovery does not attest exchange readiness or production activation. `mcp_available` is a deployment-specific boolean. It does not grant OAuth consent. Use the returned values for feature detection.
 
 ## Request example
 

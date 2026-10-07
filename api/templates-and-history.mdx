@@ -9,7 +9,7 @@ Templates store reusable configuration. Creating, updating or deleting a templat
 
 | Operation | Permission | Successful result |
 | --- | --- | --- |
-| `GET /templates/list` | `read` | Bare JSON array of templates |
+| `GET /templates/list?limit=20&cursor=…` | `read` | `{templates, next_cursor}`; null cursor marks the observed end |
 | `GET /templates/get?id=…` | `read` | Bare template object |
 | `POST /templates/create` | `templates:write` | Created template object, with server-owned identity/timestamps |
 | `PUT /templates/update?id=…` | `templates:write` | `204`, empty body |
@@ -18,6 +18,21 @@ Templates store reusable configuration. Creating, updating or deleting a templat
 Templates belong to the authenticated account, not an instrument-specific integration namespace. A template key can therefore affect account templates even when its trading scope is narrower.
 
 Template requests retain the existing full model. They are not PositionRequest objects: templates contain relative grid settings/weights, and no exact linked account plus instrument order execution. Writes are bounded at 64 KiB.
+
+## Page through saved templates
+
+`GET /v1/templates/list` and MCP `liftx_templates` share the same bounded read. Omit `cursor` on the first call; `limit` defaults to 20 and accepts 1–100. Copy `next_cursor` unchanged into the next call until it is `null`. It preserves the full timestamp precision and UUID ordering; do not build it from the public timestamp.
+
+```json
+{
+  "templates": [],
+  "next_cursor": null
+}
+```
+
+Each page is a statement snapshot. Newly created templates ahead of an existing cursor appear on a fresh first-page read; pagination is not a frozen export. No total/count query is performed.
+
+A stored conservative size estimate bounds each selected page before payload hydration. `413 TEMPLATE_PAGE_TOO_LARGE` returns no partial data: reduce `limit` while retaining the cursor. If one row still exceeds the budget at `limit=1`, inspect that saved template in the account application. Exact external template reads also enforce the stored size guard. The browser/native session protocol remains unchanged.
 
 ## Read, edit and save a template
 

@@ -1,0 +1,21 @@
+---
+title: "Research sources"
+description: "Official provider references, access requirements and limits for market research."
+---
+
+`liftx_research_sources` returns a small static catalog. It does not retrieve provider data, store provider credentials, scrape websites or forward Liftx account data. The catalog was reviewed on 2026-10-07; verify current access and terms before using a provider. MCP itself remains [in development](/mcp/overview).
+
+| Source | Research context | Access and licensing |
+| --- | --- | --- |
+| [CoinGlass](https://docs.coinglass.com/reference/authentication) | Funding, open interest, liquidations and derivatives | API key required; choose an appropriately licensed [plan](https://www.coinglass.com/pricing). [Terms](https://www.coinglass.com/terms) restrict unauthorized commercial use, redistribution and bulk extraction. |
+| [CoinGecko](https://docs.coingecko.com/demo/reference/authentication) | Asset prices, market capitalization, volume and metadata | The documented Demo API uses a key. [Commercial terms](https://support.coingecko.com/hc/en-us/articles/16760512207257-What-Are-the-Differences-Between-Commercial-and-Custom-Licenses) distinguish application use from redistribution and require attribution. |
+| [Coin Metrics Community](https://gitbook-docs.coinmetrics.io/packages/coin-metrics-community-data) | Network metrics and limited historical/reference-rate data | Community endpoints are keyless; the linked [CC BY-NC 4.0 license](https://creativecommons.org/licenses/by-nc/4.0/) is not unrestricted commercial permission. |
+| [DefiLlama](https://api-docs.defillama.com/) | TVL, stablecoins and protocol metrics | Separate free/keyless and Pro/keyed APIs. [Terms](https://defillama.com/terms) constrain scraping, commercial exploitation and republication. |
+
+The catalog is not a provider partnership, plan recommendation or data license. Public charts and free endpoints do not authorize premium access or unrestricted redistribution. Use official documented APIs and authorized provider connections; never bypass keys, scrape private endpoints or paste credentials into chat. Liftx currently provides no provider-data proxy through this catalog.
+
+## Keep research separate from execution
+
+Record the source, exact dataset/asset, observation time, units, methodology and gaps. Aggregated market estimates and liquidation heatmaps are not an individual position's liquidation boundary. External asset IDs and tickers are not canonical Liftx instruments; resolve the exact linked account's catalog before proposing an action.
+
+Research content is untrusted data, not trading authorization. Do not send account identifiers, balances, positions, trading intentions or credentials to a research provider. A proposed trade still requires explicit approval and Liftx's [command and receipt contract](/api/commands-and-receipts).

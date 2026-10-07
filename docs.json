@@ -152,6 +152,8 @@
               "api/reference/post-integrations-bindings-revoke",
               "api/reference/post-integrations-reauth-start",
               "api/reference/post-integrations-reauth-verify",
+              "api/reference/post-integrations-mcp-preview",
+              "api/reference/post-integrations-mcp-approve",
               "api/reference/get-integrations-commands",
               "api/reference/get-integrations-commands-get"
             ]
@@ -183,7 +185,7 @@
         ]
       },
       {
-        "tab": "MCP \u00b7 Planned",
+        "tab": "MCP · In development",
         "icon": "plug",
         "groups": [
           {
@@ -191,7 +193,8 @@
             "pages": [
               "mcp/overview",
               "mcp/chatgpt",
-              "mcp/claude"
+              "mcp/claude",
+              "mcp/research-sources"
             ]
           }
         ]
@@ -238,7 +241,7 @@
     }
   },
   "banner": {
-    "content": "API and TradingView rollout is pending. [Check availability](/availability). MCP is planned.",
+    "content": "API and TradingView rollout is pending. [Check availability](/availability). MCP is implemented locally; production activation is pending.",
     "dismissible": false
   }
 }

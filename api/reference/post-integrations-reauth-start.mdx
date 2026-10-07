@@ -13,7 +13,7 @@ Authenticated Liftx Settings session.
 
 ## Behavior
 
-Bind a canonical operation UUID, purpose and exact request to a five-minute approval attempt. Returned methods, MFA requirement and optional Apple nonce describe the allowed proof. This does not link a different account.
+Bind a canonical operation UUID, purpose and exact request to a five-minute approval attempt. Returned methods, MFA requirement and optional Apple nonce describe the allowed proof. This does not link a different account. `purpose` selects the exact request schema: `credential` → `CredentialRequest`, `binding` → `BindingRequest`, or `mcp` → `MCPConsentRequest`. MCP consent requires activation and is submitted after proof to its [dedicated approval endpoint](/api/reference/post-integrations-mcp-approve), never ordinary key issuance.
 
 This is a session-owned application contract, not an ordinary API-key endpoint. Use [Settings → Integrations](https://app.liftx.io/settings/integrations). The public API base URL does not grant session access.
 

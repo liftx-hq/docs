@@ -1,0 +1,43 @@
+---
+title: "Preview MCP authorization"
+description: "Validate and normalize the OAuth client request without creating a grant."
+openapi: "/api/openapi.json POST /integrations/mcp/preview"
+playground: "simple"
+---
+
+<Note>MCP is implemented locally and is not production active. These synthetic examples do not announce availability or submit requests.</Note>
+
+## Authorization
+
+Authenticated Liftx Settings session. API keys, TradingView capabilities and MCP access tokens cannot authenticate this application route. Use [Settings → Integrations](https://app.liftx.io/settings/integrations); the public API hostname does not provide session access.
+
+## Behavior
+
+The response contains `client_name`, normalized `authorization`, `allowed_scopes` and the exact `resource`. Preview validates the callback/client pairing, resource, state and PKCE challenge. It does not create a credential, issue a code or consume fresh approval. Client labels come from callback policy; a local callback does not attest a provider identity.
+
+## JSON body example
+
+This is a synthetic local-client shape. The actual client owns registration, callback, state and PKCE challenge. Do not manually construct consent from a chat or substitute a different client request. Fixed timestamps are illustrative.
+
+```json
+{
+  "authorization": {
+    "client_id": "lx_mcp_client_WyJodHRwOi8vMTI3LjAuMC4xOjU0MzIxL2NhbGxiYWNrIl0",
+    "redirect_uri": "http://127.0.0.1:54321/callback",
+    "response_type": "code",
+    "resource": "https://mcp.liftx.io/mcp",
+    "code_challenge": "E9Melhoa2OwvFrEMTJguCHaoeK1t8URWbuGJSstw-cM",
+    "code_challenge_method": "S256",
+    "state": "SYNTHETIC_CLIENT_STATE",
+    "scope": "read"
+  }
+}
+```
+
+## Response and errors
+
+Success is `200` with normalized metadata. An omitted/empty authorization `scope` defaults to `read`; duplicate or unknown scope names are rejected. The allowed scopes are the OAuth client’s request, not permissions already granted to it. Preview is outside the issuance limiter and retains bounded request/concurrency admission.
+
+MCP activation is required. When disabled, `503` uses `{error:"temporarily_unavailable",error_description,iss}`; other validation/admission failures retain the documented integration error envelope. Check status and content type. Unknown/duplicate JSON fields and compressed bodies are rejected; request size is limited to 256 KiB.
+
+See [Settings contract](/api/settings-contract) and [MCP authorization](/mcp/overview).

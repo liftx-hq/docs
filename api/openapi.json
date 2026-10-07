@@ -73,7 +73,8 @@
                       "additionalProperties": true
                     },
                     "mcp_available": {
-                      "const": false
+                      "type": "boolean",
+                      "description": "Whether MCP is enabled in this deployment. This flag does not grant OAuth consent or attest exchange readiness."
                     }
                   },
                   "required": [
@@ -87,7 +88,7 @@
                 },
                 "examples": {
                   "synthetic": {
-                    "summary": "Actual published contract values; not activation evidence",
+                    "summary": "Synthetic discovery with MCP inactive; availability is deployment-specific",
                     "description": "Synthetic documentation data, not an account snapshot, executable market configuration or production-availability assertion. IDs, quantities, prices, times and values are illustrative.",
                     "value": {
                       "version": "v1",
@@ -2334,7 +2335,7 @@
     "/v1/templates/list": {
       "get": {
         "operationId": "get_v1_templates_list",
-        "summary": "Canonical template list",
+        "summary": "List a bounded page of account order templates",
         "security": [
           {
             "ApiKey": []
@@ -2346,48 +2347,48 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/OrderTemplate"
-                  }
+                  "$ref": "#/components/schemas/TemplatePage"
                 },
                 "examples": {
                   "synthetic": {
                     "summary": "Synthetic success response",
                     "description": "Synthetic documentation data, not an account snapshot, executable market configuration or production-availability assertion. IDs, quantities, prices, times and values are illustrative.",
-                    "value": [
-                      {
-                        "id": "44444444-4444-4444-8444-444444444444",
-                        "user_id": 1,
-                        "name": "Illustrative derivative limit",
-                        "instrument_type": 2,
-                        "position_side": 1,
-                        "margin_mode": 1,
-                        "leverage": 2,
-                        "order_grid_enabled": false,
-                        "open_price_deltas": [],
-                        "open_quantity_percent": [
-                          1000000
-                        ],
-                        "sl_enabled": false,
-                        "sl_price_rearrangement": false,
-                        "slx_enabled": false,
-                        "slx_tp_trailing_enabled": false,
-                        "slx_each_tp_trailing": false,
-                        "slx_sl_trailing_breakeven_enabled": false,
-                        "slx_sl_trigger_price_trailing_enabled": false,
-                        "tp_enabled": false,
-                        "tp_price_rearrangement": false,
-                        "tp_grid_enabled": false,
-                        "tp_pnls": [],
-                        "tp_quantity_percent": [],
-                        "open_order_type": 1,
-                        "sl_order_type": 2,
-                        "tp_order_type": 1,
-                        "created_at": 1893456000,
-                        "updated_at": 1893456000
-                      }
-                    ]
+                    "value": {
+                      "templates": [
+                        {
+                          "id": "44444444-4444-4444-8444-444444444444",
+                          "user_id": 1,
+                          "name": "Illustrative derivative limit",
+                          "instrument_type": 2,
+                          "position_side": 1,
+                          "margin_mode": 1,
+                          "leverage": 2,
+                          "order_grid_enabled": false,
+                          "open_price_deltas": [],
+                          "open_quantity_percent": [
+                            1000000
+                          ],
+                          "sl_enabled": false,
+                          "sl_price_rearrangement": false,
+                          "slx_enabled": false,
+                          "slx_tp_trailing_enabled": false,
+                          "slx_each_tp_trailing": false,
+                          "slx_sl_trailing_breakeven_enabled": false,
+                          "slx_sl_trigger_price_trailing_enabled": false,
+                          "tp_enabled": false,
+                          "tp_price_rearrangement": false,
+                          "tp_grid_enabled": false,
+                          "tp_pnls": [],
+                          "tp_quantity_percent": [],
+                          "open_order_type": 1,
+                          "sl_order_type": 2,
+                          "tp_order_type": 1,
+                          "created_at": 1893456000,
+                          "updated_at": 1893456000
+                        }
+                      ],
+                      "next_cursor": null
+                    }
                   }
                 }
               }
@@ -2407,9 +2408,45 @@
                 }
               }
             }
+          },
+          "413": {
+            "description": "The selected template page exceeds the conservative pre-hydration read budget; retry this read with a smaller limit, preserving its cursor. No partial page is returned.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
           }
         },
-        "x-liftx-required-scope": "read"
+        "x-liftx-required-scope": "read",
+        "description": "Account-owned configuration, not trading state. Optional limit defaults to 20, maximum 100. Pass next_cursor unchanged until null; it retains the full-precision creation time and UUID tie-breaker. Each page is one ordered statement snapshot, not a frozen multi-page export. Concurrent new templates before the cursor require a fresh first-page read. Storage checks a conservative 1 MiB page budget before loading payloads. A 413 TEMPLATE_PAGE_TOO_LARGE requires a smaller limit; if limit=1 still fails, that saved row is unavailable through external reads and requires account-side inspection. No account-wide count, additional count query, total, or silent truncation. Browser/native session list protocols are separate from this external API contract.",
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 20
+            },
+            "description": "Maximum templates in this page. Reduce it on TEMPLATE_PAGE_TOO_LARGE."
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "maxLength": 128,
+              "minLength": 1
+            },
+            "description": "Opaque next_cursor returned by the previous page. Omit for the first page; never construct, round or edit it."
+          }
+        ]
       }
     },
     "/v1/templates/get": {
@@ -2483,6 +2520,16 @@
                 }
               }
             }
+          },
+          "413": {
+            "description": "Saved template exceeds the external read budget and requires account-side inspection.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
           }
         },
         "x-liftx-required-scope": "read",
@@ -2496,7 +2543,8 @@
               "format": "uuid"
             }
           }
-        ]
+        ],
+        "description": "Get one account-owned template by exact UUID. The same stored read-size guard rejects an oversized inherited row before loading its payload; the failure is explicit, never a missing template or partial model."
       }
     },
     "/v1/templates/create": {
@@ -3108,7 +3156,7 @@
     "/integrations/credentials": {
       "get": {
         "operationId": "get_integrations_credentials",
-        "summary": "List credential metadata and TradingView availability",
+        "summary": "List credential metadata and integration availability",
         "security": [
           {
             "SessionBearer": []
@@ -3130,17 +3178,22 @@
                     },
                     "tradingview_available": {
                       "type": "boolean"
+                    },
+                    "mcp_available": {
+                      "type": "boolean",
+                      "description": "Whether MCP is enabled in this deployment. Credential metadata remains inspectable when MCP is inactive."
                     }
                   },
                   "required": [
                     "credentials",
-                    "tradingview_available"
+                    "tradingview_available",
+                    "mcp_available"
                   ],
                   "additionalProperties": false
                 },
                 "examples": {
                   "synthetic": {
-                    "summary": "Synthetic credential metadata; webhook remains inactive",
+                    "summary": "Synthetic credential metadata with integrations inactive; not activation evidence",
                     "description": "Synthetic documentation data, not an account snapshot, executable market configuration or production-availability assertion. IDs, quantities, prices, times and values are illustrative.",
                     "value": {
                       "credentials": [
@@ -3167,7 +3220,8 @@
                           "revoked_at": null
                         }
                       ],
-                      "tradingview_available": false
+                      "tradingview_available": false,
+                      "mcp_available": false
                     }
                   }
                 }
@@ -3976,7 +4030,8 @@
                     "type": "string",
                     "enum": [
                       "credential",
-                      "binding"
+                      "binding",
+                      "mcp"
                     ]
                   },
                   "request": {
@@ -3986,6 +4041,9 @@
                       },
                       {
                         "$ref": "#/components/schemas/BindingRequest"
+                      },
+                      {
+                        "$ref": "#/components/schemas/MCPConsentRequest"
                       }
                     ]
                   }
@@ -3995,12 +4053,105 @@
                   "purpose",
                   "request"
                 ],
-                "additionalProperties": false
+                "additionalProperties": false,
+                "allOf": [
+                  {
+                    "if": {
+                      "properties": {
+                        "purpose": {
+                          "const": "credential"
+                        }
+                      },
+                      "required": [
+                        "purpose"
+                      ]
+                    },
+                    "then": {
+                      "properties": {
+                        "request": {
+                          "$ref": "#/components/schemas/CredentialRequest"
+                        }
+                      }
+                    }
+                  },
+                  {
+                    "if": {
+                      "properties": {
+                        "purpose": {
+                          "const": "binding"
+                        }
+                      },
+                      "required": [
+                        "purpose"
+                      ]
+                    },
+                    "then": {
+                      "properties": {
+                        "request": {
+                          "$ref": "#/components/schemas/BindingRequest"
+                        }
+                      }
+                    }
+                  },
+                  {
+                    "if": {
+                      "properties": {
+                        "purpose": {
+                          "const": "mcp"
+                        }
+                      },
+                      "required": [
+                        "purpose"
+                      ]
+                    },
+                    "then": {
+                      "properties": {
+                        "request": {
+                          "$ref": "#/components/schemas/MCPConsentRequest"
+                        }
+                      }
+                    }
+                  }
+                ],
+                "description": "Purpose selects the exact request schema. MCP consent uses mcp and MCPConsentRequest; it cannot issue an MCP credential through ordinary CredentialRequest."
+              },
+              "examples": {
+                "mcp_read_consent": {
+                  "summary": "Synthetic read-only MCP approval start",
+                  "description": "Synthetic documentation data, not an account snapshot, valid credential or production-availability assertion. Fixed times, IDs and callback state are illustrative; use the OAuth client request in the real Settings flow.",
+                  "value": {
+                    "operation_id": "66666666-6666-4666-8666-666666666666",
+                    "purpose": "mcp",
+                    "request": {
+                      "authorization": {
+                        "client_id": "lx_mcp_client_WyJodHRwOi8vMTI3LjAuMC4xOjU0MzIxL2NhbGxiYWNrIl0",
+                        "redirect_uri": "http://127.0.0.1:54321/callback",
+                        "response_type": "code",
+                        "resource": "https://mcp.liftx.io/mcp",
+                        "code_challenge": "E9Melhoa2OwvFrEMTJguCHaoeK1t8URWbuGJSstw-cM",
+                        "code_challenge_method": "S256",
+                        "state": "SYNTHETIC_CLIENT_STATE",
+                        "scope": "read"
+                      },
+                      "exchange_link_ids": [
+                        17
+                      ],
+                      "instrument_ids": [
+                        "COPY_EXACT_CATALOG_ID"
+                      ],
+                      "scopes": [
+                        "read"
+                      ],
+                      "expires_at": 1893542400,
+                      "trading_consent": false
+                    }
+                  }
+                }
               }
             }
           }
         },
-        "description": "Session-owned Settings contract. Ordinary API keys and TradingView capabilities cannot authenticate this route. Use the Liftx Settings application; this is not a third-party bot endpoint. Shares credential-security admission of 12 requests per minute per source IP across these issuance/reauthentication POST operations; separate from the five-attempt approval budget. Metadata and revocation are exempt. No trading usage quota.",
+        "description": "Session-owned Settings contract. Ordinary API keys and TradingView capabilities cannot authenticate this route. Use the Liftx Settings application; this is not a third-party bot endpoint. Shares credential-security admission of 12 requests per minute per source IP across these issuance/reauthentication POST operations; separate from the five-attempt approval budget. Metadata and revocation are exempt. No trading usage quota. Purpose mcp binds the exact MCPConsentRequest later submitted to /integrations/mcp/approve and requires MCP activation.",
         "x-liftx-security-rate-limit": {
           "requests": 12,
           "window_seconds": 60,
@@ -4386,6 +4537,284 @@
         ],
         "description": "Session-owned Settings contract. Ordinary API keys and TradingView capabilities cannot authenticate this route. Use the Liftx Settings application; this is not a third-party bot endpoint. "
       }
+    },
+    "/integrations/mcp/preview": {
+      "post": {
+        "operationId": "post_integrations_mcp_preview",
+        "summary": "Preview and normalize an MCP authorization request",
+        "security": [
+          {
+            "SessionBearer": []
+          }
+        ],
+        "x-liftx-required-scope": "",
+        "description": "Session-owned Liftx Settings contract. Ordinary API keys, TradingView capabilities and MCP access tokens cannot authenticate this route. Use the authenticated Settings application; the public API hostname does not grant session access. Validates the exact public-client callback, resource, state, scope and PKCE challenge and returns normalized authorization metadata. Creates no credential or code and consumes no fresh approval. Client name derives from the reviewed callback policy; the local-client label is not verified provider identity. MCP activation is required. JSON is strict, uncompressed and limited to 256 KiB.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "authorization": {
+                    "$ref": "#/components/schemas/OAuthAuthorization"
+                  }
+                },
+                "required": [
+                  "authorization"
+                ],
+                "additionalProperties": false
+              },
+              "examples": {
+                "synthetic": {
+                  "summary": "Synthetic local-client authorization preview",
+                  "description": "Synthetic documentation data, not an account snapshot, valid credential or production-availability assertion. Fixed times, IDs and callback state are illustrative; use the OAuth client request in the real Settings flow.",
+                  "value": {
+                    "authorization": {
+                      "client_id": "lx_mcp_client_WyJodHRwOi8vMTI3LjAuMC4xOjU0MzIxL2NhbGxiYWNrIl0",
+                      "redirect_uri": "http://127.0.0.1:54321/callback",
+                      "response_type": "code",
+                      "resource": "https://mcp.liftx.io/mcp",
+                      "code_challenge": "E9Melhoa2OwvFrEMTJguCHaoeK1t8URWbuGJSstw-cM",
+                      "code_challenge_method": "S256",
+                      "state": "SYNTHETIC_CLIENT_STATE",
+                      "scope": "read"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Normalized metadata; no authorization grant is created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MCPPreviewResponse"
+                },
+                "examples": {
+                  "synthetic": {
+                    "summary": "Synthetic normalized preview; no grant issued",
+                    "description": "Synthetic documentation data, not an account snapshot, valid credential or production-availability assertion. Fixed times, IDs and callback state are illustrative; use the OAuth client request in the real Settings flow.",
+                    "value": {
+                      "client_name": "Local MCP client",
+                      "authorization": {
+                        "client_id": "lx_mcp_client_WyJodHRwOi8vMTI3LjAuMC4xOjU0MzIxL2NhbGxiYWNrIl0",
+                        "redirect_uri": "http://127.0.0.1:54321/callback",
+                        "response_type": "code",
+                        "resource": "https://mcp.liftx.io/mcp",
+                        "code_challenge": "E9Melhoa2OwvFrEMTJguCHaoeK1t8URWbuGJSstw-cM",
+                        "code_challenge_method": "S256",
+                        "state": "SYNTHETIC_CLIENT_STATE",
+                        "scope": "read"
+                      },
+                      "allowed_scopes": [
+                        "read"
+                      ],
+                      "resource": "https://mcp.liftx.io/mcp"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "MCP disabled returns the OAuth-shaped availability error; temporary internal admission failure retains the integration error shape",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/MCPOAuthUnavailable"
+                    },
+                    {
+                      "$ref": "#/components/schemas/Error"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Integration errors use Error; existing trading handlers retain their own JSON or text/plain error codec. Inspect status and content type.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              },
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/integrations/mcp/approve": {
+      "post": {
+        "operationId": "post_integrations_mcp_approve",
+        "summary": "Approve an MCP OAuth grant with exact fresh account proof",
+        "security": [
+          {
+            "SessionBearer": []
+          }
+        ],
+        "x-liftx-required-scope": "",
+        "description": "Session-owned Liftx Settings contract. Ordinary API keys, TradingView capabilities and MCP access tokens cannot authenticate this route. Use the authenticated Settings application; the public API hostname does not grant session access. Submit the exact consent request and operation UUID after successful purpose=mcp reauthentication. Atomically consumes the five-minute approval, validates current Pro/trial entitlement and owned active links, and creates the scoped MCP grant plus a two-minute authorization code. Returns no API key, MCP access token or refresh token; the OAuth client exchanges the callback code. An identical committed retry returns 409 OAUTH_APPROVAL_CONSUMED, never another code. On an ambiguous result inspect connection metadata, then explicitly restart authorization; never automatically repeat approval. Shares the existing 12 requests/minute/IP credential-security limiter. JSON is strict, uncompressed and limited to 256 KiB.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "operation_id": {
+                    "type": "string",
+                    "format": "uuid",
+                    "description": "Required nonzero UUID of the approved mcp-purpose request for this same account session."
+                  },
+                  "request": {
+                    "$ref": "#/components/schemas/MCPConsentRequest"
+                  }
+                },
+                "required": [
+                  "operation_id",
+                  "request"
+                ],
+                "additionalProperties": false
+              },
+              "examples": {
+                "synthetic": {
+                  "summary": "Synthetic exact read-only consent",
+                  "description": "Synthetic documentation data, not an account snapshot, valid credential or production-availability assertion. Fixed times, IDs and callback state are illustrative; use the OAuth client request in the real Settings flow.",
+                  "value": {
+                    "operation_id": "66666666-6666-4666-8666-666666666666",
+                    "request": {
+                      "authorization": {
+                        "client_id": "lx_mcp_client_WyJodHRwOi8vMTI3LjAuMC4xOjU0MzIxL2NhbGxiYWNrIl0",
+                        "redirect_uri": "http://127.0.0.1:54321/callback",
+                        "response_type": "code",
+                        "resource": "https://mcp.liftx.io/mcp",
+                        "code_challenge": "E9Melhoa2OwvFrEMTJguCHaoeK1t8URWbuGJSstw-cM",
+                        "code_challenge_method": "S256",
+                        "state": "SYNTHETIC_CLIENT_STATE",
+                        "scope": "read"
+                      },
+                      "exchange_link_ids": [
+                        17
+                      ],
+                      "instrument_ids": [
+                        "COPY_EXACT_CATALOG_ID"
+                      ],
+                      "scopes": [
+                        "read"
+                      ],
+                      "expires_at": 1893542400,
+                      "trading_consent": false
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "New MCP credential metadata and sensitive one-time callback URL",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MCPApprovalResponse"
+                },
+                "examples": {
+                  "synthetic": {
+                    "summary": "Synthetic callback placeholder; not a valid authorization code",
+                    "description": "Synthetic documentation data, not an account snapshot, valid credential or production-availability assertion. Fixed times, IDs and callback state are illustrative; use the OAuth client request in the real Settings flow.",
+                    "value": {
+                      "credential": {
+                        "id": "77777777-7777-4777-8777-777777777777",
+                        "integration_id": "88888888-8888-4888-8888-888888888888",
+                        "name": "Local MCP client",
+                        "kind": "mcp",
+                        "prefix": "lx_mcp_77777777",
+                        "scopes": [
+                          "read"
+                        ],
+                        "exchange_link_ids": [
+                          17
+                        ],
+                        "instrument_ids": [
+                          "COPY_EXACT_CATALOG_ID"
+                        ],
+                        "created_at": 1893456000,
+                        "expires_at": 1893542400,
+                        "revoked_at": null
+                      },
+                      "redirect_url": "http://127.0.0.1:54321/callback?code=ONE_TIME_AUTHORIZATION_CODE_PLACEHOLDER&state=SYNTHETIC_CLIENT_STATE&iss=https%3A%2F%2Fmcp.liftx.io"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Approval already consumed or credential capacity reached; inspect metadata before starting a new flow",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Credential security admission limit reached; existing security middleware response. Wait before an explicit retry, and never automatically replay secret issuance."
+          },
+          "503": {
+            "description": "MCP disabled returns the OAuth-shaped availability error; internal admission failure retains the integration error shape",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/MCPOAuthUnavailable"
+                    },
+                    {
+                      "$ref": "#/components/schemas/Error"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Integration errors use Error; existing trading handlers retain their own JSON or text/plain error codec. Inspect status and content type.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              },
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "x-liftx-security-rate-limit": {
+          "requests": 12,
+          "window_seconds": 60,
+          "key": "source_ip",
+          "scope": "integration_security"
+        }
+      }
     }
   },
   "components": {
@@ -4417,7 +4846,13 @@
             "type": "string"
           },
           "kind": {
-            "type": "string"
+            "type": "string",
+            "enum": [
+              "api",
+              "tradingview",
+              "mcp"
+            ],
+            "description": "Credential metadata type. MCP credentials come from OAuth consent, not ordinary API-key issuance."
           },
           "prefix": {
             "type": "string"
@@ -7928,6 +8363,299 @@
             "terminal_request_kind"
           ]
         }
+      },
+      "OAuthAuthorization": {
+        "type": "object",
+        "properties": {
+          "client_id": {
+            "type": "string",
+            "maxLength": 3072,
+            "pattern": "^lx_mcp_client_[A-Za-z0-9_-]+$",
+            "description": "Required. Exact opaque identifier returned by public OAuth client registration. Server revalidates its canonical callback set; do not invent an ID or treat it as a secret."
+          },
+          "redirect_uri": {
+            "type": "string",
+            "format": "uri",
+            "maxLength": 512,
+            "description": "Required. Exact callback registered in client_id. Supported callbacks: https://claude.ai/api/mcp/auth_callback; https://chatgpt.com/connector_platform_oauth_redirect; https://chatgpt.com/connector/oauth/{identifier} with 1\u2013128 ASCII letters/digits, hyphens or underscores; or http://localhost:{port}/callback / http://127.0.0.1:{port}/callback with port 1024\u201365535. No userinfo, query, fragment or escaped path."
+          },
+          "response_type": {
+            "type": "string",
+            "const": "code"
+          },
+          "resource": {
+            "type": "string",
+            "format": "uri",
+            "pattern": "^[hH][tT][tT][pP][sS]://[mM][cC][pP]\\.[lL][iI][fF][tT][xX]\\.[iI][oO]/mcp$",
+            "description": "Required. https://mcp.liftx.io/mcp with no port, credentials, query, fragment or escaped path. Scheme/hostname case is normalized; the path is exact."
+          },
+          "code_challenge": {
+            "type": "string",
+            "minLength": 43,
+            "maxLength": 43,
+            "pattern": "^[A-Za-z0-9_-]{42}[AEIMQUYcgkosw048]$",
+            "description": "Required. Canonical unpadded base64url encoding of the 32-byte SHA-256 PKCE challenge. The client retains the verifier; do not send it to this Settings route."
+          },
+          "code_challenge_method": {
+            "type": "string",
+            "const": "S256"
+          },
+          "state": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 1024,
+            "not": {
+              "pattern": "[\\u0000\\r\\n]"
+            },
+            "description": "Required. Client-owned opaque state, 1\u20131024 UTF-8 bytes; NUL/CR/LF are rejected. Returned unchanged to the exact callback."
+          },
+          "scope": {
+            "type": "string",
+            "default": "read",
+            "description": "Optional. Whitespace-separated requested scopes: read, positions:open, positions:modify, positions:terminate, templates:write. At most five distinct scopes; duplicates/unknown values are rejected. Omitted or empty defaults to read. Preview returns a sorted, space-separated value."
+          }
+        },
+        "required": [
+          "client_id",
+          "redirect_uri",
+          "response_type",
+          "resource",
+          "code_challenge",
+          "code_challenge_method",
+          "state"
+        ],
+        "additionalProperties": false
+      },
+      "MCPConsentRequest": {
+        "type": "object",
+        "properties": {
+          "authorization": {
+            "$ref": "#/components/schemas/OAuthAuthorization"
+          },
+          "exchange_link_ids": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 32,
+            "uniqueItems": true,
+            "items": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 9007199254740991
+            },
+            "description": "Required. One to 32 unique active exchange links owned by this account; ownership is checked before grant issuance."
+          },
+          "instrument_ids": {
+            "type": "array",
+            "maxItems": 64,
+            "uniqueItems": true,
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 128,
+              "pattern": "^[!-~]+$"
+            },
+            "description": "Optional. Exact adapter-owned canonical IDs. Empty/omitted permits all instruments on the selected links; no inferred venue or symbol conversion."
+          },
+          "scopes": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 5,
+            "uniqueItems": true,
+            "items": {
+              "type": "string",
+              "enum": [
+                "read",
+                "positions:open",
+                "positions:modify",
+                "positions:terminate",
+                "templates:write"
+              ]
+            },
+            "description": "Required. One to five unique selected permissions, each a subset of authorization.scope. Consent never expands the OAuth request. Values are normalized into sorted order."
+          },
+          "expires_at": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Required. Future UTC Unix seconds, no more than 30 days from consent validation. Must still be valid when approval is consumed."
+          },
+          "trading_consent": {
+            "type": "boolean",
+            "default": false,
+            "description": "Optional for read-only consent, where omitted means false. Required true when any selected scope permits position or template mutation. OAuth capability consent is separate from authorization of a concrete trade."
+          }
+        },
+        "required": [
+          "authorization",
+          "exchange_link_ids",
+          "scopes",
+          "expires_at"
+        ],
+        "additionalProperties": false,
+        "allOf": [
+          {
+            "if": {
+              "properties": {
+                "scopes": {
+                  "contains": {
+                    "enum": [
+                      "positions:open",
+                      "positions:modify",
+                      "positions:terminate",
+                      "templates:write"
+                    ]
+                  }
+                }
+              },
+              "required": [
+                "scopes"
+              ]
+            },
+            "then": {
+              "properties": {
+                "trading_consent": {
+                  "const": true
+                }
+              },
+              "required": [
+                "trading_consent"
+              ]
+            }
+          }
+        ]
+      },
+      "MCPPreviewResponse": {
+        "type": "object",
+        "properties": {
+          "client_name": {
+            "type": "string",
+            "enum": [
+              "Claude",
+              "ChatGPT",
+              "Local MCP client"
+            ]
+          },
+          "authorization": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/OAuthAuthorization"
+              },
+              {
+                "required": [
+                  "scope"
+                ],
+                "properties": {
+                  "resource": {
+                    "const": "https://mcp.liftx.io/mcp"
+                  }
+                }
+              }
+            ]
+          },
+          "allowed_scopes": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 5,
+            "uniqueItems": true,
+            "items": {
+              "type": "string",
+              "enum": [
+                "read",
+                "positions:open",
+                "positions:modify",
+                "positions:terminate",
+                "templates:write"
+              ]
+            }
+          },
+          "resource": {
+            "type": "string",
+            "const": "https://mcp.liftx.io/mcp"
+          }
+        },
+        "required": [
+          "client_name",
+          "authorization",
+          "allowed_scopes",
+          "resource"
+        ],
+        "additionalProperties": false
+      },
+      "MCPApprovalResponse": {
+        "type": "object",
+        "properties": {
+          "credential": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Credential"
+              },
+              {
+                "properties": {
+                  "kind": {
+                    "const": "mcp"
+                  }
+                }
+              }
+            ]
+          },
+          "redirect_url": {
+            "type": "string",
+            "format": "uri",
+            "description": "Exact registered callback with one-time code, original state and iss=https://mcp.liftx.io. The code expires after two minutes and is exchanged by the OAuth client with PKCE. Sensitive: never log, paste into chat or repeat after an ambiguous response."
+          }
+        },
+        "required": [
+          "credential",
+          "redirect_url"
+        ],
+        "additionalProperties": false
+      },
+      "MCPOAuthUnavailable": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "string",
+            "const": "temporarily_unavailable"
+          },
+          "error_description": {
+            "type": "string"
+          },
+          "iss": {
+            "type": "string",
+            "const": "https://mcp.liftx.io"
+          }
+        },
+        "required": [
+          "error",
+          "error_description",
+          "iss"
+        ],
+        "additionalProperties": false
+      },
+      "TemplatePage": {
+        "type": "object",
+        "properties": {
+          "templates": {
+            "type": "array",
+            "maxItems": 100,
+            "items": {
+              "$ref": "#/components/schemas/OrderTemplate"
+            },
+            "description": "Current account-owned templates ordered by full-precision creation time and UUID, descending."
+          },
+          "next_cursor": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 128,
+            "description": "Opaque continuation for older templates, or null when this statement observed the end. Copy unchanged; public template timestamps are not a substitute."
+          }
+        },
+        "required": [
+          "templates",
+          "next_cursor"
+        ],
+        "additionalProperties": false
       }
     }
   }

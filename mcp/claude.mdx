@@ -1,12 +1,40 @@
 ---
-title: "Claude · Planned"
-description: "Claude connection instructions will be published after the Liftx MCP server is available."
+title: "Claude · In development"
+description: "Personal OAuth access and the Liftx review and position-management plugin."
 ---
 
-Liftx does not currently provide an active trading MCP connection for Claude. No desktop configuration, remote connector registration, or command-line package is required or supported for this release.
+<Info>
+The MCP adapter and plugin are implemented locally and unreleased. Production activation, real Claude qualification and package publication remain pending. No Anthropic directory acceptance or endorsement is claimed.
+</Info>
 
-The reserved `https://mcp.liftx.io/mcp` address must not be treated as an active server. Do not place Liftx API keys or TradingView capabilities in prompts or an unverified MCP configuration.
+## Remote connector after activation
 
-After activation, the guide will describe the supported authorization flow, account and instrument consent, separate read and trading permissions, receipt reconciliation, and revocation. Client-specific instructions will be verified against the supported Claude release before publication.
+Add `https://mcp.liftx.io/mcp` in Claude's custom connector settings. Require sign-in and choose **Register automatically** for the OAuth client. Liftx supports public-client registration with PKCE; the published-identity/CIMD option is not implemented. Keep custom request headers empty. Do not paste a Liftx API key, TradingView capability, account-session token or shared organization bearer credential. Team/Enterprise setup follows organizational policy; each user authorizes their own Liftx account. [Claude remote connector guidance](https://support.claude.com/en/articles/11175166-get-started-with-custom-connectors-using-remote-mcp).
 
-For current automation, use the [API](/api/overview) or [TradingView](/integrations/tradingview/overview). See the [MCP status](/mcp/overview) for the shared planned model.
+Review Liftx consent for your account, exact linked accounts, demo/live environment, instruments, operations and expiry. Begin with read access and inspect discovery/current positions. Trading requires explicit consent, fresh authentication and approval of the concrete action. See the [MCP tool and receipt contract](/mcp/overview).
+
+## Liftx plugin for Claude Code
+
+After the separate package publication, install from the Liftx marketplace:
+
+```text
+/plugin marketplace add liftx-hq/ai-plugin
+/plugin install liftx@liftx
+```
+
+Authenticate the Liftx plugin connector from `/mcp`. The package contains one remote HTTP connector and two skills, with no local server, credentials or install hooks:
+
+| Skill | Purpose |
+| --- | --- |
+| `/liftx:review` | Review positions, protections and receipts without trading. |
+| `/liftx:manage` | User-invoked preparation and execution of an exact approved action, preserving command identity and receipt uncertainty. |
+
+A local callback is labelled a local client; it is not proof of a verified provider identity. Follow the client's normal OAuth flow. [Claude plugin format](https://code.claude.com/docs/en/plugins-reference) and [MCP setup](https://code.claude.com/docs/en/mcp).
+
+Claude supports [custom plugin uploads](https://support.claude.com/en/articles/13837440-use-plugins-in-claude); use a reviewed official release archive when available. Public GitHub marketplace installation in Claude Code differs from organization GitHub syncing, which [requires a private/internal repository](https://support.claude.com/en/articles/13837433-manage-plugins-for-your-organization). The public Liftx repository is not an organization-sync source.
+
+## Outcomes and revocation
+
+Keep original command IDs and receipts across reconnects. A pending or `operator_required` outcome remains unresolved; `execution_observed` is not proof of fills or flat exposure. Never replay uncertain work under a new identity or compensate automatically.
+
+Revoke the grant in Liftx Settings to end server access, then disconnect or uninstall the connector in Claude. Revocation prevents new handoffs while Liftx preserves already-owned protection, termination and recovery. Client removal alone does not prove server revocation.

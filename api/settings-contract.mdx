@@ -3,7 +3,7 @@ title: "Session-owned Settings API"
 description: "Document credential administration without granting it to trading API keys."
 ---
 
-These routes document the Liftx Settings application's authenticated contract. They are **not ordinary bot endpoints**. An API key or TradingView capability cannot create keys, expand its permissions, change account security or authenticate these routes.
+These routes document the Liftx Settings application's authenticated contract. They are **not ordinary bot endpoints**. An API key, TradingView capability or MCP access token cannot create keys, expand its permissions, change account security or authenticate these routes.
 
 Use [Settings → Integrations](https://app.liftx.io/settings/integrations) for customer administration. The web application preserves its session and CSRF boundary. The reference shows Base path contracts; it does not instruct third-party clients to bypass the application session.
 
@@ -11,7 +11,7 @@ Use [Settings → Integrations](https://app.liftx.io/settings/integrations) for 
 
 | Method/path | Purpose |
 | --- | --- |
-| `GET /integrations/credentials` | Credential metadata and `tradingview_available` |
+| `GET /integrations/credentials` | Credential metadata, `tradingview_available` and `mcp_available` |
 | `POST /integrations/credentials` | Issue a key after exact fresh approval; one-time secret |
 | `POST /integrations/credentials/revoke` | Revoke one credential UUID |
 | `GET /integrations/bindings` | Unrevoked TradingView setup metadata |
@@ -19,16 +19,18 @@ Use [Settings → Integrations](https://app.liftx.io/settings/integrations) for 
 | `POST /integrations/bindings/revoke` | Disconnect an integration namespace |
 | `POST /integrations/reauth/start` | Start five-minute purpose/payload-bound fresh authentication |
 | `POST /integrations/reauth/verify` | Verify password or bound Apple proof and MFA when required |
+| `POST /integrations/mcp/preview` | Validate/normalize the OAuth request; no grant or code |
+| `POST /integrations/mcp/approve` | Consume exact fresh MCP consent and return a one-time callback |
 | `GET /integrations/commands` | Account-level Activity receipt page |
 | `GET /integrations/commands/get` | Exact account-owned receipt and group detail |
 
 ## Fresh approval flow
 
 1. Allocate a canonical UUID `operation_id` for the exact draft.
-2. Start with `purpose:"credential"` or `"binding"` and the full proposed request.
+2. Start with `purpose:"credential"`, `"binding"` or `"mcp"` and the matching complete request schema.
 3. Use an offered authentication method. The Apple flow must use the returned nonce and the subject already linked to this account.
 4. Verify exactly one of `password` or `apple_token`, plus `mfa_code` when required.
-5. Issue the exact approved request with the same operation ID before approval expiry.
+5. Submit the exact approved request with the same operation ID before approval expiry; MCP uses its dedicated approval endpoint.
 
 The approval binds the operation ID, session bearer, purpose and payload digest. It is consumed atomically. Five proof attempts share one five-minute budget. This is fresh approval within the same account, not account linking or a new login identity.
 
@@ -76,7 +78,51 @@ In addition to restricted credential fields, a binding has `mode`, `position_mod
 
 Both credential and binding issuance wrap the proposed `request` with the required `operation_id`. Fresh-auth start also requires `purpose`; verify requires `operation_id` and `proof`, referring to that existing challenge. Inside `proof`, exactly one offered `password` or `apple_token` is required, with `mfa_code` conditionally required by the challenge. Do not include both authentication methods. Revoke requests require the exact `id` (credential) or `integration_id` (binding) specified by their endpoint. See the endpoint schemas for wire bounds and request wrappers.
 
+## MCP consent
+
+MCP approval is separate from ordinary key issuance. Never send `kind:"mcp"` to
+`POST /integrations/credentials`. Use the OAuth request supplied by the client
+and the authenticated Settings flow. MCP must be activated for these routes.
+
+1. [Preview the authorization](/api/reference/post-integrations-mcp-preview)
+   using `authorization`. The server validates the registered callback, exact
+   resource, state and S256 PKCE challenge, then returns `client_name`, normalized
+   `authorization`, `allowed_scopes` and `resource`. Preview creates no grant.
+2. Form `MCPConsentRequest` from that authorization, one to 32 owned active
+   `exchange_link_ids`, one to five selected `scopes` drawn from the requested
+   permissions, and future `expires_at` within 30 days. Optional `instrument_ids`
+   selects up to 64 exact IDs; empty/omitted permits all instruments on the links.
+   Optional `trading_consent` defaults false and is required true for any selected
+   position/template write scope.
+3. Start fresh authentication with `purpose:"mcp"` and the complete request,
+   verify the offered proof and required MFA, then [approve the connection](/api/reference/post-integrations-mcp-approve)
+   with the same `operation_id` and unchanged request before the five-minute
+   approval expires.
+
+The authorization object's `scope` is optional and defaults to `read` when
+omitted/empty. Duplicate/unknown requested scopes are rejected. The client owns
+its registered callback, opaque state and PKCE verifier; never construct or paste
+these sensitive callback values into chat. The `allowed_scopes` in preview are
+requested permissions, not permissions already granted.
+
+Approval requires current Pro/trial entitlement and returns `201` with `credential`
+metadata and a sensitive `redirect_url`. The callback contains a two-minute,
+single-use code, original state and issuer; access/refresh tokens are obtained by
+the OAuth client separately. A committed retry returns `409 OAUTH_APPROVAL_CONSUMED`
+and cannot recover the code. After an ambiguous response inspect connection
+metadata and explicitly restart OAuth instead of automatically replaying approval.
+The approval route shares the 12-requests/minute/IP credential-security limiter;
+preview retains bounded request/concurrency admission without consuming that quota.
+
+When MCP is disabled, preview/approve return OAuth-shaped `503` data with
+`error`, `error_description` and `iss`; `error` is `temporarily_unavailable`.
+Reauthentication with purpose `mcp` uses the normal integration error
+`MCP_NOT_ACTIVATED`. Other validation/admission failures retain the documented
+integration error shape. See [MCP setup and permissions](/mcp/overview).
+
 ## Metadata, retention and revocation
+
+Metadata `kind` is `api`, `tradingview` or `mcp`. MCP credentials come from the [OAuth consent flow](/mcp/overview), not ordinary key issuance. Both availability booleans reflect this deployment’s activation gates; they do not attest exchange readiness or grant permission.
 
 Active metadata is listed first, followed by recent history, up to 100 rows. Inactive credentials become eligible for cleanup 30 days after their own expiry or revocation, provided retained command evidence no longer references them. Unrevoked keyless TradingView setups remain visible for disconnection. A credential's expiry does not itself remove its setup or free the unrevoked-binding capacity.
 

@@ -1,12 +1,28 @@
 ---
-title: "ChatGPT · Planned"
-description: "ChatGPT connection instructions will be published after the Liftx MCP server is available."
+title: "ChatGPT · In development"
+description: "Prepare a personal OAuth connection to Liftx after release qualification."
 ---
 
-Liftx does not currently provide an active trading MCP connection for ChatGPT. There is no connector URL, registration sequence, or tool list to configure in this release.
+<Info>
+The MCP adapter is implemented locally. Production activation and real ChatGPT end-to-end qualification remain pending. No OpenAI directory listing or approval is claimed.
+</Info>
 
-The reserved `https://mcp.liftx.io/mcp` address must not be treated as an active server. Do not enter Liftx API keys, TradingView capabilities, account passwords, or exchange credentials into a conversation.
+## Connect after activation
 
-When available, setup will use the supported client authorization flow with explicit Liftx consent for accounts, instruments, and operations. The final guide will explain read-only access, separately approved trading access, receipts, revocation, and limitations after end-to-end verification.
+Current OpenAI guidance uses ChatGPT on the web: **Plugins → plus → Add custom MCP server**. Enter `https://mcp.liftx.io/mcp`, select OAuth and use automatic client registration. Workspace policy may restrict this setup. The published-identity/CIMD option is not supported by this Liftx implementation. [Official custom MCP instructions](https://developers.openai.com/plugins/deploy/connect-chatgpt).
 
-For current automation, use the [API](/api/overview) or [TradingView](/integrations/tradingview/overview). See the [MCP status](/mcp/overview) for the shared planned model.
+Follow Liftx browser sign-in and consent. Begin with `read`, confirm your account, exact linked accounts, demo/live environment, canonical instruments and grant expiry. Use `liftx_discovery` and a bounded position read to verify access. Add trading permissions only through explicit Liftx consent and fresh authentication.
+
+Never configure a static API-key or bearer header, select anonymous authentication, or paste passwords, tokens, exchange credentials, TradingView capabilities or callback URLs into a chat. The supported connection uses personal OAuth access; shared credentials are not a substitute.
+
+## Use trading tools deliberately
+
+Review the exact action before approving an OPEN, modification or termination. Read/research prompts do not authorize trades. Modification requires the current snapshot/revision. Preserve the original `client_command_id`, complete payload and receipt across timeouts or reconnects; an absent response does not prove absence of effects.
+
+The [MCP contract](/mcp/overview) describes permissions and tools. The [receipt contract](/api/commands-and-receipts) explains why acceptance, handoff and `execution_observed` do not prove completion or flat exposure.
+
+## Reconnect or disconnect
+
+Access tokens expire within 15 minutes and grants within 30 days. The client owns refresh; uncertain refresh requires a new browser authorization. That does not authorize a new trading command. Revoke the grant in Liftx Settings, then disconnect in ChatGPT. Client removal alone is not evidence of server revocation.
+
+Connecting a remote server, importing skills and publishing an OpenAI directory entry are separate workflows. The Liftx Claude package is not an already-approved OpenAI plugin. [OpenAI's Claude-plugin import guide](https://developers.openai.com/plugins/guides/submit-claude-plugin) describes a separate production/OAuth/domain/review process.

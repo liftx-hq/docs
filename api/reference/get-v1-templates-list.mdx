@@ -1,6 +1,6 @@
 ---
 title: "List order templates"
-description: "Returns a bare array, including an empty array when no templates exist."
+description: "Read a bounded cursor page of account-owned order templates."
 openapi: "/api/openapi.json GET /v1/templates/list"
 playground: "simple"
 ---
@@ -13,18 +13,20 @@ playground: "simple"
 
 ## Behavior
 
-Returns a bare array, including an empty array when no templates exist. It is not wrapped in success/data and not limited to the credential instrument. Template reads place no trades.
+Returns `{templates, next_cursor}`. The cursor is null when the statement observed the end; otherwise copy it unchanged to the next call. The optional limit defaults to 20, with a maximum of 100. Templates are account-owned and are not limited to the credential instrument. Template reads place no trades.
 
 ## Request example
 
 ```http
-GET /v1/templates/list
+GET /v1/templates/list?limit=20
 Authorization: Bearer YOUR_API_KEY_FROM_PRIVATE_STORAGE
 ```
 
 All IDs and dates are illustrative. URL-encode opaque query values and supply each allowed key once. Optional filters and their types appear in the generated schema below.
 
 ## Response and errors
+
+`413 TEMPLATE_PAGE_TOO_LARGE` rejects a page before loading its template payloads. Retry this read with a smaller limit and the same cursor. At limit 1, a persistent failure means the saved row exceeds the external read budget and needs account-side inspection. No partial page or approximate cursor is returned.
 
 The generated response schema below is the wire contract. Preserve fixed-point strings, nullable fields and endpoint-specific envelopes. Inspect HTTP status and Content-Type before decoding failures; reused trading routes may return JSON or plain text. Authentication, entitlement and exact link/instrument restrictions apply in addition to endpoint validation. See [errors and recovery](/api/errors-and-limits).
 

@@ -1,0 +1,59 @@
+---
+title: "Approve an MCP connection"
+description: "Consume exact fresh account approval and return a one-time OAuth callback."
+openapi: "/api/openapi.json POST /integrations/mcp/approve"
+playground: "simple"
+---
+
+<Note>MCP is implemented locally and is not production active. These synthetic examples do not announce availability or submit requests.</Note>
+
+## Authorization
+
+Authenticated Liftx Settings session. API keys, TradingView capabilities and MCP access tokens cannot authenticate this application route. Use [Settings → Integrations](https://app.liftx.io/settings/integrations); the public API hostname does not provide session access.
+
+## Behavior
+
+First start fresh authentication with `purpose:"mcp"` and the same complete `MCPConsentRequest`, then verify the offered password/Apple proof and MFA when required. Submit the unchanged request with that operation UUID before the five-minute approval expires. The grant requires current Pro/trial entitlement, one to 32 owned active links, a subset of requested scopes and an expiry within 30 days. Any selected position/template write scope requires `trading_consent:true`. Omitted `instrument_ids` permits all instruments on the selected links; otherwise exact canonical IDs are required.
+
+## JSON body example
+
+This is a synthetic local-client shape. The actual client owns registration, callback, state and PKCE challenge. Do not manually construct consent from a chat or substitute a different client request. Fixed timestamps are illustrative.
+
+```json
+{
+  "operation_id": "66666666-6666-4666-8666-666666666666",
+  "request": {
+    "authorization": {
+      "client_id": "lx_mcp_client_WyJodHRwOi8vMTI3LjAuMC4xOjU0MzIxL2NhbGxiYWNrIl0",
+      "redirect_uri": "http://127.0.0.1:54321/callback",
+      "response_type": "code",
+      "resource": "https://mcp.liftx.io/mcp",
+      "code_challenge": "E9Melhoa2OwvFrEMTJguCHaoeK1t8URWbuGJSstw-cM",
+      "code_challenge_method": "S256",
+      "state": "SYNTHETIC_CLIENT_STATE",
+      "scope": "read"
+    },
+    "exchange_link_ids": [
+      17
+    ],
+    "instrument_ids": [
+      "COPY_EXACT_CATALOG_ID"
+    ],
+    "scopes": [
+      "read"
+    ],
+    "expires_at": 1893542400,
+    "trading_consent": false
+  }
+}
+```
+
+## Response and errors
+
+Success is `201` with `credential` metadata of kind `mcp` and a sensitive `redirect_url` containing the one-time code, original state and issuer. The code lasts two minutes; the OAuth client exchanges it with its retained verifier. No access token, refresh token or ordinary API key is returned here. Never log or paste the callback URL into chat.
+
+An identical committed retry is `409 OAUTH_APPROVAL_CONSUMED`; it cannot recover the code. After an ambiguous response inspect connection metadata and deliberately restart OAuth rather than replaying approval. The operation shares the 12-requests/minute/IP issuance limiter.
+
+MCP activation is required. When disabled, `503` uses `{error:"temporarily_unavailable",error_description,iss}`; other validation/admission failures retain the documented integration error envelope. Check status and content type. Unknown/duplicate JSON fields and compressed bodies are rejected; request size is limited to 256 KiB.
+
+See [Settings contract](/api/settings-contract) and [MCP authorization](/mcp/overview).

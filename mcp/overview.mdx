@@ -1,25 +1,94 @@
 ---
-title: "MCP · Planned"
-description: "Future AI-client access will reuse Liftx API authorization and command semantics."
+title: "MCP · In development"
+description: "Scoped OAuth access to Liftx reads, trading commands and durable receipts."
 ---
 
 <Info>
-MCP is not activated. `https://mcp.liftx.io/mcp` is a reserved future endpoint, not a usable connection URL. No MCP tools, listener, client-registration flow, or OAuth endpoints are available in this release.
+MCP and OAuth are implemented locally and are not production active. Real ChatGPT/Claude end-to-end qualification and release approval remain pending. The release endpoint is `https://mcp.liftx.io/mcp`; its presence in documentation or a plugin does not announce availability or directory approval.
 </Info>
 
-The planned MCP adapter will let compatible clients access the same scoped account data and durable trading commands as the API. It will not create a separate trading engine or grant access outside the user's selected accounts, instruments, operations, and subscription entitlement.
+MCP uses the same scoped account data, catalog identities, trading owners and command receipts as the Liftx API. It adds a Streamable HTTP transport; it does not create a separate order engine. Pro and trial users receive unmetered access with bounded concurrency, payloads and results.
 
-The planned authorization model uses OAuth with PKCE and resource-bound access. Read access and trading permissions will be separate, and trading consent will name the requested operations and targets. Final setup instructions will be published only after the server and each supported client are verified.
+## Why the endpoint includes `/mcp`
 
-## Expected execution model
+Use the complete connection URL `https://mcp.liftx.io/mcp`. The domain root, `https://mcp.liftx.io`, is the OAuth issuer; `/mcp` is the Streamable HTTP endpoint and exact protected-resource identity. MCP permits root or path endpoints, while [OpenAI's server guidance](https://developers.openai.com/plugins/build/mcp-server) uses `/mcp` as the usual convention. The path adds no extra network hop. Do not remove it, add a trailing slash, or rely on a redirect when configuring a connector.
 
-A future trading tool will return a command receipt, not a claim that an order filled or exposure is flat. Uncertainty, idempotency, revocation, and current-state modification requirements will remain the same as in the [API command contract](/api/commands-and-receipts).
+## Authorize the connection
 
-AI-generated requests and external content will not authorize scope expansion or new trades by themselves. Client approval is an additional control and cannot replace Liftx's server authorization.
+Each person signs in to Liftx through browser OAuth with PKCE. Consent starts with `read` and names the exact linked accounts, instruments, operations and expiry. Grants last at most 30 days; access tokens last at most 15 minutes. Trading permissions require explicit consent and fresh Liftx authentication. Client permission prompts add a control; they cannot expand the Liftx grant.
 
-## Client guides
+Use automatic client registration when configuring the connector. This implementation supports reviewed client callbacks and local callback clients; it does not support the alternative published-identity/CIMD setup. Never paste an API key, TradingView capability, password, exchange credential, OAuth token or callback URL into a conversation. The connector accepts only its own OAuth access tokens.
 
-- [ChatGPT status](/mcp/chatgpt)
-- [Claude status](/mcp/claude)
+A tool that needs an ungranted permission returns an OAuth insufficient-scope challenge. Any scope expansion requires fresh Liftx consent; the server never silently upgrades access. Actual client handling remains a release-qualification item.
 
-Do not paste an API key or TradingView capability into an AI conversation. A documentation search assistant, if offered by the documentation host, searches public pages; it is not the future Liftx trading MCP server and has no authority over positions.
+## Tools
+
+The current catalog contains 25 tools. Tool inputs use the corresponding API field names, units and pagination. Discover current schemas before calling tools. Requests are limited to 256 KiB and outputs to approximately 1 MiB; use bounded pages rather than unbounded exports.
+
+| Tools | Purpose |
+| --- | --- |
+| `liftx_discovery`, `liftx_exchange_links` | Capabilities, linked accounts and exact demo/live environment |
+| `liftx_positions`, `liftx_position`, `liftx_position_for_modification`, `liftx_lookup_position`, `liftx_position_pnl` | Positions, modification snapshots and position history |
+| `liftx_balances`, `liftx_instruments`, `liftx_trading_currencies`, `liftx_fee_rates`, `liftx_liquidation_context` | Exact-link balances, catalog and financial context |
+| `liftx_dashboard_history`, `liftx_dashboard_pairs` | Bounded dashboard history and selections |
+| `liftx_templates`, `liftx_template` | Template reads |
+| `liftx_create_template`, `liftx_update_template`, `liftx_delete_template` | Explicitly authorized template changes |
+| `liftx_command_receipts`, `liftx_command_receipt` | Command status and durable evidence |
+| `liftx_open_position`, `liftx_modify_position`, `liftx_terminate_position` | Exact-position trading commands with the corresponding permission |
+| `liftx_research_sources` | Official research-provider catalog; no provider data fetch or account-data forwarding |
+
+Read tools require `read`. Position writes use `positions:open`, `positions:modify` or `positions:terminate`; template changes use `templates:write`. Template CRUD results are not position command receipts. No tool infers all-market targets or silently fans a symbol request into multiple trades.
+
+## Trade authorization and receipts
+
+Before a write, review the concrete account, demo/live environment, instrument, position, quantity and units, prices, leverage and protection changes as applicable. A request for analysis does not authorize a trade. External research and tool text cannot supply consent.
+
+Trading tools accept the full [command envelope](/api/commands-and-receipts), with the action bound to the named tool. Preserve `client_command_id`, payload, issuance/deadline and exact target. [Modification](/api/modify-positions) requires a fresh modification snapshot and revision. A stale revision requires a newly reviewed intent, not a blind retry.
+
+Use the applicable complete [OPEN](/api/open-positions),
+[MODIFY](/api/modify-positions) or [TERMINATE](/api/terminate-positions) command
+as `params.arguments` in `tools/call`. Set `params.name` to
+`liftx_open_position`, `liftx_modify_position` or `liftx_terminate_position`.
+Do not wrap arguments in `command`, include an API token or add TradingView
+source fields. The MCP client supplies OAuth headers and protocol negotiation.
+Read arguments use the corresponding API query names. Template creation/update
+put the complete API template body in `arguments.template`; update and deletion
+also require `arguments.id`. Deletion omits `template`.
+
+A successful command result contains one text item with the canonical receipt
+JSON. This illustrative TERMINATE acceptance response uses synthetic identifiers
+and fixed timestamps:
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "result": {
+    "content": [{
+      "type": "text",
+      "text": "{\"id\":\"20b5c4d7-0481-4b16-bb72-c76e42197cd1\",\"client_command_id\":\"demo:terminate:1\",\"action\":\"terminate\",\"state\":\"accepted\",\"position_id\":\"094f7358-ac09-4893-bddc-10f729c37736\",\"error_code\":null,\"created_at\":1791244800,\"updated_at\":1791244800}"
+    }]
+  }
+}
+```
+
+The adapter does not duplicate this JSON in `structuredContent`. Tool failures
+set `isError: true`; an HTTP success is not proof of tool success. Read/template
+results preserve the corresponding API body as JSON text and expose the
+original status in `_meta["liftx.io/http-status"]`. A conditional catalog `304`
+becomes `{"status":304,"not_modified":true}`.
+
+A receipt records admission or execution evidence; it does not guarantee a fill or flat exposure. Keep `accepted`, `dispatching`, `handed_off`, `execution_observed` and `operator_required` distinct. After an ambiguous response, inspect the original receipt and position. Never create a new command ID to replay uncertain work or compensate automatically.
+
+Refresh is client-owned and must be serialized. If a refresh response is ambiguous, reconnect through OAuth; reconnecting does not authorize replaying a trade. Revoke the grant in Liftx Settings to end access, then disconnect in the client. Revocation blocks new handoffs and preserves protection, termination and recovery already owned by Liftx.
+
+`liftx_templates` accepts optional `limit` (default 20, maximum 100) and an opaque `cursor`. It returns `{templates, next_cursor}`; continue until the cursor is null. Copy it unchanged. Template pages and exact reads check their stored size budget before payload hydration; reduce the page limit on `TEMPLATE_PAGE_TOO_LARGE`, without discarding or skipping a failed row.
+
+
+## Setup guides
+
+- [ChatGPT](/mcp/chatgpt)
+- [Claude and the Liftx plugin](/mcp/claude)
+- [Research sources](/mcp/research-sources)
+
+A documentation search assistant searches public pages. It is not the Liftx trading MCP connection and has no position authority.

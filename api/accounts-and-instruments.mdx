@@ -22,7 +22,7 @@ curl --fail-with-body -H "Authorization: Bearer ${LIFTX_API_KEY}" \
   https://api.liftx.io/v1/discovery
 ```
 
-An illustrative discovery response is:
+An illustrative discovery response with MCP inactive is shown below. `mcp_available` is a deployment-specific boolean; read it at runtime rather than assuming it is always false. It does not grant OAuth consent or attest exchange readiness.
 
 ```json
 {
