@@ -154,7 +154,7 @@ The safe preparation sequence is:
 
 1. An API controller reads [get-for-modification and current position state](/api/modify-positions).
 2. It maps that position publication into the complete `PositionRequest`, retaining current rows, slot identities and immutable fields. The read response is not itself a ready-to-submit request.
-3. It changes only the intended supported protection configuration. TradingView capped modification must preserve every OPEN row, including exact slot identities; same-size replacements still count as OPEN changes.
+3. It changes only the intended supported protection configuration. TradingView protection-only modification must preserve every OPEN row, including exact slot identities; same-size replacements still count as OPEN changes.
 4. It emits an exact-position `modify` intent with the resulting complete request and, preferably, the observed revision.
 5. It follows the receipt and resulting state. A conflict requires a fresh read and a deliberate new intent; an uncertain outcome requires review, not whole-request replay.
 
@@ -251,15 +251,15 @@ The outer `token` is required. Exactly one of `command` or the [ordinary `alert`
 
 | Field | Presence | Contract |
 | --- | --- | --- |
-| `client_command_id` | Required | Nonempty, at most 128 UTF-8 bytes; unique intent within integration namespace; preserve exactly on retry; reserved `liftx-group:` prefix is unavailable |
+| `client_command_id` | Required | Nonempty, at most 256 UTF-8 bytes; unique intent within integration namespace; preserve exactly on retry; reserved `liftx-group:` prefix is unavailable |
 | `issued_at` | Required | Positive integer Unix seconds; unseen identities must be within five minutes of issuance, with at most 30 seconds of future clock allowance, and still before their own deadline |
 | `expires_at` | Required | Integer Unix seconds, after issuance and no more than 300 seconds later; generated helpers use 60 seconds |
 | `action` | Required | `open`, `modify`, `terminate`; canonical TV aliases `cancel` and `close` normalize to termination |
 | `target` | Optional; defaults to `position` | Omitted/`position` for exact commands; explicit `strategy`/`market` only for termination |
-| `exchange_link_id`, `instrument_id` | Required | Must match the authenticated immutable setup and nested request when present |
+| `exchange_link_id`, `instrument_id` | Required | The setup's exact link and an instrument permitted by its allowlist; both must match the nested request when present |
 | `source_instance_id`, `binding_revision` | Required | Exact configured values, not user-selected per event |
 | `sequence` | Required | Positive integer source ordering, assigned once per intent |
-| `client_position_id`, `position_started_at` | Conditional: exact target only; forbidden for groups | Exact lifecycle reference for position targeting; reference length 1–128 UTF-8 bytes; immutable positive start no later than issuance; absent for groups |
+| `client_position_id`, `position_started_at` | Conditional: exact target only; forbidden for groups | Exact lifecycle reference for position targeting; reference length 1–256 UTF-8 bytes; immutable positive start no later than issuance; absent for groups |
 | `expected_revision` | Optional: exact MODIFY; forbidden for groups | Optional TV modify fence; when present must match current state |
 | `request` | Conditional: Advanced OPEN / MODIFY; omit for Guided OPEN and all termination | Complete canonical position request where required; absent for termination |
 

@@ -4,9 +4,9 @@ indicator("Liftx one-shot demo", overlay = true)
 // PRIVATE: this script contains a restricted credential. Never publish/share it.
 // Fixed target: link 17, instrument COPY_EXACT_CATALOG_ID.
 // The chart supplies signal data; it cannot change this fixed trading target.
-// One key is one ordered producer: use a separate setup/key for another alert
-// or independent strategy. The same running alert can reuse its key for cycles.
-// Never mix this Pine alert with an ordinary OPEN/EXIT alert pair on this key.
+// Keep one ordered producer per instrument. Use a separate setup for
+// independent strategies on the same instrument. The same running alert can reuse its key for cycles.
+// Never mix this Pine alert with an ordinary OPEN/EXIT pair on the same instrument.
 // Use a demo link for initial validation. Configure the inputs while disabled.
 // Set future times in the chart's timezone, enable the indicator, then create
 // ONE alert: this indicator / Any alert() function call / Liftx webhook URL.
@@ -28,7 +28,7 @@ if liftxTerminateTarget == ""
 
 // Every intent uses this one envelope; group targets omit position references.
 liftxMessage(string action, string positionRef, int positionStarted, int sequence, int issued, string requestJSON, string target = "position") =>
-    string commandID = "11111111-1111-4111-8111-111111111111:" + str.tostring(sequence) + ":" + action
+    string commandID = "11111111-1111-4111-8111-111111111111:17:Q09QWV9FWEFDVF9DQVRBTE9HX0lE:" + str.tostring(sequence) + ":" + action
     string message = "{\"token\":\"REPLACE_WITH_RESTRICTED_TRADINGVIEW_KEY\",\"command\":{\"client_command_id\":" + '"' + commandID + '"'
     message += ',"issued_at":' + str.tostring(issued) + ',"expires_at":' + str.tostring(issued + 60)
     message += ',"action":"' + action + '"' + ",\"exchange_link_id\":17,\"instrument_id\":\"COPY_EXACT_CATALOG_ID\",\"source_instance_id\":\"11111111-1111-4111-8111-111111111111\",\"binding_revision\":1"
@@ -42,7 +42,7 @@ liftxMessage(string action, string positionRef, int positionStarted, int sequenc
 bool liftxEnabled = input.bool(false, "Enable one-shot demo", tooltip = "Sends one OPEN and one TERMINATE signal. No execution feedback or automatic retry.")
 int liftxOpenAt = input.time(0, "OPEN time (chart timezone)")
 int liftxTerminateAt = input.time(0, "TERMINATE time (chart timezone)")
-const string liftxPositionRef = "11111111-1111-4111-8111-111111111111:one-shot"
+const string liftxPositionRef = "11111111-1111-4111-8111-111111111111:17:Q09QWV9FWEFDVF9DQVRBTE9HX0lE:one-shot"
 int liftxPositionStarted = int(liftxOpenAt / 1000)
 
 // Signal phases only: 0 idle, 1 waiting, 2 OPEN emitted, 3 TERMINATE emitted,
@@ -52,10 +52,10 @@ varip int liftxPhase = 0
 varip int liftxSequence = 0
 
 if barstate.isrealtime and liftxEnabled
-    if timenow >= liftxCredentialExpiresAt
+    if liftxCredentialExpiresAt > 0 and timenow >= liftxCredentialExpiresAt
         runtime.error("Credential expired. Signals have stopped; inspect Liftx and manage remaining orders or exposure there.")
     if liftxPhase == 0
-        if liftxOpenAt <= timenow or liftxTerminateAt < liftxOpenAt + 60000 or liftxTerminateAt >= liftxCredentialExpiresAt
+        if liftxOpenAt <= timenow or liftxTerminateAt < liftxOpenAt + 60000 or (liftxCredentialExpiresAt > 0 and liftxTerminateAt >= liftxCredentialExpiresAt)
             runtime.error("Choose a future OPEN time and a TERMINATE time at least 60 seconds later, before credential expiry. After interruption, stop the alert and inspect Liftx; do not restart it.")
         liftxPhase := 1
     if liftxPhase == 1 and timenow >= liftxOpenAt

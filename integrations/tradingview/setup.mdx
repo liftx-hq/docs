@@ -6,28 +6,36 @@ description: Every permission, opening policy, quantity cap and one-time secret 
 ## Before opening the form
 
 1. Sign in to [Liftx Settings → Integrations](https://app.liftx.io/settings/integrations) with Pro or an active trial.
-2. In Trading, select the intended connected exchange account and an instrument from its catalog. Prefer a supported demo account for initial validation.
-3. Prepare a valid **new** order draft without submitting it. Select direction, quantities, OPEN rows, SL, SLx, TP, grids, rearrangement, leverage and applicable account options in the normal order builder.
-4. Finish any position-modification session. The integration imports a new-order setup, not an in-progress edit of an existing position.
+2. Connect the intended exchange account in Settings. Select it directly in the TradingView setup's **Exchange link** dropdown; the options show the exchange and Demo/Live environment. The row shows the selected link ID. Prefer a supported demo account for initial validation.
+3. For Guided mode, prepare a valid **new** order draft without submitting it, or have its complete Position JSON ready to paste. Select direction, quantities, OPEN rows, SL, SLx, TP, grids, rearrangement, leverage and applicable account options in the normal order builder.
+4. Before importing, finish any position-modification session. The integration imports a new-order setup, not an in-progress edit of an existing position.
 5. Enable TradingView two-factor authentication in [account settings](https://www.tradingview.com/settings/#account-settings). TradingView requires 2FA for webhooks; follow its [2FA guide](https://www.tradingview.com/support/solutions/43000572460-how-to-configure-2fa/).
 6. Return to **Settings → Integrations**, select **TradingView** in the dropdown, then choose **Connect** to open the [New TradingView connection screen](https://app.liftx.io/settings/integrations/tradingview/new-connection). Back returns to the TradingView list.
 
-Advanced setups without OPEN permission can omit the imported draft, but still need a loaded link/instrument with known quantity units and a positive cap. Guided mode always needs an imported opening request.
+Advanced setup does not import or save an order draft. Each Advanced OPEN or MODIFY signal supplies its full canonical `request`. Guided mode needs a complete opening request loaded or pasted into its JSON editor. Both modes require one exchange link; the instrument allowlist, quantity cap and credential expiry are optional.
 
 ## Name and lifetime
 
 | Field | How to fill it | Meaning |
 | --- | --- | --- |
 | **Name** | A descriptive strategy and market name, such as `BTC trend · demo` | Required, up to 80 UTF-8 bytes. Avoid credentials or private account details in names. |
-| **Expires in days** | An integer from 1 to 365; the initial value is 90 | Bounds credential lifetime. A TradingView alert can remain enabled after this time, but its new commands will no longer be authorized. |
+| **Expires in days (optional)** | Leave blank for no expiration, or enter an integer from 1 to 365 | A dated key stops authorizing new commands at expiry. A non-expiring key still requires active entitlement and can be disconnected or revoked. |
 
-Set the alert's expiration no later than the key's expiration. Plan credential maintenance before a strategy needs an exit; expiry does not flatten positions.
+If you set a key expiry, set the alert's expiration no later than that time. Plan credential maintenance before a strategy needs an exit; expiry does not flatten positions. Command deadlines remain mandatory and short even when the key has no expiration.
+
+## Exchange and instruments
+
+Choose one linked account in **Exchange link**. The selected button shows the exchange and environment; the row shows its exact link ID. This selection is independent of the Trading screen in both modes.
+
+**Instruments (optional)** lets you search the selected exchange's catalog and add up to 64 unique IDs as removable chips. You can also add an exact ID or paste IDs separated by newlines. Leave the selection empty to permit any supported instrument on that link. Every alert still names one exact `instrument_id`; an Advanced request must name the same link and instrument. Do not use TradingView chart aliases as catalog IDs.
+
+One setup can receive BTC and ETH alerts. Ordering and the single-position policy apply independently per instrument, and each group exit targets only the instrument in that signal. Use one coordinated producer per instrument and include the instrument in custom command IDs and lifecycle references. A setup retains ordering for at most 1,024 distinct instruments; independent strategies on the same instrument need separate setups.
 
 ## Permissions
 
 | Liftx label | Scope | What it permits |
 | --- | --- | --- |
-| **Open positions** | `positions:open` | New lifecycles within the setup's exact link, instrument, quantity cap and opening policy |
+| **Open positions** | `positions:open` | New lifecycles within the setup's link, optional instrument allowlist, optional quantity cap and opening policy |
 | **Modify positions and orders** | `positions:modify` | Advanced exact-position modification within the existing position contract; TradingView must preserve current OPEN rows and their identities |
 | **Cancel pending positions or close exposure** | `positions:terminate` | Termination of an exact owned lifecycle or an authorized group; cancellation of pending work and closure of remaining exposure |
 
@@ -40,63 +48,69 @@ TradingView keys do not expose the ordinary API's read or template-management pe
 | Choice | Opening request | Later edits |
 | --- | --- | --- |
 | **Guided · use your Liftx order setup** | Stored with the setup. OPEN messages omit `request`. | Changing the Trading order builder later does not change the saved setup. Guided supports OPEN and termination. |
-| **Advanced · include the full request in each alert** | Each OPEN carries the full canonical `request`. Liftx still imports the builder to create the first valid example. | Custom senders can supply permitted configuration changes. Modify requires current state; an old opening payload is not a safe modification template. |
+| **Advanced · include the full request in each alert** | Each OPEN carries the full canonical `request`. There is no JSON editor or saved opening request. | Custom senders can supply permitted configuration changes. Modify requires current state; an old opening payload is not a safe modification template. |
 
-Both modes use the same position engine, decimal representation and exchange adapter. Advanced is not broader market authority, and it does not bypass the cap or lifecycle validation.
+Both modes use the same position engine, decimal representation and exchange adapter. Advanced does not bypass permissions, a configured cap or lifecycle validation. Guided applies the saved request to the alert's exact instrument on the selected link without converting prices or quantity assets. Use compatible saved settings across instruments, or Advanced JSON for instrument-specific values.
 
 ## Opening policy
 
 | Choice | Behavior | What it does not imply |
 | --- | --- | --- |
-| **One position at a time** | Rejects a new OPEN while the setup has known active or unresolved own work. Allows another cycle after completion is established. | No queued automatic reopen, no account-wide one-position guarantee and no promise that a Pine exit signal made exposure flat |
+| **One position per instrument** | Rejects a new OPEN while the setup has known active or unresolved own work on that instrument. Allows another cycle after completion is established. | No queued automatic reopen, no account-wide one-position guarantee and no promise that a Pine exit signal made exposure flat |
 | **Multiple concurrent positions** | Each OPEN with a fresh lifecycle reference can create an independent position. | The per-position cap does not cap aggregate exposure across those positions |
 
-Use one position at a time for an entry/exit cycle that should not overlap known earlier work. Use multiple positions for deliberate independent entries or pyramiding. Existing account and instrument restrictions still apply.
+Use one position per instrument for an entry/exit cycle that should not overlap known earlier work on that instrument. Use multiple positions for deliberate independent entries or pyramiding. Existing account and instrument restrictions still apply.
 
 ## Termination permission
 
-**Allow terminating every Liftx position on this link and instrument** is off initially.
+**Allow terminating all Liftx positions on a signal’s market** is off initially.
 
 - **Off:** exact and group termination stays within positions owned by this setup.
 - **On:** with terminate scope, `target: "market"` can select matching Liftx positions opened manually or by other strategies on the exact same linked account and instrument.
 
-This permission authorizes a possible target. It does not make every exit market-wide. Choose **On an EXIT alert** or **On a termination signal** separately when generating a message or script. Opening policy and the market grant are fixed for the setup. See [target semantics](/integrations/tradingview/targets-and-lifecycles).
+This permission authorizes a possible target. It does not make every exit market-wide. Generated examples default to this setup's positions. An ordinary alert's `target` field or the Pine indicator's **On a termination signal** input chooses an authorized target. Opening policy and the market grant are fixed for the setup. See [target semantics](/integrations/tradingview/targets-and-lifecycles).
 
-## Import the market and order draft
+## Guided Position JSON
 
-The form displays the selected link and canonical instrument. Click **Use current order setup**. Once imported, the button becomes **Replace imported order setup**.
+The JSON editor appears inside **Signal mode**, directly below its dropdown row. Click **Load Current Position JSON** to load the current Trading draft, or paste a complete new-position request into the editor. You can edit it before continuing; **Copy JSON** copies the current editor contents. Switching to Advanced hides the editor and discards its draft.
 
-The import preserves the builder's complete opening and protection configuration. Review the reported opening-order count and target. Importing a different market clears an incompatible cap so that a previous asset quantity is not silently reused.
+Loading preserves the builder's complete opening and protection configuration. It does not change the selected exchange or instrument allowlist. Review the JSON, including its quantities, prices and protections. Saved price levels and quantity assets must suit each target; Liftx does not convert a BTC quantity into an ETH quantity or rescale price levels automatically.
+
+Paste the position request itself with `action: 1`, without an `alert`, `command` or `request` wrapper. Preserve quoted decimal coefficients in `_atomic` fields. The editor accepts up to 128 KiB; malformed JSON, unsafe numeric values and incorrect root shapes are rejected before identity confirmation. Liftx validates the complete position fields before saving. See the [position field reference](/api/position-request).
 
 Do not submit the draft just to create an integration. The import captures configuration; it does not open a position.
 
-## Maximum OPEN quantity: use the displayed unit
+Advanced senders author the full request using the [command format](/integrations/tradingview/command-format). For a new OPEN request, **Position JSON** below any tab in Trading copies the complete setup with exact decimal fields. Add it to your own alert's `request`; include the required event fields and matching exchange link and instrument. A modification needs fresh current position state, not the copied creation draft.
 
-The field resolves to **Maximum OPEN per position (asset)**. Enter a positive decimal in that displayed unit, without a currency symbol or thousands separators.
+## Optional maximum OPEN quantity
+
+Leave **Maximum OPEN per position (optional)** blank for no setup cap in either mode. If supplied, enter a positive decimal without a currency symbol or thousands separators. It applies in each target instrument's normalized quantity unit, not a shared currency budget.
 
 | Instrument topology | Enforced unit | Example interpretation |
 | --- | --- | --- |
-| Spot or linear derivative | Canonical base asset | If the label is BTC, `0.001` caps the combined OPEN rows of each position at 0.001 BTC |
-| Inverse derivative | Canonical quote face value | If the label is USD quote face, the entered amount is USD face value, not BTC collateral or venue contract count |
+| Spot or linear derivative | Canonical base asset | `0.001` caps each BTC position at 0.001 BTC and each ETH position at 0.001 ETH |
+| Inverse derivative | Canonical quote face value | For a USD-face instrument, the amount is USD face value, not BTC collateral or venue contract count |
 
 The imported builder amount may use a different asset. For example, a builder amount entered in USDT does not turn a BTC cap into a USDT spending cap. At a purely illustrative price of 50,000 USDT/BTC, 0.001 BTC has a 50 USDT notional; that value changes with price. It is not a guaranteed spending limit. Exchange minimums, lots and adapter normalization still apply.
 
-The cap covers the sum of OPEN rows **per position**. It is not an account budget, a maximum loss, a margin limit or a total across concurrent positions. Derivative leverage does not redefine the unit. Select the canonical instrument to determine the unit; there is no free-form BTC/USDT selector that can reinterpret it.
+The cap covers the sum of OPEN rows **per position**. It is not an account budget, a maximum loss, a margin limit or a total across concurrent positions. Derivative leverage does not redefine the unit. Inspect the exact catalog instrument to determine its unit. Omitting the cap does not allow TradingView modifications to replace OPEN orders: they remain protection-only.
 
 ## Confirm and save the secret once
 
-1. Select **Confirm and create**.
-2. Complete the offered fresh password or Apple authentication, plus MFA when enabled. The approval is purpose-bound, expires after five minutes and is consumed once.
+1. Select **Continue** to review access and verify your identity in the same setup screen. Back returns to your configuration without losing its values.
+2. Complete the offered fresh password or Apple authentication, plus MFA when enabled, and select **Create TradingView setup**. The approval is purpose-bound, expires after five minutes and is consumed once.
 3. Read the resulting setup summary and status.
-4. In **Save your TradingView setup**, select **Ordinary alerts** or **Pine (advanced)** and the desired exit target.
+4. In **Save your TradingView setup**, the separate guide starts with **Ordinary alerts** and **Pine (advanced)** tabs. Each shows one complete example for the granted permissions. Guided keeps its saved instrument when allowed; restricted keys otherwise use the first allowed instrument. Unrestricted Advanced examples use `BTC-USDT-SWAP`. For another instrument, update the private copy with its exact permitted catalog ID; Guided prices and quantity assets remain unchanged.
 5. Use **Copy complete setup** before switching away. Store the bundle temporarily in a private editor, then copy its URL and each message/script separately to TradingView.
-6. Select **I saved it — hide the secret** when finished.
+6. Select **I saved it — hide the secret** at the bottom when finished. This returns to your integrations and clears the displayed key and generated private content.
 
 Liftx displays the random secret once and stores only its digest. Hiding the app, navigation, lock, logout or account change clears the displayed secret and generated private content. A secret cannot be recovered from the key list. Save the complete setup before using Back; returning to the list clears it. Do not publish a populated Pine script or commit the private bundle.
 
-The one-time panel also offers **Copy secret**, **Copy webhook URL**, individual message/script copy buttons, and **Copy complete setup**. Copy secret copies the credential alone; it is not a complete alert message. Copy complete setup preserves all currently selected authorized content in a labeled private bundle. The same disposal rules apply to every displayed form of the secret.
+The one-time screen also offers **Copy TradingView key**, **Copy webhook URL**, **Copy JSON** or **Copy script** inside each read-only preview, and **Copy complete setup**. Copy TradingView key copies the credential alone; it is not a complete alert message. Copy complete setup preserves the current tab's example and any Advanced connection fields in a labeled private bundle. The same disposal rules apply to every displayed form of the secret. The guide links to additional [ordinary-alert examples](/integrations/tradingview/ordinary-alerts), [Pine variants](/integrations/tradingview/pine) and the [request reference](/integrations/tradingview/command-format).
 
-If creation returns an ambiguous network error, refresh metadata first. Do not repeatedly click Create: issuance may have succeeded even if the response was lost. Review or revoke the resulting credential before deliberately creating another.
+With OPEN permission, Advanced ordinary alerts include a complete illustrative limit request with SL and TP. Review and edit its prices, amount, account settings and protections before use; the sample is not a saved Trading draft. Without OPEN permission, the ordinary example is a strategy EXIT when terminate permission is granted. Advanced Pine uses Exit-only; author opening Pine signals with your own full request. **Connection fields** exposes the fixed `exchange_link_id`, `source_instance_id` and `binding_revision`. **Copy complete setup** includes those fields, the secret and webhook URL even when no example is available. The fixed fields alone are not a complete alert: each signal also needs its exact `instrument_id`, event fields and any required canonical request.
+
+If creation returns an ambiguous network error, refresh metadata first. Do not repeatedly click **Create TradingView setup** or **Create replacement key**: issuance may have succeeded even if the response was lost. Review or revoke the resulting credential before deliberately creating another.
 
 ## Existing setup controls
 
@@ -106,9 +120,11 @@ If creation returns an ambiguous network error, refresh metadata first. Do not r
 | **Expired** | New requests fail authorization. Existing position management continues. |
 | **No available key** | Setup metadata remains, but no usable credential is listed. |
 | **Refresh** | Reloads settings metadata. |
-| **Create replacement key** | Retains the integration namespace, market, scopes and policy. The old key remains active until removed. Both keys appear in the same integration item. |
+| **Create replacement key** | Retains the integration namespace, exchange, instrument allowlist, scopes and policy. The old key remains active until removed. Both keys appear in the same integration item. |
 | **Keys → Remove key** | Shown when the integration has multiple keys. Stops new requests using only the selected key, leaving its replacement active. |
 | **Disconnect** | Stops signals through every key for the setup and removes its item from Settings in one step. No separate key-revocation step is needed. |
+
+The replacement form's final action is **Create replacement key**. Review its expiry and complete fresh authentication; this issues a key for the existing setup rather than creating another setup.
 
 After moving your sender to a replacement key, open **Keys** and remove the old
 key. Use **Disconnect** to end the whole integration. The same controls apply to

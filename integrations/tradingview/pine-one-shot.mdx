@@ -4,17 +4,17 @@ description: A bounded demonstration emitting at most one OPEN and one later ter
 ---
 
 <Warning>
-Public sample only: dummy key, synthetic link/instrument and an intentionally expired credential timestamp. It starts disabled and cannot connect as published. Obtain the fully populated private script from Liftx and review its inputs before enabling it. Never publish the real generated copy.
+Public developer template only: dummy key, synthetic link/instrument and an intentionally expired credential timestamp. It starts disabled and cannot connect as published. Populate all connection values from your private Liftx setup before enabling it. Never publish the populated copy.
 </Warning>
 
 The One-shot example is intended for a deliberate demo validation. It sends at most one OPEN and one termination, using one immutable lifecycle reference. Its default termination target is **One strategy position**.
 
-## Configure the real generated copy
+## Configure a private copy
 
-1. Create a valid setup with OPEN and terminate and an approved small demo quantity.
-2. Generate **Pine (advanced) → One-shot · scheduled demo** in Liftx.
-3. Set a future **OPEN time** and a **TERMINATE time** at least 60 seconds later, before key expiry.
-4. Enable the indicator and create **Any alert() function call** before OPEN time. Keep alert expiration after TERMINATE time and within credential lifetime.
+1. Create a Guided setup with OPEN and terminate and an approved small demo quantity. Save the private bundle from its **Pine (advanced)** tab before leaving Liftx.
+2. Start with the One-shot source below. Replace its synthetic connection values using that bundle: token, exact link/instrument, source UUID, binding revision, and the connection prefix used in event IDs. Set `liftxCredentialExpiresAt` to the key's expiry in Unix milliseconds, or `0` for no expiration. Review every replacement; changing only the token is insufficient. The setup screen supplies Continuous, while this scheduled variant is configured from the template.
+3. Set a future **OPEN time** and a **TERMINATE time** at least 60 seconds later, before key expiry when one is set.
+4. Enable the indicator and create **Any alert() function call** before OPEN time. Keep alert expiration after TERMINATE time and no later than credential expiry when one is set.
 5. Observe both events in the provider log, Liftx Events and the actual position.
 
 Realtime chart updates drive the schedule. If the first eligible OPEN update is at least 60 seconds late, the helper skips OPEN. Missing updates or delivery can prevent termination. It does not rearm or recover state after restart.
@@ -32,9 +32,9 @@ indicator("Liftx one-shot demo", overlay = true)
 // PRIVATE: this script contains a restricted credential. Never publish/share it.
 // Fixed target: link 17, instrument COPY_EXACT_CATALOG_ID.
 // The chart supplies signal data; it cannot change this fixed trading target.
-// One key is one ordered producer: use a separate setup/key for another alert
-// or independent strategy. The same running alert can reuse its key for cycles.
-// Never mix this Pine alert with an ordinary OPEN/EXIT alert pair on this key.
+// Keep one ordered producer per instrument. Use a separate setup for
+// independent strategies on the same instrument. The same running alert can reuse its key for cycles.
+// Never mix this Pine alert with an ordinary OPEN/EXIT pair on the same instrument.
 // Use a demo link for initial validation. Configure the inputs while disabled.
 // Set future times in the chart's timezone, enable the indicator, then create
 // ONE alert: this indicator / Any alert() function call / Liftx webhook URL.
@@ -56,7 +56,7 @@ if liftxTerminateTarget == ""
 
 // Every intent uses this one envelope; group targets omit position references.
 liftxMessage(string action, string positionRef, int positionStarted, int sequence, int issued, string requestJSON, string target = "position") =>
-    string commandID = "11111111-1111-4111-8111-111111111111:" + str.tostring(sequence) + ":" + action
+    string commandID = "11111111-1111-4111-8111-111111111111:17:Q09QWV9FWEFDVF9DQVRBTE9HX0lE:" + str.tostring(sequence) + ":" + action
     string message = "{\"token\":\"REPLACE_WITH_RESTRICTED_TRADINGVIEW_KEY\",\"command\":{\"client_command_id\":" + '"' + commandID + '"'
     message += ',"issued_at":' + str.tostring(issued) + ',"expires_at":' + str.tostring(issued + 60)
     message += ',"action":"' + action + '"' + ",\"exchange_link_id\":17,\"instrument_id\":\"COPY_EXACT_CATALOG_ID\",\"source_instance_id\":\"11111111-1111-4111-8111-111111111111\",\"binding_revision\":1"
@@ -70,7 +70,7 @@ liftxMessage(string action, string positionRef, int positionStarted, int sequenc
 bool liftxEnabled = input.bool(false, "Enable one-shot demo", tooltip = "Sends one OPEN and one TERMINATE signal. No execution feedback or automatic retry.")
 int liftxOpenAt = input.time(0, "OPEN time (chart timezone)")
 int liftxTerminateAt = input.time(0, "TERMINATE time (chart timezone)")
-const string liftxPositionRef = "11111111-1111-4111-8111-111111111111:one-shot"
+const string liftxPositionRef = "11111111-1111-4111-8111-111111111111:17:Q09QWV9FWEFDVF9DQVRBTE9HX0lE:one-shot"
 int liftxPositionStarted = int(liftxOpenAt / 1000)
 
 // Signal phases only: 0 idle, 1 waiting, 2 OPEN emitted, 3 TERMINATE emitted,
@@ -80,10 +80,10 @@ varip int liftxPhase = 0
 varip int liftxSequence = 0
 
 if barstate.isrealtime and liftxEnabled
-    if timenow >= liftxCredentialExpiresAt
+    if liftxCredentialExpiresAt > 0 and timenow >= liftxCredentialExpiresAt
         runtime.error("Credential expired. Signals have stopped; inspect Liftx and manage remaining orders or exposure there.")
     if liftxPhase == 0
-        if liftxOpenAt <= timenow or liftxTerminateAt < liftxOpenAt + 60000 or liftxTerminateAt >= liftxCredentialExpiresAt
+        if liftxOpenAt <= timenow or liftxTerminateAt < liftxOpenAt + 60000 or (liftxCredentialExpiresAt > 0 and liftxTerminateAt >= liftxCredentialExpiresAt)
             runtime.error("Choose a future OPEN time and a TERMINATE time at least 60 seconds later, before credential expiry. After interruption, stop the alert and inspect Liftx; do not restart it.")
         liftxPhase := 1
     if liftxPhase == 1 and timenow >= liftxOpenAt
@@ -111,8 +111,8 @@ plot(liftxPhase, "Local signal phase (not execution)", display = display.data_wi
 
 ## Before adapting the sample
 
-The generated private copy replaces the dummy `token`, link, catalog ID, source UUID, binding revision and `liftxCredentialExpiresAt`. Guided mode intentionally has an empty `liftxOpenRequest`; Liftx uses the saved opening configuration. Do not turn the public sample into a live sender by changing only its token.
+Your private copy must replace the dummy `token`, link, catalog ID, source UUID, binding revision, event-ID prefix and `liftxCredentialExpiresAt`. The generated Continuous script's `liftxMessage` function contains the matching connection values and event-ID prefix; its credential-expiry constant supplies the matching deadline. Preserve the One-shot lifecycle logic when adapting those values. Guided mode intentionally has an empty `liftxOpenRequest`; Liftx uses the saved opening configuration.
 
-Retain one ordered producer per setup, preserve event identities on delivery retries and never reuse a lifecycle reference for a new position. [Pine setup](/integrations/tradingview/pine), [canonical command fields](/integrations/tradingview/command-format) and [target semantics](/integrations/tradingview/targets-and-lifecycles) explain the contract.
+Retain one coordinated producer per setup and instrument, preserve event identities on delivery retries and never reuse a lifecycle reference for a new position. [Pine setup](/integrations/tradingview/pine), [canonical command fields](/integrations/tradingview/command-format) and [target semantics](/integrations/tradingview/targets-and-lifecycles) explain the contract.
 
 After any interruption, inspect Events and actual positions, manage remaining orders/exposure and create a fresh source for a new alert. The example has no execution feedback, automatic delivery retry, automatic rearm or restart recovery.

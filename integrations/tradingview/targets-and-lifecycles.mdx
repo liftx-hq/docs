@@ -10,7 +10,7 @@ The opening policy and termination target answer different questions. Opening po
 | UI choice | JSON `target` | Selected work | Required authority |
 | --- | --- | --- | --- |
 | **One strategy position** | `position` | One exact lifecycle from this setup, identified by client reference and immutable start | Terminate scope and matching ownership |
-| **This strategy’s positions** | `strategy` | Eligible earlier lifecycles owned by this setup on its pinned market, including earlier accepted OPEN work | Terminate scope |
+| **This strategy’s positions** | `strategy` | Eligible earlier lifecycles owned by this setup on the signal’s exact market, including earlier accepted OPEN work | Terminate scope |
 | **All positions in this market** | `market` | Captured matching Liftx positions on the exact link/instrument, including manual and other strategy positions | Terminate scope plus explicit market termination grant |
 
 OPEN and MODIFY always address `position`. Group targeting is termination-only. Omitting a position reference never silently means all positions. Ordinary EXIT offers strategy or market; an exact prior lifecycle reference requires Pine or an external controller.
@@ -23,10 +23,10 @@ For canonical Pine commands, use these identities consistently:
 
 | Field | Lifetime |
 | --- | --- |
-| `source_instance_id` | Fixed for the setup; one ordered producer |
+| `source_instance_id` | Fixed for the setup; one coordinated producer per instrument |
 | `binding_revision` | Fixed setup revision |
 | `client_command_id` | Unique per intent; unchanged for an identical delivery retry |
-| `sequence` | Positive increasing event ordering within this producer |
+| `sequence` | Positive increasing event ordering per setup and instrument |
 | `client_position_id` | Fresh for each new position lifecycle; reused only for that lifecycle's modify/terminate |
 | `position_started_at` | Immutable positive Unix-second start for that lifecycle; no later than issuance |
 
@@ -42,7 +42,7 @@ OPEN       reference source:cycle-B  sequence 104
 TERMINATE  reference source:cycle-B  sequence 105
 ```
 
-The key remains the same. Cycle B uses a new reference and start time. No Liftx position UUID is required in the Pine signal; `position_id` is not accepted as a TradingView target.
+Include the exact instrument in custom command IDs and lifecycle references so two markets cannot reuse an identity. Generated Pine scripts use a bounded base64url instrument component for this purpose. The key remains the same. Cycle B uses a new reference and start time. No Liftx position UUID is required in the Pine signal; `position_id` is not accepted as a TradingView target.
 
 Do not reuse a lifecycle reference to reopen a position. Termination fences that reference against further trading signals, including while termination is still pending. A delayed message for cycle A cannot select cycle B by sharing a market name.
 
@@ -57,11 +57,11 @@ Group admission saves the original intent and its selected targets together. Eac
 - Positions opened after capture are outside the group. The command is not a permanent market pause.
 - Child outcomes can differ; inspect **View targets** in Events. Group admission is not atomic exchange execution.
 
-A strategy group selects eligible own references earlier than its sequence. A market group must be newer than its own source's watermark; independent strategies have independent sequence spaces, so their sequence numbers are not compared as one global clock.
+A strategy group selects eligible own references earlier than its sequence. A market group must be newer than its own source-and-instrument watermark; independent strategies have independent sequence spaces, so their sequence numbers are not compared as one global clock.
 
 ## Late OPEN protection
 
-Each source maintains a durable fence for unseen OPEN messages. Admitted OPEN and termination signals advance it, including a termination group with no targets. An unseen older OPEN cannot arrive later and reopen work behind that fence.
+Each source maintains a separate durable fence per instrument for unseen OPEN messages. At most 1,024 distinct instrument fences are retained per setup. Admitted OPEN and termination signals advance it, including a termination group with no targets. An unseen older OPEN cannot arrive later and reopen work behind that fence.
 
 An exact close for a known older position can still follow a newer position's open, subject to that lifecycle's own ordering. This allows multiple-position strategies to close one older cycle without pretending all cycles share a position reference.
 
@@ -69,9 +69,9 @@ Ordering is not a request to replay missed commands. Sequence gaps do not cause 
 
 ## Single and multiple opening policies
 
-**One position at a time** checks known active canonical positions, resident candidates and pending or uncertain work owned by this setup. If evidence is incomplete, admission fails rather than assuming it is safe. The check is not an exchange-wide guarantee against another strategy, a later fill or later reactivation.
+**One position per instrument** checks known active canonical positions, resident candidates and pending or uncertain work owned by this setup on that exact instrument. If evidence is incomplete, admission fails rather than assuming it is safe. The check is not an exchange-wide guarantee against another strategy, a later fill or later reactivation.
 
-**Multiple concurrent positions** permits distinct lifecycles. The quantity cap applies independently to each, so ten positions each below the cap can have ten times one position's quantity. An external risk controller is needed for a portfolio-wide budget.
+**Multiple concurrent positions** permits distinct lifecycles. A configured quantity cap applies independently to each, so ten positions each below the cap can have ten times one position's quantity. An external risk controller is needed for a portfolio-wide budget.
 
 An emitted EXIT does not clear either policy. A subsequent OPEN can still be rejected until the earlier lifecycle is complete. Pine has no callback that proves readiness and does not automatically queue a rejected entry.
 

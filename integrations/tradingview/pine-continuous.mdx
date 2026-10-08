@@ -11,8 +11,8 @@ The Continuous example can reuse one setup/key across successive positions. The 
 
 ## Configure the real generated copy
 
-1. Create a Guided setup with OPEN and terminate. Select **One position at a time** for sequential lifecycles, or deliberately choose multiple positions for concurrent entries.
-2. Generate **Pine (advanced) → Continuous · confirmed-bar threshold signals** in Liftx. Advanced setups instead embed the complete imported request.
+1. Create a Guided setup with OPEN and terminate. Select **One position per instrument** for sequential lifecycles, or deliberately choose multiple positions for concurrent entries.
+2. Select **Pine (advanced)** in the setup guide and copy its Continuous script. For Advanced mode, author your own opening signals with complete canonical requests.
 3. Use standard time-based candles of at least one minute.
 4. Set a future **Start time**, an **OPEN when close crosses above** threshold and a lower positive **TERMINATE when close crosses below** threshold.
 5. Enable the indicator and create **Any alert() function call** before Start time, with the Liftx webhook URL and an appropriate expiration.
@@ -34,9 +34,9 @@ indicator("Liftx continuous signals", overlay = true)
 // PRIVATE: this script contains a restricted credential. Never publish/share it.
 // Fixed target: link 17, instrument COPY_EXACT_CATALOG_ID.
 // The chart supplies signal data; it cannot change this fixed trading target.
-// One key is one ordered producer: use a separate setup/key for another alert
-// or independent strategy. The same running alert can reuse its key for cycles.
-// Never mix this Pine alert with an ordinary OPEN/EXIT alert pair on this key.
+// Keep one ordered producer per instrument. Use a separate setup for
+// independent strategies on the same instrument. The same running alert can reuse its key for cycles.
+// Never mix this Pine alert with an ordinary OPEN/EXIT pair on the same instrument.
 // Use a demo link for initial validation. Configure the inputs while disabled.
 // Set future times in the chart's timezone, enable the indicator, then create
 // ONE alert: this indicator / Any alert() function call / Liftx webhook URL.
@@ -58,7 +58,7 @@ if liftxTerminateTarget == ""
 
 // Every intent uses this one envelope; group targets omit position references.
 liftxMessage(string action, string positionRef, int positionStarted, int sequence, int issued, string requestJSON, string target = "position") =>
-    string commandID = "11111111-1111-4111-8111-111111111111:" + str.tostring(sequence) + ":" + action
+    string commandID = "11111111-1111-4111-8111-111111111111:17:Q09QWV9FWEFDVF9DQVRBTE9HX0lE:" + str.tostring(sequence) + ":" + action
     string message = "{\"token\":\"REPLACE_WITH_RESTRICTED_TRADINGVIEW_KEY\",\"command\":{\"client_command_id\":" + '"' + commandID + '"'
     message += ',"issued_at":' + str.tostring(issued) + ',"expires_at":' + str.tostring(issued + 60)
     message += ',"action":"' + action + '"' + ",\"exchange_link_id\":17,\"instrument_id\":\"COPY_EXACT_CATALOG_ID\",\"source_instance_id\":\"11111111-1111-4111-8111-111111111111\",\"binding_revision\":1"
@@ -99,12 +99,12 @@ if barstate.isrealtime and liftxEnabled
     if not liftxArmed
         if not chart.is_standard or not (timeframe.isminutes or timeframe.isdwm)
             runtime.error("Use a standard time-based chart of at least one minute.")
-        if liftxStartAt <= timenow or liftxStartAt >= liftxCredentialExpiresAt
+        if liftxStartAt <= timenow or (liftxCredentialExpiresAt > 0 and liftxStartAt >= liftxCredentialExpiresAt)
             runtime.error("Create this alert before a future Start time, before credential expiry. After interruption, inspect Liftx and create a new setup; do not restart this alert.")
         if liftxTerminateBelow <= 0 or liftxOpenAbove <= liftxTerminateBelow
             runtime.error("Choose positive threshold prices, with OPEN above TERMINATE.")
         liftxArmed := true
-    if timenow >= liftxCredentialExpiresAt
+    if liftxCredentialExpiresAt > 0 and timenow >= liftxCredentialExpiresAt
         runtime.error("Credential expired. Signals have stopped; inspect Liftx and manage remaining orders or exposure there.")
     if barstate.isconfirmed and time_close >= liftxStartAt and time_close > liftxLastBar
         liftxLastBar := time_close
@@ -116,7 +116,7 @@ if barstate.isrealtime and liftxEnabled
                 liftxOpenEmitted := false
                 alert(liftxMessage("terminate", liftxPositionRef, liftxPositionStarted, time_close, issued, "", liftxTerminateTarget), alert.freq_once_per_bar_close)
         else if liftxOpenSignal and (not liftxOpenEmitted or (liftxMultiplePositions and liftxTerminateTarget != "position"))
-            liftxPositionRef := "11111111-1111-4111-8111-111111111111:" + str.tostring(time_close)
+            liftxPositionRef := "11111111-1111-4111-8111-111111111111:17:Q09QWV9FWEFDVF9DQVRBTE9HX0lE:" + str.tostring(time_close)
             liftxPositionStarted := issued
             liftxOpenEmitted := true
             alert(liftxMessage("open", liftxPositionRef, liftxPositionStarted, time_close, issued, liftxOpenRequest), alert.freq_once_per_bar_close)
@@ -136,6 +136,6 @@ plot(liftxOpenEmitted ? 1 : 0, "OPEN emitted without subsequent TERMINATE (not e
 
 The generated private copy replaces the dummy `token`, link, catalog ID, source UUID, binding revision and `liftxCredentialExpiresAt`. Guided mode intentionally has an empty `liftxOpenRequest`; Liftx uses the saved opening configuration. Do not turn the public sample into a live sender by changing only its token.
 
-Retain one ordered producer per setup, preserve event identities on delivery retries and never reuse a lifecycle reference for a new position. [Pine setup](/integrations/tradingview/pine), [canonical command fields](/integrations/tradingview/command-format) and [target semantics](/integrations/tradingview/targets-and-lifecycles) explain the contract.
+Retain one coordinated producer per setup and instrument, preserve event identities on delivery retries and never reuse a lifecycle reference for a new position. [Pine setup](/integrations/tradingview/pine), [canonical command fields](/integrations/tradingview/command-format) and [target semantics](/integrations/tradingview/targets-and-lifecycles) explain the contract.
 
 After any interruption, inspect Events and actual positions, manage remaining orders/exposure and create a fresh source for a new alert. The example has no execution feedback, automatic delivery retry, automatic rearm or restart recovery.

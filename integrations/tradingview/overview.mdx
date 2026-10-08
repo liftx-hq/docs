@@ -3,7 +3,7 @@ title: TradingView integration
 description: Send chart alerts or Pine signals to Liftx while retaining Liftx position and protection management.
 ---
 
-TradingView sends an HTTPS POST to Liftx when an alert fires. The message describes an intent: open a position, modify an identified position, or terminate selected positions. Liftx authenticates the restricted key, checks its fixed market and permissions, records the command, then hands execution to its existing trading owners. SL, SLx and TP remain managed by Liftx.
+TradingView sends an HTTPS POST to Liftx when an alert fires. The message describes an intent: open a position, modify an identified position, or terminate selected positions. Liftx authenticates the restricted key, checks its selected exchange, optional instrument allowlist and permissions, records the command, then hands execution to its existing trading owners. SL, SLx and TP remain managed by Liftx.
 
 ```text
 TradingView condition
@@ -26,11 +26,11 @@ An alert can reach Liftx without an open Liftx browser. Pine does not receive ex
 | [Strategy order-fill alerts](/integrations/tradingview/strategy-alerts) | An existing Pine strategy deliberately emits Liftx intent from emulator order events | Complete per-order Liftx envelope; no generic buy/sell translation |
 | [External API controller](/api/position-request) | Workflows requiring current positions, exact modification state, execution confirmation or coordinated multi-market decisions | Current canonical state and API position identities |
 
-## One reusable key, one market, successive positions
+## One reusable key, multiple permitted instruments
 
 One running Pine alert can reuse its key for many OPEN/terminate cycles. No pre-created Liftx position or Liftx UUID is needed. Every new lifecycle gets a fresh client reference; follow-up commands identify that lifecycle.
 
-Each TradingView setup currently pins **one exchange link, one canonical instrument, one source identity and one binding revision**. A BTC setup and an ETH setup use separate keys. Two independent strategies on the same market should also use separate setups. Rotating a credential retains its setup's namespace; creating a new strategy requires a new setup.
+Each setup pins **one exchange link, one source identity and one binding revision**. Both modes accept an optional instrument allowlist; blank permits all supported instruments on that link. BTC and ETH alerts can share this setup, with ordering and single-position admission isolated per instrument. Independent strategies on the same instrument need separate setups. Rotating a credential retains the namespace and policy. Quantity caps and key expiry are optional; every command still has a short deadline.
 
 The chart feed is input to the signal. It does not select the execution exchange, account, spot/futures market or quantity unit. Liftx never guesses a market from `BTCUSDT`, `{{ticker}}` or `{{exchange}}`.
 
@@ -42,7 +42,7 @@ The chart feed is input to the signal. It does not select the execution exchange
 - Advanced exact-position protection modifications with current canonical state and unchanged OPEN rows.
 - Durable identities, duplicate receipts, deadlines and ordering fences.
 
-State-dependent modification, confirmed-flat reversal and portfolio coordination require API feedback. Bulk modification, a universal multi-market TradingView key, arbitrary exchange-order calls and Pine reads of Liftx positions are not provided. See [scenario coverage](/integrations/tradingview/scenarios).
+State-dependent modification, confirmed-flat reversal and portfolio coordination require API feedback. Bulk modification, a TradingView key spanning multiple exchange links, arbitrary exchange-order calls and Pine reads of Liftx positions are not provided. See [scenario coverage](/integrations/tradingview/scenarios).
 
 ## Connection details
 

@@ -7,15 +7,15 @@ description: "Connect ChatGPT to Liftx with personal OAuth access and scoped per
 
 In [Liftx Integrations](https://app.liftx.io/settings/integrations), select **MCP → Connect** to open the [New MCP connection screen](https://app.liftx.io/settings/integrations/mcp/new-connection). Choose **ChatGPT** and copy the connection name and complete MCP server URL. The bottom **Open ChatGPT Plugins** button opens the client setup.
 
-1. Open [ChatGPT Plugins](https://chatgpt.com/plugins) on the web. Use the plus menu to add a custom MCP server.
-2. Name it `Liftx`. Choose the public server URL connection and enter `https://mcp.liftx.io/mcp`.
-3. Choose OAuth authentication with automatic client registration. Review the client notice and create the plugin.
-4. Complete Liftx sign-in and consent, review the discovered tools, then install the resulting plugin.
-5. In a new conversation, select Liftx with `@` and begin with a read request.
+1. Open [ChatGPT Plugins](https://chatgpt.com/plugins) on the web. Click **Add**, then **Add custom MCP server**.
+2. Name it **Liftx**. Under **Connection**, choose **Server URL** and enter `https://mcp.liftx.io/mcp`.
+3. Choose **OAuth** authentication with automatic client registration. Review the client notice and select **Create as a plugin**.
+4. Complete **Liftx** sign-in and consent, review the discovered tools, then install the resulting plugin.
+5. In a new conversation, select **Liftx** with **@** and begin with a read request.
 
 Workspace policy controls access to custom plugins. Liftx uses automatic registration with PKCE; leave static client credentials unset. The published-identity/CIMD option is not supported. [Official custom MCP instructions](https://developers.openai.com/plugins/deploy/connect-chatgpt).
 
-Follow Liftx browser sign-in and consent. Begin with `read`, confirm your account, exact linked accounts, demo/live environment, canonical instruments and grant expiry. Use `liftx_discovery` and a bounded position read to verify access. Add trading permissions only through explicit Liftx consent and fresh authentication.
+Follow Liftx browser sign-in and consent. All five [permissions](/mcp/overview#authorize-the-connection) are available even if ChatGPT initially requests only `read`; only read starts enabled. Choose the intended permissions, exact linked accounts, demo/live environment, canonical instruments and optional expiry. Select **Continue** and complete Liftx identity verification to authorize the enabled permissions. Use `liftx_discovery` and a bounded position read to verify access.
 
 Never configure a static API-key or bearer header, select anonymous authentication, or paste passwords, tokens, exchange credentials, TradingView capabilities or callback URLs into a chat. The supported connection uses personal OAuth access; shared credentials are not a substitute.
 
@@ -27,6 +27,6 @@ The [MCP contract](/mcp/overview) describes permissions and tools. The [receipt 
 
 ## Reconnect or disconnect
 
-Access tokens expire within 15 minutes and grants within 30 days. The client owns refresh; uncertain refresh requires a new browser authorization. That does not authorize a new trading command. Select **MCP** in [Liftx Integrations](https://app.liftx.io/settings/integrations), then choose **Disconnect** on the connection, then disconnect in ChatGPT. Client removal alone is not evidence of server revocation.
+Access tokens expire within 15 minutes. Grant expiry is optional: empty means no expiration; a chosen expiry is at most 30 days. The client owns refresh; uncertain refresh requires a new browser authorization. Reconnect through OAuth to change an existing grant's permissions. Reconnecting does not authorize a new trading command. Select **MCP** in [Liftx Integrations](https://app.liftx.io/settings/integrations), then choose **Disconnect** on the connection, then disconnect in ChatGPT. Client removal alone is not evidence of server revocation.
 
 Connecting a remote server, importing skills and publishing an OpenAI directory entry are separate workflows. The Liftx Claude package is not an already-approved OpenAI plugin. [OpenAI's Claude-plugin import guide](https://developers.openai.com/plugins/guides/submit-claude-plugin) describes a separate production/OAuth/domain/review process.

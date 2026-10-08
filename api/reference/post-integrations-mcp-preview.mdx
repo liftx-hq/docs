@@ -13,7 +13,7 @@ Authenticated Liftx Settings session. API keys, TradingView capabilities and MCP
 
 ## Behavior
 
-The response contains `client_name`, normalized `authorization`, `allowed_scopes` and the exact `resource`. Preview validates the callback/client pairing, resource, state and PKCE challenge. It does not create a credential, issue a code or consume fresh approval. Client labels come from callback policy; a local callback does not attest a provider identity.
+The response contains `client_name`, normalized `authorization`, all five supported `allowed_scopes` and the exact `resource`. Preview validates the callback/client pairing, resource, state and PKCE challenge. It does not create a credential, issue a code or consume fresh approval. Client labels come from callback policy; a local callback does not attest a provider identity.
 
 ## JSON body example
 
@@ -36,7 +36,7 @@ This is a synthetic local-client shape. The actual client owns registration, cal
 
 ## Response and errors
 
-Success is `200` with normalized metadata. An omitted/empty authorization `scope` defaults to `read`; duplicate or unknown scope names are rejected. The allowed scopes are the OAuth client’s request, not permissions already granted to it. Preview is outside the issuance limiter and retains bounded request/concurrency admission.
+Success is `200` with normalized metadata. An omitted/empty authorization `scope` defaults to `read`; duplicate or unknown scope names are rejected. The original client request is preserved. All five permission choices remain available independently of that request; only read starts enabled in Settings. The account owner selects the grant's permissions and authorizes them through **Continue** and fresh identity verification. Preview is outside the issuance limiter and retains bounded request/concurrency admission.
 
 An MCP service refusal uses `503` with `{error:"temporarily_unavailable",error_description,iss}`; other validation/admission failures retain the documented integration error envelope. Check status and content type. Unknown/duplicate JSON fields and compressed bodies are rejected; request size is limited to 256 KiB.
 

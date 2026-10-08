@@ -3,7 +3,7 @@ title: TradingView placeholders
 description: Which TradingView substitutions belong in Liftx JSON, and when Pine must construct the message.
 ---
 
-TradingView placeholders substitute alert-time values into supported alert messages. Liftx's ordinary JSON uses `{{timenow}}` for the trigger timestamp. The fixed market, permissions and position request still come from the Liftx setup.
+TradingView placeholders substitute alert-time values into supported alert messages. Liftx's ordinary JSON uses `{{timenow}}` for the trigger timestamp. Each alert names an exact permitted catalog instrument on the setup’s selected exchange link. Permissions come from the setup; Guided uses its saved request and Advanced supplies a full request per signal.
 
 ## Supported ordinary-message substitution
 

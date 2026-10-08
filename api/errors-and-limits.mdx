@@ -48,7 +48,8 @@ Reused trading and reporting endpoints retain their existing JSON envelopes or p
 | `REVISION_REQUIRED`, `INVALID_REVISION` | Supply the positive revision from the current modification publication |
 | `SCOPE_MISMATCH` | The nested position request must match the command link/instrument |
 | `INVALID_BINDING_POLICY` | Choose a supported explicit position mode and market-termination policy |
-| `SIGNAL_ORDER_CONFLICT` | TradingView OPEN is behind the source watermark; do not reissue it as a fresh OPEN automatically |
+| `SOURCE_MARKET_CAPACITY` | A TradingView setup has retained ordering for 1,024 distinct instruments; use a separate setup for new instruments |
+| `SIGNAL_ORDER_CONFLICT` | TradingView OPEN is behind its source-and-instrument watermark; do not reissue it as a fresh OPEN automatically |
 | `SOURCE_POSITION_BUSY` | Single-position setup has active or unresolved work; inspect it before another lifecycle |
 | `TARGET_CAPACITY` | Group selection exceeds 64 targets; the group is rejected, not silently truncated |
 | `MARKET_TERMINATION_DENIED` | Missing explicit market grant or stale source sequence |
@@ -71,14 +72,16 @@ Owner-specific validation codes remain part of their documented endpoint respons
 | Unresolved commands | 64 per account; group children each consume capacity |
 | TradingView group capture | At most 64 targets; atomic admission or rejection |
 | Receipt page | Up to 50 top-level commands |
-| Resolved receipt retention | 30 days; unresolved work remains until resolution |
+| Resolved receipt retention | Eligible for bounded cleanup after 30 days; unresolved work remains until resolution |
 | Position page | Default 50, maximum 200 |
 | WebSocket control message | At most 16 KiB and 1–32 channels on one exact link |
 | Active credentials | At most 64 |
 | Credential metadata page | At most 100 rows, active first |
 | Unrevoked TradingView setups | At most 64, independently of key expiry |
-| Key link/instrument policy | 1–32 links; 0–64 unique instrument IDs for API keys; TV pins one link/instrument |
-| Credential lifetime | At most one year |
+| Key link/instrument policy | API: 1–32 links; TV: exactly one link. Both: optional 0–64 unique instrument IDs; empty means all on selected links |
+| API/TradingView key lifetime | Optional; no expiration when omitted, otherwise at most 365 days |
+| MCP grant lifetime | Optional; no expiration when omitted, otherwise at most 30 days |
+| MCP access token lifetime | At most 15 minutes, capped by grant expiry when set |
 | Fresh Settings approval | Five minutes, five proof attempts, atomically consumed |
 | Credential security issuance/reauthentication | Shared 12 requests per minute per source IP |
 

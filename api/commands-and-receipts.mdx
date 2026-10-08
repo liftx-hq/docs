@@ -9,7 +9,7 @@ All API trading mutations use [POST /v1/commands](/api/reference/post-v1-command
 
 | Field | Required for | Meaning |
 | --- | --- | --- |
-| `client_command_id` | All | Immutable identity within the integration namespace; 1-128 UTF-8 bytes; `liftx-group:` is reserved. |
+| `client_command_id` | All | Immutable identity within the integration namespace; 1-256 UTF-8 bytes; `liftx-group:` is reserved. |
 | `issued_at` | All | UTC Unix seconds when this intent was created. |
 | `expires_at` | All | Deadline for a new execution handoff, later than issuance and at most 300 seconds later. |
 | `action` | All | `open`, `modify` or `terminate`. |

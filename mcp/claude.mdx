@@ -5,31 +5,43 @@ description: "Personal OAuth access and the Liftx review and position-management
 
 ## Remote connector
 
-In [Liftx Integrations](https://app.liftx.io/settings/integrations), select **MCP → Connect** to open the [New MCP connection screen](https://app.liftx.io/settings/integrations/mcp/new-connection). Choose **Claude**. Use the copy controls for the name and URL, then the bottom **Open Claude Connectors** button.
+In [Liftx Integrations](https://app.liftx.io/settings/integrations), select **MCP → Connect** to open the [New MCP connection screen](https://app.liftx.io/settings/integrations/mcp/new-connection). Choose **Claude**. Use the copy controls for the name and URL, then select **Add Claude connector** below the connector instructions.
 
-In [Claude Connectors](https://claude.ai/settings/connectors), choose **Add custom connector**, enter the name `Liftx` and URL `https://mcp.liftx.io/mcp`, then continue. Require sign-in and choose **Register automatically** for the OAuth client. Liftx supports public-client registration with PKCE; the published-identity/CIMD option is not implemented. Keep custom request headers empty. Do not paste a Liftx API key, TradingView capability, account-session token or shared organization bearer credential. Team/Enterprise setup follows organizational policy; each user authorizes their own Liftx account. [Claude remote connector guidance](https://support.claude.com/en/articles/11175166-get-started-with-custom-connectors-using-remote-mcp).
+1. Open [Claude's add-connector dialog](https://claude.ai/new?modal=add-custom-connector#customize/connectors), or go to **Customize → Connectors → Add → Add custom connector**.
+2. Name it **Liftx**, enter `https://mcp.liftx.io/mcp` as the **MCP server URL** and click **Continue**.
+3. Review the detected OAuth settings and click **Continue**. Choose **Sign in now** and **Register automatically** for the OAuth client, then finish with **Add**.
+4. Sign in to **Liftx** and approve your chosen access. Enable **Liftx** from the conversation's **Connectors** menu.
 
-Review Liftx consent for your account, exact linked accounts, demo/live environment, instruments, operations and expiry. Begin with read access and inspect discovery/current positions. Trading requires explicit consent, fresh authentication and approval of the concrete action. See the [MCP tool and receipt contract](/mcp/overview).
+Liftx supports public-client registration with PKCE; the published-identity/CIMD option is not implemented. Keep custom request headers empty. Do not paste a Liftx API key, TradingView capability, account-session token or shared organization bearer credential. Team/Enterprise setup follows organizational policy; each user authorizes their own Liftx account. [Claude remote connector guidance](https://support.claude.com/en/articles/11175166-get-started-with-custom-connectors-using-remote-mcp).
 
-## Liftx plugin for Claude Code
+The connector and plugin offer all five [permissions](/mcp/overview#authorize-the-connection), even when Claude initially requests only `read`; only read starts enabled. Choose the intended permissions, exact linked accounts, demo/live environment and instruments. Expiry is optional: empty means no expiration; a chosen expiry is at most 30 days. Select **Continue** and complete Liftx identity verification to authorize the enabled permissions, then inspect discovery/current positions. Reconnect through OAuth to change an existing grant's permissions. Trading actions still require approval of the concrete action. See the [MCP tool and receipt contract](/mcp/overview).
 
-Install from the Liftx marketplace:
+## Liftx plugin
 
-```text
-/plugin marketplace add liftx-hq/ai-plugin
-/plugin install liftx@liftx
-```
+The optional plugin adds guided trading review and position-management workflows to the Liftx MCP connection. Select **Open Claude Plugins** below the plugin instructions in Liftx, or open [Claude Plugins](https://claude.ai/customize/plugins).
 
-Authenticate the Liftx plugin connector from `/mcp`. The package contains one remote HTTP connector and two skills, with no local server, credentials or install hooks:
+1. Go to **Customize → Plugins**, then choose **Add → Add marketplace**.
+2. Choose **Add from a repository**, paste `https://github.com/liftx-hq/ai-plugin` and click **Sync**.
+3. Open **Liftx** in the marketplace and click **Add**.
+4. Connect the plugin's **Liftx** connector, then sign in to **Liftx** and approve your chosen access.
+
+See [Claude's plugin installation guide](https://support.claude.com/en/articles/13837440-use-plugins-in-claude). The package contains one remote HTTP connector and two skills, with no local server, credentials or install hooks:
 
 | Skill | Purpose |
 | --- | --- |
 | `/liftx:review` | Review positions, protections and receipts without trading. |
 | `/liftx:manage` | User-invoked preparation and execution of an exact approved action, preserving command identity and receipt uncertainty. |
 
-A local callback is labelled a local client; it is not proof of a verified provider identity. Follow the client's normal OAuth flow. [Claude plugin format](https://code.claude.com/docs/en/plugins-reference) and [MCP setup](https://code.claude.com/docs/en/mcp).
+### Claude Code
 
-Claude supports [custom plugin uploads](https://support.claude.com/en/articles/13837440-use-plugins-in-claude); use an official Liftx plugin archive. Public GitHub marketplace installation in Claude Code differs from organization GitHub syncing, which [requires a private/internal repository](https://support.claude.com/en/articles/13837433-manage-plugins-for-your-organization). The public Liftx repository is not an organization-sync source.
+For a direct installation in Claude Code, add the Liftx marketplace and plugin:
+
+```text
+/plugin marketplace add liftx-hq/ai-plugin
+/plugin install liftx@liftx
+```
+
+Authenticate the Liftx plugin connector from `/mcp`. A local callback is labelled a local client; it is not proof of a verified provider identity. Follow the client's normal OAuth flow. [Claude plugin format](https://code.claude.com/docs/en/plugins-reference) and [MCP setup](https://code.claude.com/docs/en/mcp).
 
 ## Outcomes and revocation
 

@@ -9,9 +9,8 @@ Examples use fictitious link `17`. `COPY_EXACT_CATALOG_ID` means the returned `i
 
 1. Select the intended linked account and its environment in the terminal.
 2. Open the symbol picker and search by familiar pair text such as `BTCUSDT`. Select the spot or derivative market and inspect the exact instrument ID and topology shown for the row.
-3. Configure the order's quantity asset, OPEN rows and protections in the order builder.
-4. Open **Settings → Integrations → API → Create API key**, then select **Current order JSON → Copy** on the [New API key screen](https://app.liftx.io/settings/integrations/api/new-key). The copied request contains the exact `exchange_link_id`, `instrument_id`, quantity unit and decimal fields. It creates no key and sends no trade.
-5. For TradingView, use **Use current order setup** instead; generated messages already pin the instrument. No manual placeholder replacement is needed for generated messages.
+3. For a bot, use the catalog below to resolve that exact account and market, then construct the [complete request](/api/position-request) with its quantity asset, OPEN rows and protections. API key creation grants access; it does not export an order.
+4. For Guided TradingView mode, select **Load Current Position JSON** under **Signal mode**, or paste a complete opening request into its editor. Advanced senders supply the complete request in each signal; **Position JSON** in Trading can prepare a new opening request. Choose an exact permitted instrument for every message or script. An import or copy preserves literal prices and quantities; it does not convert them for a different market.
 
 A bot can perform the same selection from the catalog below. Resolve it during setup and retain that exact ID. `BTCUSDT + futures` is not a unique execution key: multiple derivative products can share a base/quote pair. Do not select the first matching pair or reconstruct an ID from a ticker string. If multiple catalog rows match, require an explicit choice.
 
@@ -85,7 +84,7 @@ Topology values are `1` spot, `2` linear derivative and `3` inverse derivative. 
 
 ## Decimal interpretation
 
-See [prices, quantities and exact decimals](/api/precision-and-units) for copy/export steps, conversion code and unit comparisons.
+See [prices, quantities and exact decimals](/api/precision-and-units) for conversion code and unit comparisons.
 
 ```json
 {"price_atomic":"7012345","price_scale":2,"quantity_atomic":"25","quantity_scale":5}

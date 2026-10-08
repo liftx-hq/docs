@@ -1,11 +1,11 @@
 ---
 title: "Prices, quantities and exact decimals"
-description: "Copy a valid order request or encode decimal strings without floating-point rounding."
+description: "Encode prices and quantities without floating-point rounding."
 ---
 
-Most users can avoid writing `_atomic` and `_scale` fields. Prepare an order in Liftx, then open **Settings → Integrations → API → Create API key**, then select **Current order JSON → Copy** on the [New API key screen](https://app.liftx.io/settings/integrations/api/new-key). This uses the same validated order builder as the terminal. It copies a `PositionRequest`, including the selected account, exact catalog instrument, quantity unit and applicable protection settings; it does not submit an order or create a key. Wrap it in an [OPEN command](/api/open-positions) with fresh command identity and timestamps.
+API requests encode exact decimal strings as matching `_atomic` and `_scale` fields. **Position JSON** below any tab in the web or iOS Trading builder copies the [complete position request](/api/position-request) with these fields already encoded. For a request constructed in your own client, use the conversion below with the selected account's exact catalog instrument and quantity unit. Wrap the request in an [OPEN command](/api/open-positions) with fresh command identity and timestamps.
 
-For TradingView, **Use current order setup** imports the draft into a setup. Guided mode saves that request in Liftx and generates an alert without a nested `request`. Advanced mode includes the complete request in generated JSON/Pine. See [TradingView setup](/integrations/tradingview/setup). Existing positions require a [fresh modification workflow](/api/modify-positions), not a reused creation draft.
+For Guided TradingView mode, **Load Current Position JSON** imports the draft into the **Signal mode** editor. You can also paste or edit a complete request before saving; generated alerts use that saved configuration without a nested `request`. Advanced setup does not import a draft: your JSON or Pine sender supplies the complete request per signal. See [TradingView setup](/integrations/tradingview/setup). Existing positions require a [fresh modification workflow](/api/modify-positions), not a reused creation draft.
 
 ## Read the numbers
 
@@ -54,7 +54,7 @@ request_rows = {
 }
 ```
 
-Perform exact decimal arithmetic and tick/lot validation in the client before submission. The server still validates authoritative account and instrument constraints. The terminal's exporter already applies its existing precision and sizing logic.
+Perform exact decimal arithmetic and tick/lot validation in the client before submission. The server still validates authoritative account and instrument constraints. TradingView's order import reuses the terminal builder's precision and sizing logic.
 
 ## Quantity is not margin or contract count
 
@@ -74,4 +74,4 @@ Percentage configuration uses percentage points × 1,000,000: 2% is `2000000`. T
 
 ## Why keep the current wire format?
 
-Exact decimal strings are also a valid public API design; for example, [Coinbase's order API](https://docs.cdp.coinbase.com/api-reference/advanced-trade-api/rest-api/orders/create-order) uses string size and price fields. There is no universal rule that coefficient/scale is faster than decimal text. Liftx currently shares one strict coefficient/scale decoder with its terminal and trading owners. Changing the external representation would require a measured codec and contract change. The exporter improves authoring without adding conversion, catalog lookup or another execution path to command admission.
+Exact decimal strings are also a valid public API design; for example, [Coinbase's order API](https://docs.cdp.coinbase.com/api-reference/advanced-trade-api/rest-api/orders/create-order) uses string size and price fields. There is no universal rule that coefficient/scale is faster than decimal text. Liftx currently shares one strict coefficient/scale decoder with its terminal and trading owners. Changing the external representation would require a measured codec and contract change.

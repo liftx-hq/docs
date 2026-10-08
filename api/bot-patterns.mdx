@@ -41,7 +41,7 @@ If a strategy intentionally allows overlapping positions, each OPEN has its own 
 
 ## Two independent strategies or markets
 
-Use separate keys/namespaces for independent strategies. A BTC strategy and ETH strategy can each select their intended exact catalog market. Chart aliases are not routing rules. TradingView currently pins one market per setup, so two markets require two setups.
+Use separate keys/namespaces for independent strategies. One TradingView setup can serve BTC and ETH on its selected exchange link, subject to its optional instrument allowlist. Each instrument needs one coordinated producer and distinct command/lifecycle identities. Guided mode reuses its saved prices and quantity assets unchanged, so those values must suit every target. Chart aliases are not routing rules.
 
 API permissions are account/link/instrument authority, not automatic namespace ownership restrictions over position mutations. A controller must additionally enforce its intended strategy ownership when credentials overlap. Prefer least privilege and separate links when stronger isolation is needed.
 

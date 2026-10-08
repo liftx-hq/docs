@@ -47,7 +47,7 @@ The approval binds the operation ID, session bearer, purpose and payload digest.
 }
 ```
 
-This is a nonoperational shape example. A real expiry must be in the future and within one year of the request. Optional `integration_id` is for replacement within an existing exact namespace policy.
+This is a nonoperational shape example. When supplied, expiry must be in the future and within one year of the request; omission or `null` means no expiration for API/TradingView. Optional `integration_id` is for replacement within an existing exact namespace policy.
 
 The issuance response contains `credential` metadata and a one-time `secret` on new issuance. A committed duplicate cannot recover the secret. After a lost response, inspect metadata and revoke a key whose secret was not retained before explicitly creating another.
 
@@ -57,22 +57,22 @@ The issuance response contains `credential` metadata and a one-time `secret` on 
 | `kind` | Required | `api` for ordinary API credentials; dedicated TradingView setup uses `tradingview` |
 | `scopes` | Required | Exact permissions; permissions are not implied by name or target mode |
 | `exchange_link_ids` | Required | Explicit linked accounts |
-| `instrument_ids` | Optional for API; required for TV binding | Empty API filter permits all instruments on the selected links; TV pins exactly one instrument |
-| `expires_at` | Required | Future UTC Unix seconds, no more than one year ahead |
+| `instrument_ids` | Optional for API and TV | Empty/omitted permits all supported instruments on selected links; otherwise up to 64 exact catalog IDs |
+| `expires_at` | Optional for API and TV | Omitted/null means no expiration; otherwise future UTC Unix seconds, no more than one year ahead |
 | `integration_id` | Optional on credential replacement | Existing exact namespace policy; not a permission expansion mechanism |
 
 ## TradingView binding policy
 
-In addition to restricted credential fields, a binding has `mode`, `position_mode`, `allow_market_terminate`, positive decimal-string `max_quantity`, fresh source UUID and guided `position_request` when applicable. One exact link and instrument are required. The returned immutable `revision` accompanies subsequent signals.
+In addition to restricted credential fields, a binding has `mode`, `position_mode`, `allow_market_terminate`, optional positive decimal-string `max_quantity`, fresh source UUID and guided `position_request` when applicable. One exact exchange link is required. Each alert selects one instrument within the optional allowlist. The returned immutable `revision` accompanies subsequent signals.
 
-`single`/`multiple` controls OPEN occupancy, while the signal's exact-position/strategy/market target controls what termination selects. The explicit market grant is additional authority, including manual and other strategies' positions in that exact market. It is not enabled by choosing multiple-position mode.
+`single`/`multiple` controls OPEN occupancy per instrument, while the signal's exact-position/strategy/market target controls what termination selects. The explicit market grant is additional authority, including manual and other strategies' positions in that exact market. It is not enabled by choosing multiple-position mode.
 
 | Additional binding field | Presence | Rule |
 | --- | --- | --- |
 | `mode` | Required | `guided` or `advanced` |
 | `position_request` | Conditional | Complete request in Guided mode; omit in Advanced mode |
-| `max_quantity` | Required | Positive decimal string in [normalized units](/api/precision-and-units), per position |
-| `source_instance_id` | Required | Fresh UUID for this ordered producer |
+| `max_quantity` | Optional | Omitted/null means no setup cap; otherwise a positive decimal string in each target’s [normalized units](/api/precision-and-units), per position |
+| `source_instance_id` | Required | Fresh setup UUID; ordering is independent per instrument |
 | `position_mode` | Required | `single` or `multiple`; governs OPEN occupancy |
 | `allow_market_terminate` | Required | Explicit boolean granting or withholding market-wide termination |
 
@@ -87,14 +87,15 @@ and the authenticated Settings flow.
 1. [Preview the authorization](/api/reference/post-integrations-mcp-preview)
    using `authorization`. The server validates the registered callback, exact
    resource, state and S256 PKCE challenge, then returns `client_name`, normalized
-   `authorization`, `allowed_scopes` and `resource`. Preview creates no grant.
+   `authorization`, all five supported `allowed_scopes` and `resource`. Preview
+   creates no grant; Settings enables only read by default.
 2. Form `MCPConsentRequest` from that authorization, one to 32 owned active
-   `exchange_link_ids`, one to five selected `scopes` drawn from the requested
-   permissions, and future `expires_at` within 30 days. Optional `instrument_ids`
+   `exchange_link_ids`, and one to five supported `scopes` selected by the account
+   owner. Optional `expires_at` is null/omitted for no expiration, or future UTC
+   Unix seconds within 30 days. Optional `instrument_ids`
    selects up to 64 exact IDs; empty/omitted permits all instruments on the links.
-   Optional `trading_consent` defaults false and is required true for any selected
-   position/template write scope.
-3. Start fresh authentication with `purpose:"mcp"` and the complete request,
+3. **Continue** submits the selected permissions without a separate consent flag.
+   Start fresh authentication with `purpose:"mcp"` and the complete request,
    verify the offered proof and required MFA, then [approve the connection](/api/reference/post-integrations-mcp-approve)
    with the same `operation_id` and unchanged request before the five-minute
    approval expires.
@@ -103,7 +104,10 @@ The authorization object's `scope` is optional and defaults to `read` when
 omitted/empty. Duplicate/unknown requested scopes are rejected. The client owns
 its registered callback, opaque state and PKCE verifier; never construct or paste
 these sensitive callback values into chat. The `allowed_scopes` in preview are
-requested permissions, not permissions already granted.
+all supported choices, independently of the client's initial scope. The account
+owner's selection determines the grant under [OAuth scope rules](https://www.rfc-editor.org/rfc/rfc6749#section-3.3);
+the token response reports the actual granted scopes. Preview grants no access,
+and refresh cannot expand the selected permissions.
 
 Approval requires current Pro/trial entitlement and returns `201` with `credential`
 metadata and a sensitive `redirect_url`. The callback contains a two-minute,

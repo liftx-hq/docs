@@ -24,7 +24,7 @@ The public request structure is exchange-neutral. A strategy must still respect 
 
 ## Current boundaries
 
-- One TradingView setup binds one exchange link, one canonical instrument, and one signal source. Create another setup for another market or independent producer.
+- One TradingView setup binds one exchange link and one signal source, with an optional instrument allowlist. Each signal names one exact permitted instrument; ordering and the single-position policy apply per instrument. Independent strategies on the same instrument need separate setups.
 - Ordinary JSON alerts support OPEN and strategy- or market-level termination. Exact lifecycle modifications require the advanced command format and current position configuration.
 - Bulk termination is a bounded capture of eligible positions, not an account-wide stop switch or a permanent prohibition on future entries.
 - Pine has no arbitrary HTTP read access to Liftx, and webhook responses are not Pine execution feedback.

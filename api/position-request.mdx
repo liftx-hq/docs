@@ -5,7 +5,9 @@ description: "Every OPEN, SL, SLx, TP, grid and modification field in the canoni
 
 API OPEN/MODIFY and advanced TradingView signals embed one canonical `PositionRequest`. Guided TradingView setup saves this same request during setup. There is no separate exchange-specific webhook order language.
 
-Start with a valid Liftx order draft, then use **Settings → Integrations → API → Create API key**, then select **Current order JSON → Copy** on the [New API key screen](https://app.liftx.io/settings/integrations/api/new-key). For TradingView, **Use current order setup** imports that draft into the setup and the generated alert supplies the applicable fields. Adapter capabilities and current trading state still decide whether a well-formed request can execute.
+In the web or iOS Trading builder, complete your setup and select **Position JSON** below any Order, SL, SLx or TP tab. It copies the full new-position request, including all enabled protections and exact decimal fields, regardless of the selected tab. Copying does not place an order or include credentials. Use the result as the `request` in an API OPEN command, an advanced TradingView OPEN signal, or the MCP opening tool; each still needs its own authorization and command fields.
+
+You can also construct a request using the fields below and the [complete OPEN examples](/api/open-positions), with the exact linked account and catalog instrument. For Guided TradingView mode, **Load Current Position JSON** imports a valid terminal draft into the **Signal mode** editor; you can also paste or edit the complete request there. Generated alerts use the saved configuration. Advanced setup has no import step; your sender supplies the full request. Adapter capabilities and current trading state still decide whether a well-formed request can execute. Existing positions require a [fresh modification workflow](/api/modify-positions).
 
 ## Required, conditional and optional
 
@@ -183,4 +185,4 @@ Download [position-request.json](/examples/api/position-request.json). Optional 
 
 API MODIFY requires an outer `expected_revision`. Preserve immutable direction, margin mode, spot settlement and current row identities. Do not submit the original OPEN request after fills or manual changes.
 
-TradingView capped modification preserves OPEN rows; use the direct API for supported OPEN amendments. No group modification exists because positions can have different fills, slots and generations. Pine cannot retrieve the current Liftx state or read webhook responses; state-dependent changes need a controller using the API and streams.
+TradingView protection-only modification preserves OPEN rows; use the direct API for supported OPEN amendments. No group modification exists because positions can have different fills, slots and generations. Pine cannot retrieve the current Liftx state or read webhook responses; state-dependent changes need a controller using the API and streams.

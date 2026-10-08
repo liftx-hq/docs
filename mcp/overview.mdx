@@ -13,7 +13,11 @@ Use the complete connection URL `https://mcp.liftx.io/mcp`. The domain root, `ht
 
 From [Integrations](https://app.liftx.io/settings/integrations), select **MCP → Connect** to open the [connection setup](https://app.liftx.io/settings/integrations/mcp/new-connection). Choose ChatGPT or Claude for its instructions and client link. The connector starts OAuth; opening the setup screen alone creates no grant.
 
-Each person signs in to Liftx through browser OAuth with PKCE. Consent starts with `read` and names the exact linked accounts, instruments, operations and expiry. Grants last at most 30 days; access tokens last at most 15 minutes. Trading permissions require explicit consent and fresh Liftx authentication. Client permission prompts add a control; they cannot expand the Liftx grant.
+Each person signs in to Liftx through browser OAuth with PKCE. Liftx offers all five permissions: read account data, open positions, modify positions and orders, cancel or close positions, and manage order templates. Only `read` starts enabled. The choices remain available when the client's initial OAuth request contains only `read`; the account owner's selection determines the grant, and the token response reports its actual scopes.
+
+Choose the exact linked accounts, instruments and an optional expiry. Leave expiry empty for no expiration, or choose up to 30 days. Access tokens still last at most 15 minutes and use client-managed refresh. Every request remains subject to entitlement, restrictions and revocation.
+
+After choosing permissions, select **Continue**. Verify your identity in the same Liftx flow and select **Allow access** to authorize the enabled permissions; there is no separate trading-consent switch. **Back to permissions** retains your choices. Apple verification can open Apple's sign-in window; Liftx confirmation stays in the connection screen. Existing grants retain their permissions; reconnect through OAuth to change access. Client permission prompts cannot expand the Liftx grant.
 
 Use automatic client registration when configuring the connector. This implementation supports reviewed client callbacks and local callback clients; it does not support the alternative published-identity/CIMD setup. Never paste an API key, TradingView capability, password, exchange credential, OAuth token or callback URL into a conversation. The connector accepts only its own OAuth access tokens.
 
@@ -89,6 +93,8 @@ set `isError: true`; an HTTP success is not proof of tool success. Read/template
 results preserve the corresponding API body as JSON text and expose the
 original status in `_meta["liftx.io/http-status"]`. A conditional catalog `304`
 becomes `{"status":304,"not_modified":true}`.
+
+If a client reports a blocked action, inspect the tool name and redacted raw result before attributing it to Liftx. Client approval controls, OAuth refusals, request validation and command execution are distinct. Missing output or an empty receipt list alone does not prove that a request had no effect. Keep credentials and authorization callback URLs out of troubleshooting reports.
 
 A receipt records admission or execution evidence; it does not guarantee a fill or flat exposure. Keep `accepted`, `dispatching`, `handed_off`, `execution_observed` and `operator_required` distinct. After an ambiguous response, inspect the original receipt and position. Never create a new command ID to replay uncertain work or compensate automatically.
 

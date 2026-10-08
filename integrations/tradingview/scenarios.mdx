@@ -7,13 +7,13 @@ This guide maps common workflows to the current integration. It distinguishes su
 
 ## Continuous entry and exit on one market
 
-Create a Guided setup with OPEN and terminate, **One position at a time**, and the market-wide grant off. Use either one coordinated ordinary OPEN/EXIT pair or one Continuous Pine alert with **This strategy’s positions**.
+Create a Guided setup with OPEN and terminate, **One position per instrument**, and the market-wide grant off. Use either one coordinated ordinary OPEN/EXIT pair or one Continuous Pine alert with **This strategy’s positions**.
 
 The running source reuses its key. Each new entry creates a fresh lifecycle. The next OPEN is eligible only after Liftx establishes that earlier own work is complete. A locally emitted exit does not automatically permit another position, and rejected entries are not queued for later replay.
 
 ## BTC and ETH strategies in parallel
 
-Create one setup on the desired BTC catalog instrument and another on the desired ETH instrument. Each gets its own key, source, cap, saved order request and alert. Normal strategy exits remain isolated by both namespace and exact market.
+Choose one exchange link and either list the exact BTC and ETH catalog IDs or leave the instrument allowlist blank. Both modes can use one key for both markets. Give each market its own exact alert target and unique command/lifecycle identities. Ordering, single-position admission and exits remain instrument-scoped. Advanced supplies market-specific requests; Guided reuses literal saved prices and quantity assets, which must be valid for both targets. Use separate setups for independent strategies on the same instrument.
 
 If the BTC strategy's chart uses a different venue's feed, execution still targets its selected Liftx link. A BTCUSDT chart does not distinguish spot from a linear perpetual or another venue's market; the catalog selection does.
 
@@ -33,13 +33,13 @@ The cap is per position. Aggregate exposure, margin consumption and combined por
 
 ## One position with an OPEN grid
 
-Build multiple OPEN rows in Liftx and import the complete request. Those rows belong to one lifecycle and share its protections. This differs from many independent positions: its cap applies to the combined normalized OPEN rows in that one position.
+Build multiple OPEN rows in Liftx. Guided mode imports the complete request; an Advanced sender supplies it in each OPEN signal and can use **Position JSON** in Trading to prepare it. Those rows belong to one lifecycle and share its protections. This differs from many independent positions: its cap applies to the combined normalized OPEN rows in that one position.
 
 Preserve row ordering and paired decimal arrays. Adapter batch and lot limits still apply. Terminating the lifecycle cancels pending rows and closes remaining exposure through the existing owner.
 
 ## SL, SLx, TP and rearrangement
 
-Configure protections in the Liftx builder before import. Both Guided and Advanced opening requests retain the complete setup.
+Configure protections in the Liftx builder before a Guided import, or include them in the Advanced signal's full request. Both modes retain the complete opening setup.
 
 | Requirement | Configuration and ownership |
 | --- | --- |
@@ -71,7 +71,7 @@ Pine cannot fetch current Liftx position state. A cached opening request is insu
 
 ## Market-wide risk exit
 
-Create an intentionally scoped setup with terminate permission and the explicit market grant. Advanced mode can be exit-only without an imported opening request. It still needs a selected market and positive quantity policy. Select **All positions in this market** in the Exit-only helper or ordinary EXIT.
+Create an intentionally scoped setup with terminate permission and the explicit market grant. Advanced mode can be exit-only without an opening request. Choose one exchange; instrument restrictions and the quantity cap are optional. Select the exact permitted instrument and **All positions in this market** in the Exit-only helper or ordinary EXIT.
 
 The signal captures up to 64 matching Liftx positions on that exact link/instrument, including manual and other strategies' positions. It does not cancel future opens, pause competing strategies or cover other markets. Inspect every child receipt; mixed outcomes are possible.
 
@@ -85,9 +85,9 @@ Do not implement an automatic “close failed, so place an opposite trade” com
 
 ## Multi-timeframe, multi-symbol and watchlist signals
 
-Pine may derive conditions from supported `request.*` data. Each emitted Liftx command still uses an explicit setup for its one market. Create separate setups for separate execution markets and preserve one ordered producer per source.
+Pine may derive conditions from supported `request.*` data. Every emitted command names one exact permitted instrument and the setup’s selected exchange link. One setup can serve several instruments; preserve one coordinated producer and increasing sequence per instrument. Generated scripts target one chosen instrument each. Independent strategies on the same instrument need separate setups.
 
-A watchlist or chart symbol change does not widen authority. A universal multi-market key and automatic ticker-to-venue guessing are not shipped features. A portfolio controller using the [API](/api/overview) is the appropriate place for authenticated multi-account discovery and current-state coordination.
+A watchlist or chart symbol change does not widen authority. A TradingView key remains limited to its selected exchange link and optional instrument allowlist; chart aliases never select the execution market. A portfolio controller using the [API](/api/overview) is the appropriate place for authenticated multi-account discovery and current-state coordination.
 
 ## Operational changes and outages
 

@@ -13,7 +13,7 @@ Authenticated Liftx Settings session. API keys, TradingView capabilities and MCP
 
 ## Behavior
 
-First start fresh authentication with `purpose:"mcp"` and the same complete `MCPConsentRequest`, then verify the offered password/Apple proof and MFA when required. Submit the unchanged request with that operation UUID before the five-minute approval expires. The grant requires current Pro/trial entitlement, one to 32 owned active links, a subset of requested scopes and an expiry within 30 days. Any selected position/template write scope requires `trading_consent:true`. Omitted `instrument_ids` permits all instruments on the selected links; otherwise exact canonical IDs are required.
+First start fresh authentication with `purpose:"mcp"` and the same complete `MCPConsentRequest`, then verify the offered password/Apple proof and MFA when required. Submit the unchanged request with that operation UUID before the five-minute approval expires. The grant requires current Pro/trial entitlement, one to 32 owned active links and one to five supported scopes explicitly selected by the account owner. All five choices are available even when the client's initial request contains only `read`. **Continue** submits the selection for fresh verification without a separate trading-consent flag. `expires_at` may be null or omitted for no expiration; a supplied expiry must be in the future and within 30 days. Omitted `instrument_ids` permits all instruments on the selected links; otherwise exact canonical IDs are required.
 
 ## JSON body example
 
@@ -42,8 +42,7 @@ This is a synthetic local-client shape. The actual client owns registration, cal
     "scopes": [
       "read"
     ],
-    "expires_at": 1893542400,
-    "trading_consent": false
+    "expires_at": null
   }
 }
 ```

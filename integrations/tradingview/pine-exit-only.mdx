@@ -11,10 +11,10 @@ The Exit-only example never opens positions. It emits a strategy or explicitly a
 
 ## Configure the real generated copy
 
-1. Select the intended linked account and instrument in Liftx Trading.
-2. Create an **Advanced** setup with terminate permission only. No imported opening request is required, but the selected market must resolve its unit and the setup still requires a positive quantity cap. That cap does not grant OPEN permission.
-3. Decide which positions the new setup can actually manage. A fresh namespace has no own positions; **This strategy’s positions** may therefore match none. To select manual or other strategy positions, explicitly grant market termination and choose **All positions in this market**.
-4. Generate **Exit-only · confirmed-bar termination signals**.
+1. Open a new TradingView connection in Liftx and choose the intended exchange link.
+2. Choose **Advanced** with terminate permission only. No imported opening request or quantity cap is required. Optionally restrict instruments: the example uses the first allowed ID, or `BTC-USDT-SWAP` when unrestricted. An optional cap never grants OPEN permission.
+3. Decide which positions the new setup can actually manage. A fresh namespace has no own positions; **This strategy’s positions** may therefore match none. To select manual or other strategy positions, explicitly grant market termination, then choose **All positions in this market** in the generated indicator's TradingView inputs.
+4. Select **Pine (advanced)** in the setup guide and copy the Exit-only script.
 5. Use standard time-based candles of at least one minute. Set a future **Start time** and a positive **TERMINATE when close crosses below** threshold.
 6. Enable it and create **Any alert() function call** before Start time, using the Liftx webhook URL.
 
@@ -31,9 +31,9 @@ indicator("Liftx exit-only signals", overlay = true)
 // PRIVATE: this script contains a restricted credential. Never publish/share it.
 // Fixed target: link 17, instrument COPY_EXACT_CATALOG_ID.
 // The chart supplies signal data; it cannot change this fixed trading target.
-// One key is one ordered producer: use a separate setup/key for another alert
-// or independent strategy. The same running alert can reuse its key for cycles.
-// Never mix this Pine alert with an ordinary OPEN/EXIT alert pair on this key.
+// Keep one ordered producer per instrument. Use a separate setup for
+// independent strategies on the same instrument. The same running alert can reuse its key for cycles.
+// Never mix this Pine alert with an ordinary OPEN/EXIT pair on the same instrument.
 // Use a demo link for initial validation. Configure the inputs while disabled.
 // Set future times in the chart's timezone, enable the indicator, then create
 // ONE alert: this indicator / Any alert() function call / Liftx webhook URL.
@@ -54,7 +54,7 @@ if liftxTerminateTarget == ""
 
 // Every intent uses this one envelope; group targets omit position references.
 liftxMessage(string action, string positionRef, int positionStarted, int sequence, int issued, string requestJSON, string target = "position") =>
-    string commandID = "11111111-1111-4111-8111-111111111111:" + str.tostring(sequence) + ":" + action
+    string commandID = "11111111-1111-4111-8111-111111111111:17:Q09QWV9FWEFDVF9DQVRBTE9HX0lE:" + str.tostring(sequence) + ":" + action
     string message = "{\"token\":\"REPLACE_WITH_RESTRICTED_TRADINGVIEW_KEY\",\"command\":{\"client_command_id\":" + '"' + commandID + '"'
     message += ',"issued_at":' + str.tostring(issued) + ',"expires_at":' + str.tostring(issued + 60)
     message += ',"action":"' + action + '"' + ",\"exchange_link_id\":17,\"instrument_id\":\"COPY_EXACT_CATALOG_ID\",\"source_instance_id\":\"11111111-1111-4111-8111-111111111111\",\"binding_revision\":1"
@@ -85,12 +85,12 @@ if barstate.isrealtime and liftxEnabled
     if not liftxArmed
         if not chart.is_standard or not (timeframe.isminutes or timeframe.isdwm)
             runtime.error("Use a standard time-based chart of at least one minute.")
-        if liftxStartAt <= timenow or liftxStartAt >= liftxCredentialExpiresAt
+        if liftxStartAt <= timenow or (liftxCredentialExpiresAt > 0 and liftxStartAt >= liftxCredentialExpiresAt)
             runtime.error("Create this alert before a future Start time, before credential expiry. After interruption, inspect Liftx and create a new setup; do not restart this alert.")
         if liftxTerminateBelow <= 0
             runtime.error("Choose a positive TERMINATE threshold price.")
         liftxArmed := true
-    if timenow >= liftxCredentialExpiresAt
+    if liftxCredentialExpiresAt > 0 and timenow >= liftxCredentialExpiresAt
         runtime.error("Credential expired. Signals have stopped; inspect Liftx and manage remaining orders or exposure there.")
     if barstate.isconfirmed and time_close >= liftxStartAt and time_close > liftxLastBar
         liftxLastBar := time_close
@@ -115,6 +115,6 @@ plot(liftxArmed ? 1 : 0, "Local signals armed (not execution)", display = displa
 
 The generated private copy replaces the dummy `token`, link, catalog ID, source UUID, binding revision and `liftxCredentialExpiresAt`. This Exit-only script has no opening payload. Do not turn the public sample into a live sender by changing only its token.
 
-Retain one ordered producer per setup, preserve event identities on delivery retries and never reuse a lifecycle reference for a new position. [Pine setup](/integrations/tradingview/pine), [canonical command fields](/integrations/tradingview/command-format) and [target semantics](/integrations/tradingview/targets-and-lifecycles) explain the contract.
+Retain one coordinated producer per setup and instrument, preserve event identities on delivery retries and never reuse a lifecycle reference for a new position. [Pine setup](/integrations/tradingview/pine), [canonical command fields](/integrations/tradingview/command-format) and [target semantics](/integrations/tradingview/targets-and-lifecycles) explain the contract.
 
 After any interruption, inspect Events and actual positions, manage remaining orders/exposure and create a fresh source for a new alert. The example has no execution feedback, automatic delivery retry, automatic rearm or restart recovery.

@@ -22,7 +22,7 @@ Use `positions:open`, `positions:modify` or `positions:terminate` for the corres
 
 | Field | Required or conditional | Meaning |
 | --- | --- | --- |
-| `client_command_id` | Required for every command | Immutable identity within the integration namespace; 1-128 UTF-8 bytes; `liftx-group:` is reserved. |
+| `client_command_id` | Required for every command | Immutable identity within the integration namespace; 1-256 UTF-8 bytes; `liftx-group:` is reserved. |
 | `issued_at` | Required | UTC Unix seconds. Unseen intent must be no more than 300 seconds old or 30 seconds ahead of the admission clock. |
 | `expires_at` | Required | UTC Unix seconds, later than issuance and no more than 300 seconds later; must not have elapsed for a new command. |
 | `action` | Required | Exactly `open`, `modify` or `terminate`. |

@@ -11,7 +11,7 @@ Complete [Liftx setup](/integrations/tradingview/setup) first. Keep alerts disab
 
 ## Step 1: save the generated bundle
 
-In the one-time **Save your TradingView setup** panel, select **Ordinary alerts**. Review the generated OPEN message, the **On an EXIT alert** selector and the EXIT message. Select **Copy complete setup**, then save it in a private editor before opening TradingView.
+In the **TradingView setup guide** within **Save your TradingView setup**, select **Ordinary alerts**. Liftx shows OPEN when open permission is granted, otherwise a strategy EXIT when terminate permission is granted. Guided OPEN uses its saved configuration. Advanced OPEN includes a complete illustrative limit request with SL and TP: review and edit its prices, amount, account settings and protections before use. Its asset and market fields come from the exact instrument's catalog metadata; account eligibility and current venue limits still apply. The example never imports or saves a Trading draft. Select **Copy complete setup**, then save it in a private editor before opening TradingView.
 
 The bundle contains labeled sections. Only the JSON object for the selected action belongs in an alert's **Message** field. The webhook URL belongs in **Notifications → Webhook URL**. Do not paste the entire bundle into Message.
 
@@ -48,11 +48,11 @@ The chart's threshold is the trigger condition. It does not replace a price in t
 }
 ```
 
-Guided mode loads the opening request saved with the setup. Advanced mode adds the complete canonical `request` inside `alert`; use the generated value and the [position field reference](/api/position-request). Do not send only the fields that changed.
+Guided mode loads the opening request saved with the setup. For Advanced mode, your sender adds the complete canonical `request` inside `alert`; use **Position JSON** in Trading and the [position field reference](/api/position-request) to prepare a new opening request. Do not send only the fields that changed.
 
 ## Step 3: create the exit alert
 
-Create a second price or indicator alert for the intended exit condition. Use the same webhook URL and the generated EXIT JSON:
+Create a second price or indicator alert for the intended exit condition. If Liftx generated an OPEN message, duplicate its private JSON, set `alert.action` to `"terminate"` and `alert.target` to `"strategy"`, and remove `alert.request` when present. Keep the token, link, instrument, source, revision, fire-time placeholder and lag unchanged. This requires terminate permission. If Liftx generated EXIT directly, use that JSON. Both alerts use the same webhook URL:
 
 ```json
 {
@@ -94,7 +94,7 @@ Ordinary EXIT does not know the reference of one earlier OPEN. It cannot selecti
 | `alert.target` | Required | `position` for OPEN; `strategy` or authorized `market` for EXIT |
 | `alert.exchange_link_id` | Required | Exact positive numeric link ID from the generated setup |
 | `alert.instrument_id` | Required | Exact opaque catalog ID from the generated setup |
-| `alert.source_instance_id` | Required | Generated UUID identifying this one ordered producer |
+| `alert.source_instance_id` | Required | Generated setup UUID; coordinate one producer per instrument |
 | `alert.binding_revision` | Required | Exact revision from the setup |
 | `alert.request` | Conditional: Advanced OPEN only | Complete canonical request for Advanced OPEN; omitted for Guided OPEN and all EXIT messages |
 
@@ -102,13 +102,13 @@ Unknown, duplicate, incorrectly cased or extra fields are rejected. Do not add `
 
 ## Identity, retries and same-second signals
 
-Liftx derives the event identity from this setup's source, the UTC trigger second and action. It derives a fresh lifecycle reference for OPEN and a 60-second deadline with the default template. An unchanged delivery retry returns the original receipt.
+Liftx derives the event identity from this setup's source, exact link and instrument, UTC trigger second and action. It derives a fresh lifecycle reference for OPEN and a 60-second deadline with the default template. An unchanged delivery retry returns the original receipt.
 
-This supports **one distinct OPEN and one distinct EXIT per second per setup**. Identical same-second events are indistinguishable from retries. Different content for the same identity conflicts; editing the message does not make it a new event.
+This supports **one distinct OPEN and one distinct EXIT per second per setup and instrument**. Identical same-second events are indistinguishable from retries. Different content for the same identity conflicts; editing the message does not make it a new event.
 
 EXIT orders after OPEN in the same second. If the exit arrives first, its fence rejects the older unseen open. If the open arrives first, the exit can capture it. This prevents late delivery from automatically reopening a just-terminated cycle; it is not a delivery guarantee.
 
-Use this pair as one coordinated source. Do not clone it across charts, share it with independent strategies, or mix it with Pine commands under the same key. Create a separate setup for another strategy or market.
+Use one coordinated pair per instrument. Do not duplicate it or mix it with Pine on the same instrument. The same key can serve another permitted instrument with its own exact message target. Independent strategies on the same instrument need separate setups.
 
 ## Validate the complete path
 

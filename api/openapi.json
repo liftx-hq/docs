@@ -3429,7 +3429,6 @@
                           "integration_id": "88888888-8888-4888-8888-888888888888",
                           "mode": "guided",
                           "exchange_link_id": 17,
-                          "instrument_id": "COPY_EXACT_CATALOG_ID",
                           "position_request": {
                             "action": 1,
                             "exchange_link_id": 17,
@@ -3567,7 +3566,6 @@
                         "integration_id": "88888888-8888-4888-8888-888888888888",
                         "mode": "guided",
                         "exchange_link_id": 17,
-                        "instrument_id": "COPY_EXACT_CATALOG_ID",
                         "position_request": {
                           "action": 1,
                           "exchange_link_id": 17,
@@ -3693,7 +3691,6 @@
                         "integration_id": "88888888-8888-4888-8888-888888888888",
                         "mode": "guided",
                         "exchange_link_id": 17,
-                        "instrument_id": "COPY_EXACT_CATALOG_ID",
                         "position_request": {
                           "action": 1,
                           "exchange_link_id": 17,
@@ -4142,8 +4139,7 @@
                       "scopes": [
                         "read"
                       ],
-                      "expires_at": 1893542400,
-                      "trading_consent": false
+                      "expires_at": null
                     }
                   }
                 }
@@ -4611,7 +4607,11 @@
                         "scope": "read"
                       },
                       "allowed_scopes": [
-                        "read"
+                        "read",
+                        "positions:open",
+                        "positions:modify",
+                        "positions:terminate",
+                        "templates:write"
                       ],
                       "resource": "https://mcp.liftx.io/mcp"
                     }
@@ -4714,8 +4714,7 @@
                       "scopes": [
                         "read"
                       ],
-                      "expires_at": 1893542400,
-                      "trading_consent": false
+                      "expires_at": null
                     }
                   }
                 }
@@ -4881,8 +4880,12 @@
             "format": "int64"
           },
           "expires_at": {
-            "type": "integer",
-            "format": "int64"
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int64",
+            "description": "UTC Unix seconds, or null for an API/TradingView credential or MCP grant without expiration."
           },
           "revoked_at": {
             "anyOf": [
@@ -4925,9 +4928,6 @@
             "type": "integer",
             "format": "int64"
           },
-          "instrument_id": {
-            "type": "string"
-          },
           "position_request": {
             "anyOf": [
               {
@@ -4939,7 +4939,11 @@
             ]
           },
           "max_quantity": {
-            "type": "string"
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Positive normalized quantity limit per position, or null for no setup cap."
           },
           "source_instance_id": {
             "type": "string",
@@ -4966,7 +4970,6 @@
           "integration_id",
           "mode",
           "exchange_link_id",
-          "instrument_id",
           "position_request",
           "max_quantity",
           "source_instance_id",
@@ -6894,8 +6897,8 @@
           "client_command_id": {
             "type": "string",
             "minLength": 1,
-            "maxLength": 128,
-            "description": "Required. Immutable intent identity within one integration namespace, 1–128 UTF-8 bytes. Reuse unchanged for a retry; never for a new intent. Unique immutable namespace event identity; liftx-group: prefix is reserved."
+            "maxLength": 256,
+            "description": "Required. Immutable intent identity within one integration namespace, 1–256 UTF-8 bytes. Reuse unchanged for a retry; never for a new intent. Unique immutable namespace event identity; liftx-group: prefix is reserved."
           },
           "issued_at": {
             "type": "integer",
@@ -7019,8 +7022,8 @@
           "client_command_id": {
             "type": "string",
             "minLength": 1,
-            "maxLength": 128,
-            "description": "Required. Immutable intent identity within one integration namespace, 1–128 UTF-8 bytes. Reuse unchanged for a retry; never for a new intent. Unique immutable namespace event identity; liftx-group: prefix is reserved."
+            "maxLength": 256,
+            "description": "Required. Immutable intent identity within one integration namespace, 1–256 UTF-8 bytes. Reuse unchanged for a retry; never for a new intent. Unique immutable namespace event identity; liftx-group: prefix is reserved."
           },
           "issued_at": {
             "type": "integer",
@@ -7065,7 +7068,7 @@
           "client_position_id": {
             "type": "string",
             "minLength": 1,
-            "maxLength": 128,
+            "maxLength": 256,
             "description": "Conditional: required for exact-position targeting; immutable lifecycle reference, not a Liftx UUID. Forbidden for group targets."
           },
           "position_started_at": {
@@ -7110,7 +7113,7 @@
           "binding_revision"
         ],
         "additionalProperties": false,
-        "description": "Immutable source/revision and exact market. Each new OPEN uses a new lifecycle reference and sequence above the source watermark. Known-position termination remains per-reference ordered; groups freeze at most 64 targets and never reselect on retry. Advanced OPEN and MODIFY use the existing PositionRequest; capped MODIFY preserves OPEN rows. Pine has no execution-feedback channel.",
+        "description": "Immutable source/revision and exact market. Each new OPEN uses a new lifecycle reference and sequence above the source watermark. Known-position termination remains per-reference ordered; groups freeze at most 64 targets and never reselect on retry. Advanced OPEN and MODIFY use the existing PositionRequest; TradingView MODIFY preserves OPEN rows. Pine has no execution-feedback channel.",
         "allOf": [
           {
             "if": {
@@ -7308,12 +7311,15 @@
             "items": {
               "type": "string"
             },
-            "description": "Optional for an API key. Empty/omitted allows all instruments on the granted links; otherwise an exact catalog-ID allowlist."
+            "description": "Optional. Omitted/empty allows any catalog instrument on the granted links; otherwise up to 64 exact IDs."
           },
           "expires_at": {
-            "type": "integer",
+            "type": [
+              "integer",
+              "null"
+            ],
             "format": "int64",
-            "description": "Required. Future integer UTC Unix seconds within one year of issuance."
+            "description": "Optional. Omitted/null means no expiration for API/TradingView. If supplied, future UTC Unix seconds no more than one year ahead."
           },
           "integration_id": {
             "type": "string",
@@ -7325,8 +7331,7 @@
           "name",
           "kind",
           "scopes",
-          "exchange_link_ids",
-          "expires_at"
+          "exchange_link_ids"
         ],
         "additionalProperties": false
       },
@@ -7373,18 +7378,20 @@
           },
           "instrument_ids": {
             "type": "array",
-            "maxItems": 1,
+            "maxItems": 64,
             "uniqueItems": true,
             "items": {
               "type": "string"
             },
-            "minItems": 1,
-            "description": "Required. Exactly one exact catalog instrument."
+            "description": "Optional. Omitted/empty allows any catalog instrument on the granted links; otherwise up to 64 exact IDs."
           },
           "expires_at": {
-            "type": "integer",
+            "type": [
+              "integer",
+              "null"
+            ],
             "format": "int64",
-            "description": "Required. Future integer UTC Unix seconds within one year of issuance."
+            "description": "Optional. Omitted/null means no expiration for API/TradingView. If supplied, future UTC Unix seconds no more than one year ahead."
           },
           "mode": {
             "type": "string",
@@ -7406,9 +7413,12 @@
             "description": "Conditional: complete request required in guided mode; omit for advanced mode."
           },
           "max_quantity": {
-            "type": "string",
+            "type": [
+              "string",
+              "null"
+            ],
             "maxLength": 128,
-            "description": "Required. Positive exact decimal string in normalized quantity units, per position; not margin or a total strategy budget."
+            "description": "Optional. Omitted/null means no setup cap; otherwise a positive exact decimal in each target instrument’s normalized quantity unit, per position. Does not permit TradingView OPEN-order modification."
           },
           "source_instance_id": {
             "type": "string",
@@ -7433,10 +7443,7 @@
           "kind",
           "scopes",
           "exchange_link_ids",
-          "instrument_ids",
-          "expires_at",
           "mode",
-          "max_quantity",
           "source_instance_id",
           "position_mode",
           "allow_market_terminate"
@@ -8471,57 +8478,23 @@
                 "templates:write"
               ]
             },
-            "description": "Required. One to five unique selected permissions, each a subset of authorization.scope. Consent never expands the OAuth request. Values are normalized into sorted order."
+            "description": "Required. One to five unique supported permissions explicitly selected by the account owner. All five are available even when authorization.scope requests only read. Fresh approval binds the exact selection and the token response reports the actual granted scope under RFC 6749 section 3.3. Values are normalized into sorted order."
           },
           "expires_at": {
-            "type": "integer",
+            "type": [
+              "integer",
+              "null"
+            ],
             "format": "int64",
-            "description": "Required. Future UTC Unix seconds, no more than 30 days from consent validation. Must still be valid when approval is consumed."
-          },
-          "trading_consent": {
-            "type": "boolean",
-            "default": false,
-            "description": "Optional for read-only consent, where omitted means false. Required true when any selected scope permits position or template mutation. OAuth capability consent is separate from authorization of a concrete trade."
+            "description": "Optional. Null or omitted means no grant expiration. Otherwise future UTC Unix seconds, no more than 30 days from consent validation and still valid when approval is consumed. OAuth access tokens remain bounded to 15 minutes."
           }
         },
         "required": [
           "authorization",
           "exchange_link_ids",
-          "scopes",
-          "expires_at"
+          "scopes"
         ],
-        "additionalProperties": false,
-        "allOf": [
-          {
-            "if": {
-              "properties": {
-                "scopes": {
-                  "contains": {
-                    "enum": [
-                      "positions:open",
-                      "positions:modify",
-                      "positions:terminate",
-                      "templates:write"
-                    ]
-                  }
-                }
-              },
-              "required": [
-                "scopes"
-              ]
-            },
-            "then": {
-              "properties": {
-                "trading_consent": {
-                  "const": true
-                }
-              },
-              "required": [
-                "trading_consent"
-              ]
-            }
-          }
-        ]
+        "additionalProperties": false
       },
       "MCPPreviewResponse": {
         "type": "object",
@@ -8553,6 +8526,7 @@
           },
           "allowed_scopes": {
             "type": "array",
+            "description": "All five supported permission choices, independently of authorization.scope. Availability grants no access; Settings enables only read by default. Continue submits the selected permissions for fresh identity verification and request-bound approval.",
             "minItems": 1,
             "maxItems": 5,
             "uniqueItems": true,

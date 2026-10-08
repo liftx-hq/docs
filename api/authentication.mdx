@@ -9,12 +9,12 @@ Open [Liftx Settings → Integrations](https://app.liftx.io/settings/integration
 
 1. Select **API**, choose **Create API key**, and fill the separate [New API key screen](https://app.liftx.io/settings/integrations/api/new-key). Its Back button returns to the API list.
 2. Enter a descriptive **Name**, such as `Portfolio monitor — demo` or `Strategy controller — production`.
-3. Set **Expires in days**. Choose only the lifetime needed; the maximum is one year.
+3. Optionally set **Expires in days** to 1–365. Leave it blank for **no expiration**. A non-expiring key still requires current entitlement and can be disconnected or revoked.
 4. Select the required permissions from the table below.
 5. Select **Exchange links**. Verify both the linked account and its `demo` or `live` environment. A key can include 1–32 authorized links.
-6. Optionally enter exact **Canonical instrument IDs**, one per line. Copy them from the selected link's catalog; do not enter chart aliases. Up to 64 unique IDs are allowed. An empty list permits instruments on the selected links.
-7. Select **Confirm and create** at the bottom and complete fresh password or linked Apple authentication. If account MFA is enabled, complete that verification too.
-8. Save the one-time secret in a private secret manager. Dismiss the secret after saving it.
+6. Optionally restrict **Instruments**. Search the selected exchange's catalog and select matching IDs; **Search on** switches the catalog when several links are selected without changing your permissions. Selections appear as removable chips. You can also add an exact ID or paste IDs separated by newlines. Up to 64 unique IDs are allowed; an empty selection permits instruments on the selected links. Do not use chart aliases.
+7. Select **Continue** to review access and verify your identity in the same setup screen. Enter your password or use your linked Apple account, plus your authenticator code when MFA is enabled, then select **Create API key**. Back returns to your setup without losing its values.
+8. On **Save your API key**, copy the **API key** into a private secret manager. The **API base URL** is also available to copy. Select **I saved it — hide the secret** at the bottom to return to your integrations and clear the displayed key.
 
 Fresh approval is bound to the exact requested permissions and expires after five minutes. It is consumed once. Changing a policy requires approval for that policy; it is not enough to possess an already issued key.
 
@@ -50,11 +50,13 @@ Secrets contain 256 random bits. The service stores only a digest and displays t
 
 ## Secret disposal and ambiguous issuance
 
-The UI clears the displayed secret when hidden, on navigation, lock, logout or account change. Copy it before switching away. If issuance times out or its response is lost, inspect the credential list. Do not repeatedly press Create or automatically replay issuance. A committed duplicate can return metadata, but cannot recover the one-time secret; revoke an unusable new credential before explicitly issuing another.
+The UI clears the displayed secret when hidden, on navigation, lock, logout or account change. Copy it before switching away. If issuance times out or its response is lost, inspect the credential list. Do not repeatedly press **Create API key** or **Create replacement key**, or automatically replay issuance. A committed duplicate can return metadata, but cannot recover the one-time secret; revoke an unusable new credential before explicitly issuing another.
 
 ## Replacement, rotation and revocation
 
 A replacement credential retains the existing integration namespace and its exact policy. This preserves command deduplication and TradingView lifecycle ownership. Changing permissions or scope is a new approved policy, not an unreviewed extension of the old key.
+
+Choose **Create replacement key** on the integration item, review the expiry and select **Continue**. Complete fresh authentication in the confirmation step and select **Create replacement key**. The current key remains active during this process.
 
 Replacement keys are grouped in the same integration item. After updating the intended client and confirming its use, open **Keys** and choose **Remove key** for the old credential. This revokes only that key and leaves its replacement active. The Keys disclosure appears only when multiple keys exist.
 
@@ -72,6 +74,6 @@ Metadata inspection and revocation remain available in authenticated Settings af
 | Position controller | `read`, `positions:open`, `positions:modify`, `positions:terminate`; exact intended links |
 | Exit service | `positions:terminate`, plus `read` for reconciliation; no OPEN permission |
 | Template editor | `read`, `templates:write`; acknowledge account template access |
-| TradingView strategy | Separate TradingView setup/key; exact link, instrument and source policy |
+| TradingView strategy | Separate TradingView setup/key; one exact link, optional instrument allowlist and source policy |
 
 Keep independent strategies in separate namespaces when command identity, auditing and permissions must be independent. Ordinary API position authority is bounded by credential scope, not automatically by who opened the position; use dedicated links or a controller ownership policy where stronger strategy isolation is required.
