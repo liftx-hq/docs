@@ -51,7 +51,7 @@ inspect its original receipt and preserve its immutable identity.
 | `liftx_create_template`, `liftx_update_template`, `liftx_delete_template` | Explicitly authorized template changes |
 | `liftx_command_receipts`, `liftx_command_receipt` | Command status and durable evidence |
 | `liftx_open_position`, `liftx_modify_position`, `liftx_terminate_position` | Exact-position trading commands with the corresponding permission |
-| `liftx_research_sources` | Official research-provider catalog; no provider data fetch or account-data forwarding |
+| `liftx_research_sources` | [Research workflow and official sources](/mcp/research-sources) for insights, scenarios, risk and performance analysis; no live data, provider fetch or account-data forwarding |
 
 Read tools require `read`. Position writes use `positions:open`, `positions:modify` or `positions:terminate`; template changes use `templates:write`. Template CRUD results are not position command receipts. No tool infers all-market targets or silently fans a symbol request into multiple trades.
 

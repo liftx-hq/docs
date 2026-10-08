@@ -1,6 +1,6 @@
 ---
 title: "Claude"
-description: "Personal OAuth access and the Liftx review and position-management plugin."
+description: "Personal OAuth access and the Liftx research, review and position-management plugin."
 ---
 
 ## Remote connector
@@ -18,19 +18,22 @@ The connector and plugin offer all five [permissions](/mcp/overview#authorize-th
 
 ## Liftx plugin
 
-The optional plugin adds guided trading review and position-management workflows to the Liftx MCP connection. Select **Open Claude Plugins** below the plugin instructions in Liftx, or open [Claude Plugins](https://claude.ai/customize/plugins).
+The optional plugin adds market research, trading review and position-management workflows to the Liftx MCP connection. Select **Open Claude Plugins** below the plugin instructions in Liftx, or open [Claude Plugins](https://claude.ai/customize/plugins).
 
 1. Go to **Customize → Plugins**, then choose **Add → Add marketplace**.
 2. Choose **Add from a repository**, paste `https://github.com/liftx-hq/ai-plugin` and click **Sync**.
 3. Open **Liftx** in the marketplace and click **Add**.
 4. Connect the plugin's **Liftx** connector, then sign in to **Liftx** and approve your chosen access.
 
-See [Claude's plugin installation guide](https://support.claude.com/en/articles/13837440-use-plugins-in-claude). The package contains one remote HTTP connector and two skills, with no local server, credentials or install hooks:
+See [Claude's plugin installation guide](https://support.claude.com/en/articles/13837440-use-plugins-in-claude). The package contains one remote HTTP connector and three skills, with no local server, credentials or install hooks:
 
 | Skill | Purpose |
 | --- | --- |
+| `/liftx:research` | Develop sourced insights, competing scenarios, portfolio risk, performance analysis and cost-aware proposals without execution. |
 | `/liftx:review` | Review positions, protections and receipts without trading. |
 | `/liftx:manage` | User-invoked preparation and execution of an exact approved action, preserving command identity and receipt uncertainty. |
+
+The research skill calls `liftx_research_sources` for the shared [research workflow](/mcp/research-sources). It has no preset personal trading parameters or bundled live data. Current market observations require available, authorized host tools; missing evidence limits the conclusion. A research request does not authorize a trade.
 
 ### Claude Code
 

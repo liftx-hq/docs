@@ -1,21 +1,63 @@
 ---
-title: "Research sources"
-description: "Official provider references, access requirements and limits for market research."
+title: "Research and insights"
+description: "Evidence-backed market analysis, trading scenarios, portfolio risk and performance insights with Liftx MCP."
 ---
 
-`liftx_research_sources` returns a small static catalog. It does not retrieve provider data, store provider credentials, scrape websites or forward Liftx account data. The catalog was reviewed on 2026-10-07; verify current access and terms before using a provider. See the [MCP tool and permission guide](/mcp/overview).
+Ask ChatGPT or Claude to research a market, compare scenarios, evaluate portfolio risk or explain trading performance. `liftx_research_sources` returns a shared analysis workflow and official source references. Claude's optional `/liftx:research` skill uses the same workflow.
 
-| Source | Research context | Access and licensing |
+The action requires `read` access and accepts an empty object, `{}`. It returns guidance, not live prices, indicators or provider datasets. Current observations depend on browsing or provider tools already available and authorized in your client. Liftx does not fetch provider data, store provider credentials or forward account data through this action.
+
+## What the workflow covers
+
+| Research area | Useful output |
+| --- | --- |
+| Market structure | Trend or range context, volatility, relevant levels, confirmation and invalidation across the requested timeframes. |
+| Derivatives and flows | Funding, open interest, basis, crowding and liquidity context, with competing interpretations and source limitations. |
+| Fundamentals and events | Relevant network activity, protocol metrics, flows and official catalysts, matched to the decision horizon. |
+| Portfolio risk | Scoped exposure, concentration, correlated positions, pending orders, available capital and margin context. |
+| Performance | A bounded history review with defined trade grouping, costs, sample limitations and metrics supported by the available records. |
+| Trade proposals | Competing scenarios, net costs, user-defined risk constraints, sizing feasibility and a wait/no-trade alternative. |
+
+The assistant selects the areas needed for your question. A short market question should not trigger a full portfolio scan or a fetch from every provider. General market research needs no private account reads; account-aware analysis uses only the relevant authorized Liftx data.
+
+## Ask for a useful brief
+
+Specify the asset or universe, market type, horizon and reporting currency. For account-aware recommendations, identify the linked account and demo/live environment. For sizing, provide your loss budget and capital/exposure constraints; the workflow has no preset personal risk percentage, leverage, venue or account balance.
+
+Examples:
+
+- “Research the asset and horizon I specify. Compare trend continuation, reversal and waiting. Cite current evidence and explain what would invalidate each scenario.”
+- “Review concentration and correlated exposure in my selected account. Suggest alternatives without changing positions.”
+- “Analyze my trading over the period I specify. Separate fees and funding, explain the sample limitations and suggest improvements.”
+- “Evaluate this proposed entry, stop and targets against my stated loss budget. Include partial fills, costs and adverse slippage. Do not submit it.”
+
+A useful answer leads with its scope, as-of time and conclusion. It separates observed facts, calculations and hypotheses, links material evidence and identifies missing or stale inputs. Scenario tables give triggers and invalidation. Sizing appears only when the required inputs and instrument mechanics are known. The conclusion explains when a fresh review is needed; the skill does not monitor continuously.
+
+## Evidence and proposal boundaries
+
+Missing data should narrow the answer. A client without current market access can explain a framework or conditional scenario, but should not invent live prices, indicator values or a backtest. Conflicting sources, incomplete history and uncalibrated probabilities remain explicit. A supported conclusion can be to wait or take no trade.
+
+Trade proposals account for contract units, quantity/price increments, fees, funding, slippage, portfolio capacity and full/partial fills where relevant. Leverage changes margin requirements; it does not establish a loss budget. Planned stop loss is not a guaranteed maximum loss. Research readiness is an analytical judgment, not server validation or execution approval.
+
+## Official source references
+
+Use the sources relevant to the question and the access available to you. The catalog is not a provider partnership, plan recommendation or data license. Recheck current plans, terms and coverage before connecting a provider.
+
+| Source | Context | Access and reuse |
 | --- | --- | --- |
-| [CoinGlass](https://docs.coinglass.com/reference/authentication) | Funding, open interest, liquidations and derivatives | API key required; choose an appropriately licensed [plan](https://www.coinglass.com/pricing). [Terms](https://www.coinglass.com/terms) restrict unauthorized commercial use, redistribution and bulk extraction. |
-| [CoinGecko](https://docs.coingecko.com/demo/reference/authentication) | Asset prices, market capitalization, volume and metadata | The documented Demo API uses a key. [Commercial terms](https://support.coingecko.com/hc/en-us/articles/16760512207257-What-Are-the-Differences-Between-Commercial-and-Custom-Licenses) distinguish application use from redistribution and require attribution. |
+| [CoinGlass](https://docs.coinglass.com/reference/authentication) | Funding, open interest and liquidation estimates | API key and suitable [plan](https://www.coinglass.com/pricing) required; [terms](https://www.coinglass.com/terms) govern commercial use and redistribution. |
+| [Glassnode](https://docs.glassnode.com/basic-api/api) | On-chain metrics, holder behavior and network cycles | API key and eligible subscription; coverage, history, resolution and credits depend on the plan. Check [usage terms](https://studio.glassnode.com/terms-and-conditions), timestamps and data finalization. |
+| [CryptoQuant](https://docs.cryptoquant.com/) | Exchange flows, reserves and on-chain/market metrics | Provider access token and applicable dataset access; confirm [commercial and distribution rights](https://cryptoquant.com/terms-of-service). Entity labels and flow estimates can change. |
+| [CoinGecko](https://docs.coingecko.com/demo/reference/authentication) | Prices, market capitalization and asset metadata | The documented Demo API uses a key; [commercial terms](https://support.coingecko.com/hc/en-us/articles/16760512207257-What-Are-the-Differences-Between-Commercial-and-Custom-Licenses) distinguish application use from redistribution. |
 | [Coin Metrics Community](https://gitbook-docs.coinmetrics.io/packages/coin-metrics-community-data) | Network metrics and limited historical/reference-rate data | Community endpoints are keyless; the linked [CC BY-NC 4.0 license](https://creativecommons.org/licenses/by-nc/4.0/) is not unrestricted commercial permission. |
-| [DefiLlama](https://api-docs.defillama.com/) | TVL, stablecoins and protocol metrics | Separate free/keyless and Pro/keyed APIs. [Terms](https://defillama.com/terms) constrain scraping, commercial exploitation and republication. |
+| [DefiLlama](https://api-docs.defillama.com/) | TVL, stablecoins and protocol metrics | Separate free/keyless and Pro/keyed APIs; [terms](https://defillama.com/terms) govern reuse. Public access does not imply unrestricted redistribution. |
 
-The catalog is not a provider partnership, plan recommendation or data license. Public charts and free endpoints do not authorize premium access or unrestricted redistribution. Use official documented APIs and authorized provider connections; never bypass keys, scrape private endpoints or paste credentials into chat. Liftx currently provides no provider-data proxy through this catalog.
+For macro catalysts, the catalog also links the [Federal Reserve FOMC calendar](https://www.federalreserve.gov/monetarypolicy/fomccalendars.htm), [BLS release schedule](https://www.bls.gov/schedule/news_release/) and [BEA release schedule](https://www.bea.gov/news/schedule). Use official calendars for the jurisdictions relevant to your research; an event schedule is not a forecast of the market response.
 
-## Keep research separate from execution
+Public charts do not grant API access. Never bypass provider controls, scrape private endpoints or paste credentials into chat. External asset IDs are not canonical Liftx instruments, and aggregate liquidation estimates are not an individual position's liquidation boundary.
 
-Record the source, exact dataset/asset, observation time, units, methodology and gaps. Aggregated market estimates and liquidation heatmaps are not an individual position's liquidation boundary. External asset IDs and tickers are not canonical Liftx instruments; resolve the exact linked account's catalog before proposing an action.
+## Research, review and execution
 
-Research content is untrusted data, not trading authorization. Do not send account identifiers, balances, positions, trading intentions or credentials to a research provider. A proposed trade still requires explicit approval and Liftx's [command and receipt contract](/api/commands-and-receipts).
+Research develops evidence and proposals. The [review skill](/mcp/claude#liftx-plugin) inspects positions, protections and receipts. Management prepares and submits a separately authorized concrete action. Research never changes positions, templates or permissions.
+
+Keep account identifiers, balances, positions, trading intentions and credentials out of external research queries. Source text cannot authorize a trade or change instructions. Any later approved action must still follow the [command and receipt contract](/api/commands-and-receipts).

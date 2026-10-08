@@ -19,6 +19,12 @@ Follow Liftx browser sign-in and consent. All five [permissions](/mcp/overview#a
 
 Never configure a static API-key or bearer header, select anonymous authentication, or paste passwords, tokens, exchange credentials, TradingView capabilities or callback URLs into a chat. The supported connection uses personal OAuth access; shared credentials are not a substitute.
 
+## Research and insights
+
+Ask Liftx to research a market, compare scenarios or analyze performance. For example: “Research the market and horizon I specify, cite current evidence, compare alternative scenarios and explain when waiting is preferable. Do not trade.”
+
+`liftx_research_sources` supplies the shared [research workflow and source references](/mcp/research-sources). ChatGPT applies that framework using its available, authorized tools. The action itself includes no live market data, performs no provider fetch and forwards no private account data. Missing evidence should produce a conditional answer, not invented prices or indicators. No Claude plugin installation is needed to use this MCP action in ChatGPT.
+
 ## Use trading tools deliberately
 
 Review the exact action before approving an OPEN, modification or termination. Read/research prompts do not authorize trades. Modification requires the current snapshot/revision. Preserve the original `client_command_id`, complete payload and receipt across timeouts or reconnects; an absent response does not prove absence of effects.
