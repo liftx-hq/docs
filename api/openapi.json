@@ -4989,6 +4989,11 @@
           "client_command_id": {
             "type": "string"
           },
+          "source": {
+            "type": "string",
+            "maxLength": 80,
+            "description": "Source label on receipt reads, including group targets. API and TradingView derive from the integration kind; MCP uses the immutable OAuth-verified client name, such as ChatGPT or Claude. Initial command acknowledgments may omit this read metadata."
+          },
           "action": {
             "type": "string"
           },
@@ -8290,6 +8295,11 @@
           },
           "client_command_id": {
             "type": "string"
+          },
+          "source": {
+            "type": "string",
+            "maxLength": 80,
+            "description": "Source label inherited from the parent group."
           },
           "action": {
             "type": "string",
