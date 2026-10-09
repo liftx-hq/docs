@@ -90,3 +90,26 @@ A new exit-only setup owns no positions initially. Selecting `strategy` will not
 Canonical TradingView commands accept `terminate`, and normalize `cancel` and `close` to the same termination operation. Ordinary JSON uses `terminate` only.
 
 Termination cancels pending work and closes remaining exposure. A pending position may need only cancellation; a partially filled position may also need closure. `cancel` does not promise to keep existing exposure. For a targeted OPEN-row amendment without terminating the position, use the [direct API modification contract](/api/modify-positions) with current state.
+
+
+## SLx and stop-loss economics
+
+With trailing by trigger price, **P&L to activate trailing** uses total position
+P&L divided by executed entry cost, including realized partial exits. It is not a
+price offset or a leveraged return. **Indent from breakeven** is a favorable price
+distance from current whole-position breakeven. Zero indent targets zero modeled
+P&L, including actual signed fees, settled funding and an estimated taker fee to
+close the remaining exposure. Forecast funding is excluded. Before an entry fills,
+these previews use the first intended entry and estimated fees.
+
+Breakeven mode follows updated economics after fills, even when that loosens the
+stop, until the exit triggers. Price trailing retains its ratchet; TP milestone
+rules and already-triggered exit ownership are unchanged. SLx targets round up to
+the venue tick for longs and down for shorts. A configuration that places its stop
+beyond the requested activation is rejected.
+
+Ordinary SL **Risk** estimates the total position loss at the selected stop; a
+negative value means protected profit. Its From position / From average reference
+and entry-distance strategy remain distinct from SLx. TP percentages remain price
+offsets from entry-fee-aware breakeven. Actual execution, slippage and final fees
+can differ from every preview. Missing execution or fee evidence stays unavailable.
